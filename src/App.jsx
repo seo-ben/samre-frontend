@@ -14,6 +14,8 @@ import { ActiveSubscriptionsPage } from './pages/ActiveSubscriptions'
 import { SubscriptionHistoryPage } from './pages/SubscriptionHistory'
 import { ComingSoon } from './pages/ComingSoon'
 import { OffersPage } from './pages/Offers'
+import { EventsPage } from './pages/Events'
+import { EventCategoriesPage } from './pages/EventCategories'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
@@ -40,10 +42,10 @@ function App() {
       <Route path="/offers/expired"    element={<Protected><OffersPage /></Protected>} />
 
       {/* ── Événements ────────────────────────── */}
-      <Route path="/events"            element={<Protected><ComingSoon title="Tous les événements" /></Protected>} />
-      <Route path="/events/pending"    element={<Protected><ComingSoon title="Événements en attente" /></Protected>} />
-      <Route path="/events/approved"   element={<Protected><ComingSoon title="Événements validés" /></Protected>} />
-      <Route path="/events/categories" element={<Protected><ComingSoon title="Catégories d'événements" /></Protected>} />
+      <Route path="/events"            element={<Protected><EventsPage /></Protected>} />
+      <Route path="/events/pending"    element={<Protected><EventsPage /></Protected>} />
+      <Route path="/events/approved"   element={<Protected><EventsPage /></Protected>} />
+      <Route path="/events/categories" element={<Protected><EventCategoriesPage /></Protected>} />
 
       {/* ── Candidatures ──────────────────────── */}
       <Route path="/applications"            element={<Protected><ComingSoon title="Toutes les candidatures" /></Protected>} />

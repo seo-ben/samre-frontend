@@ -54,7 +54,7 @@ const NAV = [
     icon: CalendarDays,
     children: [
       { label: 'Tous les événements',    path: '/events',              icon: CalendarDays },
-      { label: 'En attente',             path: '/events/pending',      icon: Clock,         badge: true },
+      { label: 'En attente',             path: '/events/pending',      icon: Clock,         badgeKey: 'pending_events_count' },
       { label: 'Validés',                path: '/events/approved',     icon: CheckCircle2 },
       { label: 'Catégories',             path: '/events/categories',   icon: Tag },
     ],
@@ -423,8 +423,8 @@ const SubItem = ({ child, currentPath, sidebarStats }) => {
       )}
       {badgeValue !== null && badgeValue !== undefined && (
         <span style={{
-          background: badgeValue > 0 ? '#F5A623' : 'rgba(255,255,255,0.1)', 
-          color: badgeValue > 0 ? '#0F1923' : 'rgba(255,255,255,0.45)',
+          background: '#F5A623', 
+          color: '#0F1923',
           fontSize: '11px', fontWeight: '700',
           padding: '2px 6px', borderRadius: '999px',
           minWidth: '20px', textAlign: 'center'
