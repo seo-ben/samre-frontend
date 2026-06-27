@@ -66,20 +66,19 @@ export const Login = () => {
       <main style={{ width: '100%', maxWidth: '440px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
 
         {/* Logo + Brand */}
-        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        {/* <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         
           <h1 style={{
             fontFamily: "'Inter', sans-serif",
             fontSize: '26px', fontWeight: '700',
             color: '#191c1e', letterSpacing: '-0.01em', margin: '0 0 8px 0'
           }}>
-            Accédez à votre console de gestion sécurisée
-
+            Portail Administration
           </h1>
-          {/* <p style={{ fontSize: '14px', color: '#434656', margin: 0 }}>
+          <p style={{ fontSize: '14px', color: '#434656', margin: 0 }}>
             Accédez à votre console de gestion sécurisée
-          </p> */}
-        </div>
+          </p>
+        </div> */}
 
         {/* Card */}
         <div style={{
