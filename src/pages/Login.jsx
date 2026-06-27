@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,6 +12,16 @@ export const Login = () => {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Masquer le toast d'erreur après 4 secondes
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -80,22 +90,6 @@ export const Login = () => {
         }}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-            {/* Bloc d'erreur API */}
-            {error && (
-              <div style={{
-                display: 'flex', alignItems: 'flex-start', gap: '10px',
-                padding: '12px 14px',
-                background: '#fff1f1',
-                border: '1px solid #fecaca',
-                borderRadius: '6px',
-                color: '#b91c1c',
-                fontSize: '13px',
-                lineHeight: '1.5',
-              }}>
-                <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '1px' }} />
-                <span>{error}</span>
-              </div>
-            )}
 
             <div>
               <label style={{
@@ -246,10 +240,40 @@ export const Login = () => {
         </p>
       </main>
 
+      {/* Toast Error */}
+      {error && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          display: 'flex', alignItems: 'center', gap: '12px',
+          padding: '16px 20px',
+          background: '#ffffff',
+          borderLeft: '4px solid #ef4444',
+          borderRadius: '8px',
+          color: '#1f2937',
+          fontSize: '14px',
+          fontWeight: '500',
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          animation: 'toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          zIndex: 9999,
+          maxWidth: '350px'
+        }}>
+          <div style={{ background: '#fef2f2', padding: '6px', borderRadius: '50%', display: 'flex', color: '#ef4444' }}>
+            <AlertCircle size={20} />
+          </div>
+          <span>{error}</span>
+        </div>
+      )}
+
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes toastSlideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
         input:-webkit-autofill {
           -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
