@@ -40,7 +40,8 @@ export const Login = () => {
       } else if (!err.response) {
         setError('Impossible de joindre le serveur. Vérifiez votre connexion.');
       } else {
-        setError(message ?? 'Une erreur inattendue est survenue.');
+        const errorMsg = message || 'Une erreur inattendue est survenue.';
+        setError(typeof errorMsg === 'string' ? errorMsg : JSON.stringify(errorMsg));
       }
     } finally {
       setLoading(false);
@@ -262,7 +263,7 @@ export const Login = () => {
           <div style={{ background: '#fef2f2', padding: '6px', borderRadius: '50%', display: 'flex', color: '#ef4444' }}>
             <AlertCircle size={20} />
           </div>
-          <span>{error}</span>
+          <span>{typeof error === 'string' ? error : JSON.stringify(error)}</span>
         </div>
       )}
 
