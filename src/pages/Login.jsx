@@ -73,11 +73,12 @@ export const Login = () => {
             fontSize: '26px', fontWeight: '700',
             color: '#191c1e', letterSpacing: '-0.01em', margin: '0 0 8px 0'
           }}>
-            Portail Administration
-          </h1>
-          <p style={{ fontSize: '14px', color: '#434656', margin: 0 }}>
             Accédez à votre console de gestion sécurisée
-          </p>
+
+          </h1>
+          {/* <p style={{ fontSize: '14px', color: '#434656', margin: 0 }}>
+            Accédez à votre console de gestion sécurisée
+          </p> */}
         </div>
 
         {/* Card */}
