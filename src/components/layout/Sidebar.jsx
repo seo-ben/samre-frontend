@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, Grid
+  Languages, MapPin, Award, UserCog, Type
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../lib/apiClient';
@@ -158,7 +158,7 @@ export const Sidebar = () => {
   const location = useLocation();
 
   const [collapsed, setCollapsed] = useState(false);
-  const [sidebarStats, setSidebarStats] = useState({});
+  const [sidebarStats, setSidebarStats] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -167,7 +167,7 @@ export const Sidebar = () => {
         setSidebarStats(res.data.data || {});
       } catch (err) {
         console.error('Erreur stats sidebar', err);
-      }
+        setSidebarStats({});
     };
     fetchStats();
   }, []);
@@ -389,7 +389,9 @@ const SubItem = ({ child, currentPath, sidebarStats }) => {
   const Icon = child.icon;
   const isActive = currentPath === child.path || currentPath.startsWith(child.path + '/');
 
-  const badgeValue = child.badgeKey ? sidebarStats?.[child.badgeKey] : null;
+  const hasStats = sidebarStats !== null;
+  const badgeValue = hasStats && child.badgeKey ? (sidebarStats[child.badgeKey] || 0) : null;
+  const showBadge = hasStats && child.badgeKey;
 
   return (
     <NavLink
@@ -421,13 +423,13 @@ const SubItem = ({ child, currentPath, sidebarStats }) => {
           padding: '1px 6px', borderRadius: '999px',
         }}>●</span>
       )}
-      {badgeValue !== null && badgeValue !== undefined && (
+      {showBadge && (
         <span style={{
-          background: '#F5A623', 
-          color: '#0F1923',
-          fontSize: '11px', fontWeight: '700',
-          padding: '2px 6px', borderRadius: '999px',
-          minWidth: '20px', textAlign: 'center'
+          background: badgeValue > 0 ? '#ef4444' : '#64748b',
+          color: '#fff', fontSize: '11px', fontWeight: '700',
+          padding: '2px 6px', borderRadius: '10px',
+          marginLeft: 'auto',
+          minWidth: '18px', textAlign: 'center'
         }}>{badgeValue}</span>
       )}
     </NavLink>

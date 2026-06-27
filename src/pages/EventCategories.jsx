@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MainLayout } from "../components/layout/MainLayout";
 import apiClient from "../lib/apiClient";
-import { Plus, X, Loader2, AlertCircle, Trash2, Edit2, Tag, CheckCircle2, XCircle, ChevronRight, Image as ImageIcon, Wand2 } from "lucide-react";
+import { Plus, X, Loader2, AlertCircle, Trash2, Edit2, Tag, CheckCircle, XCircle, ChevronRight } from "lucide-react";
 
 export const EventCategoriesPage = () => {
   const [categories, setCategories] = useState([]);
@@ -235,7 +235,7 @@ export const EventCategoriesPage = () => {
                         <img src={item.icon_url} alt="icon" style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ width: '32px', height: '32px', borderRadius: '6px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF' }}>
-                          <ImageIcon size={18} />
+                          <span style={{ fontSize: '10px' }}>Icon</span>
                         </div>
                       )}
                     </td>
@@ -263,7 +263,7 @@ export const EventCategoriesPage = () => {
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {item.is_active ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#059669', fontSize: '13px', fontWeight: '500' }}><CheckCircle2 size={16} /> Actif</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#059669', fontSize: '13px', fontWeight: '500' }}><CheckCircle size={16} /> Actif</span>
                       ) : (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#DC2626', fontSize: '13px', fontWeight: '500' }}><XCircle size={16} /> Inactif</span>
                       )}
@@ -396,7 +396,7 @@ export const EventCategoriesPage = () => {
                       opacity: isTranslating ? 0.6 : 1
                     }}
                   >
-                    {isTranslating ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                    {isTranslating ? <Loader2 size={14} className="animate-spin" /> : null}
                     Traduction Auto
                   </button>
                 </div>
@@ -454,7 +454,7 @@ export const EventCategoriesPage = () => {
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           animation: 'slideUp 0.3s ease-out', zIndex: 9999
         }}>
-          <CheckCircle2 size={20} />
+          <CheckCircle size={20} />
           {toastMessage}
         </div>
       )}

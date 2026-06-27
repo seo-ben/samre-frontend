@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { 
   Plus, MoreVertical, MapPin, Clock, Calendar, Info, 
-  ChevronLeft, ChevronRight, CheckCircle2, Users, Globe
+  ChevronLeft, ChevronRight, CheckCircle, Users, Map
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 
@@ -260,7 +260,7 @@ export const EventsPage = () => {
                             {category}
                           </span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
-                            {ev.is_online ? <><Globe size={12}/> En ligne</> : <><MapPin size={12}/> {ev.location_name || 'Lieu spécifié'}</>}
+                            {ev.is_online ? <><Map size={12}/> En ligne</> : <><MapPin size={12}/> {ev.location_name || 'Lieu spécifié'}</>}
                           </span>
                           <span style={{ fontSize: '12px', color: '#94a3b8' }}>
                             {ev.status}
@@ -411,7 +411,7 @@ export const EventsPage = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', borderRadius: '12px 12px 0 0', padding: '20px' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
-                          {selectedEvent.is_online ? <Globe size={16} /> : <MapPin size={16} />} 
+                          {selectedEvent.is_online ? <Map size={16} /> : <MapPin size={16} />} 
                           Lieu
                         </div>
                         <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
