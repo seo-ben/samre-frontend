@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --primary-blue: #1A6FD4;
+  --primary-dark: #0D3B7A;
+  --accent-gold: #F5A623;
+  --accent-yellow: #FFD000;
+  --black-deep: #0F1923;
+  --white-pure: #FFFFFF;
+  --gray-light: #F4F6FA;
+  --gray-medium: #8A94A6;
+  --gray-border: #E2E8F0;
+
+  /* Semantic Colors */
+  --success: #22C55E;
+  --warning: #F5A623;
+  --danger: #EF4444;
+  --info: #1A6FD4;
+
+  /* Typography */
+  --font-inter: 'Inter', sans-serif;
+  --font-poppins: 'Poppins', sans-serif;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(13, 59, 122, 0.05);
+  --shadow-md: 0 4px 12px rgba(13, 59, 122, 0.08);
+  --shadow-lg: 0 12px 32px rgba(13, 59, 122, 0.12);
+  --shadow-hover: 0 8px 32px rgba(13, 59, 122, 0.14);
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: var(--gray-light);
+  color: var(--black-deep);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-poppins);
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+a {
+  color: var(--primary-blue);
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Base Skeleton Class */
+.skeleton {
+  background: linear-gradient(90deg, var(--gray-border) 25%, var(--gray-light) 50%, var(--gray-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Responsive Grid for Stats Cards */
+@media (max-width: 1200px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.main-content {
+  padding: 24px;
+}
+@media (max-width: 640px) {
+  .main-content {
+    padding: 16px;
+  }
+}

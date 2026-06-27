@@ -1,0 +1,236 @@
+<!DOCTYPE html><html class="light" lang="fr" style="width: 1299px; height: 742px; overflow: hidden; position: relative;"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Connexion | SAMRE Administration Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-background": "#191c1e",
+                    "surface-container-highest": "#e0e3e5",
+                    "error": "#ba1a1a",
+                    "on-secondary-fixed": "#0b1c30",
+                    "inverse-surface": "#2d3133",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#eff1f3",
+                    "primary-container": "#0052ff",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "outline-variant": "#c3c5d9",
+                    "primary": "#003ec7",
+                    "tertiary-container": "#bf3003",
+                    "surface-container-lowest": "#ffffff",
+                    "tertiary": "#952200",
+                    "surface-container": "#eceef0",
+                    "surface-container-low": "#f2f4f6",
+                    "on-primary": "#ffffff",
+                    "on-surface": "#191c1e",
+                    "surface": "#f7f9fb",
+                    "tertiary-fixed": "#ffdbd2",
+                    "primary-fixed-dim": "#b7c4ff",
+                    "on-tertiary-fixed-variant": "#891e00",
+                    "on-primary-fixed": "#001452",
+                    "surface-tint": "#004ced",
+                    "secondary-container": "#d0e1fb",
+                    "inverse-primary": "#b7c4ff",
+                    "surface-variant": "#e0e3e5",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-secondary": "#ffffff",
+                    "on-primary-container": "#dfe3ff",
+                    "on-tertiary-fixed": "#3c0800",
+                    "surface-bright": "#f7f9fb",
+                    "on-tertiary-container": "#ffddd5",
+                    "tertiary-fixed-dim": "#ffb4a1",
+                    "background": "#f7f9fb",
+                    "primary-fixed": "#dde1ff",
+                    "on-surface-variant": "#434656",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "on-tertiary": "#ffffff",
+                    "outline": "#737688",
+                    "surface-dim": "#d8dadc",
+                    "surface-container-high": "#e6e8ea",
+                    "on-secondary-container": "#54647a",
+                    "error-container": "#ffdad6",
+                    "secondary": "#505f76",
+                    "on-primary-fixed-variant": "#0038b6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sidebar-width": "260px",
+                    "stack-md": "16px",
+                    "container-max": "1440px",
+                    "gutter": "24px",
+                    "stack-sm": "8px",
+                    "margin-page": "32px",
+                    "topbar-height": "64px",
+                    "stack-lg": "24px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "mono-data": ["JetBrains Mono"],
+                    "title-sm": ["Inter"],
+                    "label-bold": ["Inter"]
+            },
+            "fontSize": {
+                    "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "display-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "mono-data": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                    "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* Level 0 Background per style guidance */
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .login-card {
+            background-color: #ffffff; /* Level 1 Surface */
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s ease-in-out;
+        }
+        .input-focus-ring:focus {
+            outline: none;
+            border-color: #0052ff;
+            box-shadow: 0 0 0 2px rgba(0, 82, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-center items-center p-stack-lg bg-surface">
+<!-- Top Glow Effect (Atmospheric) -->
+<div class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary-container to-primary opacity-50"></div>
+<main class="w-full max-w-[440px] flex flex-col items-center">
+<!-- Brand Logo Area -->
+<div class="mb-stack-lg text-center">
+<img alt="SAMRE Logo" class="h-24 w-auto object-contain mx-auto" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVZSq58OnjO4ZemIg7ORAFnCLXZXsC-ILE-QV7HWGc5vgTGOAaNwwUt_AdmroxgPpyDGAjbutTm8pfhrjwY-vBOuqJsPkOERsVUMO7PR0S4BbXV584kA_AHDBGUgEQ2umo-J8XKSTgkmPwZD4inkfNoNvsl1wZOVwPDvSENpx-DYVvjCFV-ElvhwvJwSa5Hk30GU5eb-adpHuX7S-EZLHHN3nM9xh0dIu7MmCWWkgftCTNSCzUyIBVEKgy8eXFbYqvC9pxLlfNOg8">
+<h1 class="font-headline-md text-headline-md text-on-surface mt-stack-md">Portail Administration</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Accédez à votre console de gestion sécurisée</p>
+</div>
+<!-- Login Card -->
+<section class="login-card w-full p-margin-page rounded-xl" style="transform: translate(6.18125px, -4.4375px);">
+<form class="space-y-stack-lg" id="loginForm">
+<!-- Email Field -->
+<div class="space-y-stack-sm">
+<label class="block font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider" for="email">
+                        Email Professionnel
+                    </label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">mail</span>
+<input class="w-full pl-10 pr-4 py-3 bg-white border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface input-focus-ring" id="email" name="email" placeholder="nom@entreprise.com" required="" type="email">
+</div>
+</div>
+<!-- Password Field -->
+<div class="space-y-stack-sm">
+<div class="flex justify-between items-center">
+<label class="block font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider" for="password">
+                            Mot de passe
+                        </label>
+<a class="text-primary font-body-sm text-body-sm hover:underline" href="#">Oublié ?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">lock</span>
+<input class="w-full pl-10 pr-12 py-3 bg-white border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface input-focus-ring" id="password" name="password" placeholder="••••••••" required="" type="password">
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors" id="togglePassword" type="button">
+<span class="material-symbols-outlined" id="eyeIcon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Remember Me -->
+<div class="flex items-center">
+<input class="h-4 w-4 text-primary border-outline-variant rounded focus:ring-primary-container" id="remember" name="remember" type="checkbox">
+<label class="ml-2 font-body-md text-body-md text-on-surface-variant select-none" for="remember">
+                        Maintenir la session active
+                    </label>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-primary-container hover:bg-primary text-on-primary font-title-sm text-title-sm py-3.5 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm" type="submit">
+<span class="">Se connecter</span>
+<span class="material-symbols-outlined">login</span>
+</button>
+</form>
+<!-- Security Footer in Card -->
+<div class="mt-stack-lg pt-stack-lg border-t border-outline-variant flex items-center justify-center gap-2 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span class="font-body-sm text-body-sm">Connexion SSL hautement sécurisée</span>
+</div>
+</section>
+<!-- Help/Support Link -->
+<p class="mt-stack-lg font-body-md text-body-md text-on-surface-variant">
+            Besoin d'aide ? <a class="text-primary font-semibold hover:underline" href="#">Contacter le support IT</a>
+</p>
+</main>
+<!-- Global Footer -->
+<footer class="mt-auto w-full max-w-container-max px-margin-page py-stack-lg flex flex-col md:flex-row justify-between items-center border-t border-outline-variant/30">
+
+<nav class="flex gap-stack-lg">
+
+
+
+</nav>
+</footer>
+<script>
+        // Micro-interaction for password toggle
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        toggleBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            eyeIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+        });
+
+        // Simple login animation state
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalContent = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Authentification...</span>`;
+            
+            // Simulating a slight delay for realism in an admin portal
+            setTimeout(() => {
+                // In a real app, this would redirect or handle errors
+                console.log('Login attempt simulated');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                alert('Simulation: Données envoyées. Dans un environnement réel, vous seriez redirigé vers le tableau de bord.');
+            }, 1200);
+        });
+
+        // Atmospheric parallax on mouse move (Subtle)
+        document.addEventListener('mousemove', (e) => {
+            const card = document.querySelector('.login-card');
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 80;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 80;
+            card.style.transform = `translate(${xAxis}px, ${yAxis}px)`;
+        });
+    </script>
+
+
+</body></html>
