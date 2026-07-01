@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, PlayCircle, Upload, Globe } from 'lucide-react';
+import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, PlayCircle, Upload, Globe, Wand2 } from 'lucide-react';
 
 export const AdPages = () => {
   const [adPages, setAdPages] = useState([]);
@@ -17,6 +17,7 @@ export const AdPages = () => {
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // Toast (Notifications)
   const [toast, setToast] = useState(null);
@@ -152,6 +153,60 @@ export const AdPages = () => {
         }
       }
     });
+  };
+
+  const handleAutoTranslate = async () => {
+    const sourceLangId = activeLang;
+    const langCodes = { 1: 'fr', 2: 'en', 3: 'pt' };
+    const sourceCode = langCodes[sourceLangId];
+    
+    const sourceTitle = editForm.translations[sourceLangId]?.title || '';
+    const sourceSubtitle = editForm.translations[sourceLangId]?.subtitle || '';
+    const sourceCta = editForm.translations[sourceLangId]?.cta_label || '';
+
+    if (!sourceTitle && !sourceSubtitle && !sourceCta) {
+      showToast("Veuillez remplir au moins un champ avant de traduire.", "error");
+      return;
+    }
+
+    setIsTranslating(true);
+    let newTranslations = { ...editForm.translations };
+    
+    try {
+      for (const langId of [1, 2, 3]) {
+        if (langId === sourceLangId) continue;
+        const targetCode = langCodes[langId];
+        
+        let translatedTitle = newTranslations[langId]?.title || '';
+        let translatedSubtitle = newTranslations[langId]?.subtitle || '';
+        let translatedCta = newTranslations[langId]?.cta_label || '';
+
+        const translateText = async (text) => {
+          if (!text.trim()) return '';
+          const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceCode}&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          return data && data[0] ? data[0].map(item => item[0]).join('') : text;
+        };
+
+        if (sourceTitle) translatedTitle = await translateText(sourceTitle);
+        if (sourceSubtitle) translatedSubtitle = await translateText(sourceSubtitle);
+        if (sourceCta) translatedCta = await translateText(sourceCta);
+
+        newTranslations[langId] = {
+          title: translatedTitle,
+          subtitle: translatedSubtitle,
+          cta_label: translatedCta
+        };
+      }
+      setEditForm({ ...editForm, translations: newTranslations });
+      showToast("Traduction automatique terminée !", "success");
+    } catch (err) {
+      console.error("Translation error", err);
+      showToast("Erreur lors de la traduction.", "error");
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -392,10 +447,29 @@ export const AdPages = () => {
                     <Globe size={18} /> Traductions
                   </h4>
                   
-                  <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-                    <div onClick={() => setActiveLang(1)} className={`lang-tab ${activeLang === 1 ? 'active' : 'inactive'}`}>🇫🇷 Français</div>
-                    <div onClick={() => setActiveLang(2)} className={`lang-tab ${activeLang === 2 ? 'active' : 'inactive'}`}>🇬🇧 English</div>
-                    <div onClick={() => setActiveLang(3)} className={`lang-tab ${activeLang === 3 ? 'active' : 'inactive'}`}>🇵🇹 Português</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div onClick={() => setActiveLang(1)} className={`lang-tab ${activeLang === 1 ? 'active' : 'inactive'}`}>🇫🇷 Français</div>
+                      <div onClick={() => setActiveLang(2)} className={`lang-tab ${activeLang === 2 ? 'active' : 'inactive'}`}>🇬🇧 English</div>
+                      <div onClick={() => setActiveLang(3)} className={`lang-tab ${activeLang === 3 ? 'active' : 'inactive'}`}>🇵🇹 Português</div>
+                    </div>
+                    
+                    <button 
+                      type="button"
+                      onClick={handleAutoTranslate}
+                      disabled={isTranslating}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '8px 16px', backgroundColor: '#F0F9FF',
+                        color: '#0284C7', border: '1px solid #BAE6FD',
+                        borderRadius: '8px', fontSize: '13px', fontWeight: '600',
+                        cursor: isTranslating ? 'not-allowed' : 'pointer',
+                        opacity: isTranslating ? 0.6 : 1
+                      }}
+                    >
+                      {isTranslating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                      Traduction Auto
+                    </button>
                   </div>
 
                   <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '20px' }}>
