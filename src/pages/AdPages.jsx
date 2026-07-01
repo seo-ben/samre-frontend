@@ -467,7 +467,6 @@ export const AdPages = () => {
                     {/* Bouton */}
                     <div style={{ background: '#F39C12', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
                       <span style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>{editForm.cta_label || 'Continuer'}</span>
-                      <span style={{ color: 'white' }}>→</span>
                     </div>
                   </div>
 
