@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, PlayCircle, Upload } from 'lucide-react';
+import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, PlayCircle, Upload, Globe } from 'lucide-react';
 
 export const AdPages = () => {
   const [adPages, setAdPages] = useState([]);
@@ -13,6 +13,7 @@ export const AdPages = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
+  const [activeLang, setActiveLang] = useState(1); // 1: FR, 2: EN, 3: PT
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -43,22 +44,34 @@ export const AdPages = () => {
     }
   };
 
-  const getTranslationField = (ad, field) => {
+  const getTranslationField = (ad, field, langId = 1) => {
     if (ad.translations && ad.translations.length > 0) {
-      return ad.translations[0][field] || '';
+      const t = ad.translations.find(t => t.language_id === langId) || ad.translations[0];
+      return t[field] || '';
     }
     return '';
+  };
+
+  const getTranslationData = (ad, langId) => {
+    if (ad.translations && ad.translations.length > 0) {
+      const t = ad.translations.find(t => t.language_id === langId);
+      if (t) return { title: t.title || '', subtitle: t.subtitle || '', cta_label: t.cta_label || '' };
+    }
+    return { title: '', subtitle: '', cta_label: '' };
   };
 
   const openAddModal = () => {
     setIsEditing(false);
     setImageFile(null);
     setPreviewImage(null);
+    setActiveLang(1);
     setEditForm({
-      title: '',
-      subtitle: '',
+      translations: {
+        1: { title: '', subtitle: '', cta_label: '' },
+        2: { title: '', subtitle: '', cta_label: '' },
+        3: { title: '', subtitle: '', cta_label: '' }
+      },
       image_url: '',
-      cta_label: '',
       sort_order: (adPages.length > 0 ? adPages[adPages.length - 1].sort_order + 1 : 1),
       duration_seconds: 5,
       is_skippable: 1,
@@ -72,13 +85,22 @@ export const AdPages = () => {
   const openEditModal = (ad) => {
     setIsEditing(true);
     setImageFile(null);
-    setPreviewImage(getTranslationField(ad, 'image_url'));
+    setActiveLang(1);
+    
+    let imageUrl = '';
+    if (ad.translations && ad.translations.length > 0) {
+      imageUrl = ad.translations[0].image_url || '';
+    }
+
+    setPreviewImage(imageUrl);
     setEditForm({
       id: ad.id,
-      title: getTranslationField(ad, 'title'),
-      subtitle: getTranslationField(ad, 'subtitle'),
-      image_url: getTranslationField(ad, 'image_url'),
-      cta_label: getTranslationField(ad, 'cta_label'),
+      translations: {
+        1: getTranslationData(ad, 1),
+        2: getTranslationData(ad, 2),
+        3: getTranslationData(ad, 3),
+      },
+      image_url: imageUrl,
       sort_order: ad.sort_order || 0,
       duration_seconds: ad.duration_seconds || 5,
       is_skippable: ad.is_skippable !== undefined ? (ad.is_skippable ? 1 : 0) : 1,
@@ -119,6 +141,19 @@ export const AdPages = () => {
     }
   };
 
+  const handleTranslationChange = (field, value) => {
+    setEditForm({
+      ...editForm,
+      translations: {
+        ...editForm.translations,
+        [activeLang]: {
+          ...editForm.translations[activeLang],
+          [field]: value
+        }
+      }
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setActionLoading(true);
@@ -130,9 +165,7 @@ export const AdPages = () => {
     formData.append('is_active', editForm.is_active === 1 ? 1 : 0);
     formData.append('text_position', editForm.text_position);
     formData.append('image_style', editForm.image_style);
-    formData.append('title', editForm.title || '');
-    formData.append('subtitle', editForm.subtitle || '');
-    formData.append('cta_label', editForm.cta_label || '');
+    formData.append('translations', JSON.stringify(editForm.translations));
     
     if (imageFile) {
       formData.append('image', imageFile);
@@ -142,7 +175,6 @@ export const AdPages = () => {
 
     try {
       if (isEditing) {
-        // Axios uses POST for FormData, Laravel uses PUT -> send as POST with _method=PUT
         formData.append('_method', 'PUT');
         await apiClient.post(`/v1/admin/cms/ad-pages/${editForm.id}`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
@@ -191,7 +223,6 @@ export const AdPages = () => {
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
         
-        /* Custom Toggle Switch CSS */
         .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #CBD5E1; transition: .3s; border-radius: 34px; }
@@ -216,18 +247,17 @@ export const AdPages = () => {
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; cursor: pointer; width: 100%; }
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; height: 100%; }
 
-        /* Custom Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #CBD5E1; border-radius: 10px; }
         
-        /* Mobile Preview CSS */
-        .mobile-preview-container {
-          width: 320px; height: 600px; background: #000; border-radius: 36px; padding: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative; flex-shrink: 0;
-        }
-        .mobile-screen {
-          width: 100%; height: 100%; background: #1E293B; border-radius: 28px; overflow: hidden; position: relative; display: flex; flex-direction: column;
-        }
+        .mobile-preview-container { width: 320px; height: 600px; background: #000; border-radius: 36px; padding: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative; flex-shrink: 0; }
+        .mobile-screen { width: 100%; height: 100%; background: #1E293B; border-radius: 28px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        
+        .lang-tab { padding: 10px 20px; border-radius: 12px; border: 1.5px solid #E2E8F0; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .lang-tab.active { background: #1A6FD4; color: #FFF; border-color: #1A6FD4; box-shadow: 0 4px 12px rgba(26,111,212,0.2); }
+        .lang-tab.inactive { background: #F8FAFC; color: #64748B; }
+        .lang-tab.inactive:hover { background: #F1F5F9; color: #0F1923; }
       `}</style>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', animation: 'fadeIn 0.3s ease-out' }}>
@@ -236,20 +266,13 @@ export const AdPages = () => {
             Pages d'Onboarding
           </h2>
           <p style={{ margin: '6px 0 0', fontSize: '15px', color: '#64748B' }}>
-            Gérez les écrans d'accueil (Upload d'images, position des textes, prévisualisation).
+            Gérez les écrans d'accueil (Textes multilingues, upload d'images, prévisualisation).
           </p>
         </div>
         
         <button 
           onClick={openAddModal}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '12px 20px', background: '#1A6FD4',
-            border: 'none', borderRadius: '12px',
-            color: '#FFFFFF', fontWeight: '600', fontSize: '15px',
-            cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,111,212,0.25)',
-            transition: 'all 0.2s ease'
-          }}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', background: '#1A6FD4', border: 'none', borderRadius: '12px', color: '#FFFFFF', fontWeight: '600', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(26,111,212,0.25)', transition: 'all 0.2s ease' }}
         >
           <Plus size={20} /> Nouveau Slide
         </button>
@@ -258,7 +281,6 @@ export const AdPages = () => {
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '400px', color: '#1A6FD4' }}>
           <Loader2 size={40} className="animate-spin" />
-          <p style={{ marginTop: '16px', fontWeight: '500', color: '#64748B' }}>Chargement des pages...</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px' }}>
@@ -312,7 +334,6 @@ export const AdPages = () => {
           
           <div style={{ display: 'flex', gap: '24px', maxWidth: '1000px', width: '100%', maxHeight: '95vh' }}>
             
-            {/* Colonne de Gauche : Formulaire */}
             <div className="custom-scrollbar" style={{ flex: 1, background: '#FFFFFF', borderRadius: '24px', padding: '32px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflowY: 'auto' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h3 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#0F1923' }}>
@@ -325,7 +346,7 @@ export const AdPages = () => {
 
               <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Image d'illustration <span style={{ color: '#EF4444' }}>*</span></label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Image d'illustration (Commune aux langues) <span style={{ color: '#EF4444' }}>*</span></label>
                   
                   <div className="file-upload-wrapper" style={{ background: '#F8FAFC', border: '2px dashed #CBD5E1', borderRadius: '12px', padding: '20px', textAlign: 'center', transition: '0.2s' }}>
                     <input type="file" accept="image/*" onChange={handleImageChange} />
@@ -366,22 +387,53 @@ export const AdPages = () => {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Titre principal</label>
-                  <input type="text" required placeholder="Trouvez votre futur..." value={editForm.title || ''} onChange={e => setEditForm({...editForm, title: e.target.value})} className="input-field" />
-                </div>
+                <div style={{ marginTop: '32px', marginBottom: '24px', borderTop: '1px solid #E2E8F0', paddingTop: '24px' }}>
+                  <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0F1923', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Globe size={18} /> Traductions
+                  </h4>
+                  
+                  <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+                    <div onClick={() => setActiveLang(1)} className={`lang-tab ${activeLang === 1 ? 'active' : 'inactive'}`}>🇫🇷 Français</div>
+                    <div onClick={() => setActiveLang(2)} className={`lang-tab ${activeLang === 2 ? 'active' : 'inactive'}`}>🇬🇧 English</div>
+                    <div onClick={() => setActiveLang(3)} className={`lang-tab ${activeLang === 3 ? 'active' : 'inactive'}`}>🇵🇹 Português</div>
+                  </div>
 
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Sous-titre / Description</label>
-                  <textarea rows={2} placeholder="Accédez aux meilleures opportunités..." value={editForm.subtitle || ''} onChange={e => setEditForm({...editForm, subtitle: e.target.value})} className="input-field" style={{ resize: 'vertical' }} />
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '20px' }}>
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Titre principal ({activeLang === 1 ? 'FR' : activeLang === 2 ? 'EN' : 'PT'})</label>
+                      <input 
+                        type="text" required={activeLang === 1} placeholder="Trouvez votre futur..." 
+                        value={editForm.translations[activeLang]?.title || ''} 
+                        onChange={e => handleTranslationChange('title', e.target.value)} 
+                        className="input-field" style={{ background: '#FFF' }} 
+                      />
+                    </div>
+
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Sous-titre / Description</label>
+                      <textarea 
+                        rows={2} placeholder="Accédez aux meilleures opportunités..." 
+                        value={editForm.translations[activeLang]?.subtitle || ''} 
+                        onChange={e => handleTranslationChange('subtitle', e.target.value)} 
+                        className="input-field" style={{ resize: 'vertical', background: '#FFF' }} 
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Bouton CTA (Optionnel)</label>
+                      <input 
+                        type="text" placeholder="ex: Continuer" 
+                        value={editForm.translations[activeLang]?.cta_label || ''} 
+                        onChange={e => handleTranslationChange('cta_label', e.target.value)} 
+                        className="input-field" style={{ background: '#FFF' }} 
+                      />
+                      <small style={{ color: '#94A3B8', marginTop: '4px', display: 'block' }}>Laisser vide pour la valeur par défaut ("Passer", "Continuer").</small>
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Bouton CTA</label>
-                    <input type="text" placeholder="ex: Continuer" value={editForm.cta_label || ''} onChange={e => setEditForm({...editForm, cta_label: e.target.value})} className="input-field" />
-                  </div>
-                  <div style={{ width: '80px' }}>
+                  <div style={{ width: '120px' }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Ordre</label>
                     <input type="number" min={0} value={editForm.sort_order ?? ''} onChange={e => setEditForm({...editForm, sort_order: parseInt(e.target.value)})} className="input-field" />
                   </div>
@@ -407,66 +459,53 @@ export const AdPages = () => {
               </form>
             </div>
 
-            {/* Colonne de Droite : Live Preview Android */}
+            {/* Live Preview */}
             <div className="mobile-preview-container">
-              {/* Encoche caméra */}
               <div style={{ position: 'absolute', top: '16px', left: '50%', transform: 'translateX(-50%)', width: '80px', height: '24px', background: '#000', borderRadius: '12px', zIndex: 10 }}></div>
-              
               <div className="mobile-screen">
-                {/* Image Background */}
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {previewImage ? (
                     <img src={previewImage} alt="Preview" style={{ width: '100%', height: '100%', objectFit: editForm.image_style === 'contain' ? 'contain' : 'cover' }} />
-                  ) : (
-                    <ImageIcon size={48} color="#475569" />
-                  )}
+                  ) : <ImageIcon size={48} color="#475569" />}
                 </div>
 
-                {/* Gradient Overlay */}
-                <div style={{ 
-                  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)'
-                }}></div>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.8) 75%, rgba(0,0,0,0.95) 100%)' }}></div>
 
-                {/* Bouton Passer */}
                 {editForm.is_skippable === 1 && (
                   <div style={{ position: 'absolute', top: '48px', right: '16px' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '20px', color: 'white', fontSize: '10px', fontWeight: 'bold' }}>PASSER</div>
+                    <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 12px', borderRadius: '20px', color: 'white', fontSize: '10px', fontWeight: 'bold' }}>
+                      {activeLang === 1 ? 'PASSER' : activeLang === 2 ? 'SKIP' : 'PULAR'}
+                    </div>
                   </div>
                 )}
 
-                {/* Contenu (Alignement dynamique) */}
                 <div style={{ 
-                  position: 'absolute', left: 0, right: 0, bottom: 0, top: 0,
-                  display: 'flex', padding: '24px',
-                  flexDirection: 'column',
+                  position: 'absolute', left: 0, right: 0, bottom: 0, top: 0, display: 'flex', padding: '24px', flexDirection: 'column',
                   justifyContent: editForm.text_position === 'top' ? 'flex-start' : (editForm.text_position === 'center' ? 'center' : 'flex-end'),
                   paddingTop: editForm.text_position === 'top' ? '100px' : '24px'
                 }}>
                   
-                  {/* Textes */}
                   <div style={{ marginBottom: '40px' }}>
                     <h1 style={{ color: 'white', fontSize: '26px', fontWeight: '800', margin: '0 0 12px 0', lineHeight: '1.2' }}>
-                      {editForm.title || 'Titre principal'}
+                      {editForm.translations?.[activeLang]?.title || 'Titre principal'}
                     </h1>
                     <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', margin: 0, lineHeight: '1.5' }}>
-                      {editForm.subtitle || 'Votre sous-titre apparaîtra ici avec un dégradé lisible.'}
+                      {editForm.translations?.[activeLang]?.subtitle || 'Votre sous-titre apparaîtra ici avec un dégradé lisible.'}
                     </p>
                   </div>
 
-                  {/* Pagination & Bouton (Toujours en bas) */}
                   {editForm.text_position !== 'bottom' && <div style={{ flex: 1 }}></div>}
                   
                   <div>
-                    {/* Dots */}
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
                       <div style={{ width: '20px', height: '6px', background: '#F39C12', borderRadius: '4px' }}></div>
                       <div style={{ width: '6px', height: '6px', background: 'rgba(255,255,255,0.4)', borderRadius: '4px' }}></div>
                       <div style={{ width: '6px', height: '6px', background: 'rgba(255,255,255,0.4)', borderRadius: '4px' }}></div>
                     </div>
-                    {/* Bouton */}
                     <div style={{ background: '#F39C12', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>{editForm.cta_label || 'Continuer'}</span>
+                      <span style={{ color: 'white', fontWeight: 'bold', fontSize: '14px' }}>
+                        {editForm.translations?.[activeLang]?.cta_label || (activeLang === 1 ? 'Continuer' : activeLang === 2 ? 'Continue' : 'Continuar')}
+                      </span>
                     </div>
                   </div>
 
@@ -478,7 +517,6 @@ export const AdPages = () => {
         </div>
       )}
 
-      {/* Delete and Toast stay similar... */}
       {showConfirmDelete && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15,25,35,0.6)', backdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '420px', padding: '32px', textAlign: 'center' }}>
