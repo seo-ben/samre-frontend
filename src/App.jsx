@@ -16,6 +16,10 @@ import { ComingSoon } from './pages/ComingSoon'
 import { OffersPage } from './pages/Offers'
 import { EventsPage } from './pages/Events'
 import { EventCategoriesPage } from './pages/EventCategories'
+import { ApplicationsPage } from './pages/Applications'
+import { PendingBadges } from './pages/PendingBadges'
+import { VerifiedProfiles } from './pages/VerifiedProfiles'
+import { AdPages } from './pages/AdPages'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
@@ -48,14 +52,14 @@ function App() {
       <Route path="/events/categories" element={<Protected><EventCategoriesPage /></Protected>} />
 
       {/* ── Candidatures ──────────────────────── */}
-      <Route path="/applications"            element={<Protected><ComingSoon title="Toutes les candidatures" /></Protected>} />
-      <Route path="/applications/by-status"  element={<Protected><ComingSoon title="Candidatures par statut" /></Protected>} />
-      <Route path="/applications/by-offer"   element={<Protected><ComingSoon title="Candidatures par offre" /></Protected>} />
+      <Route path="/applications"            element={<Protected><ApplicationsPage /></Protected>} />
+      <Route path="/applications/by-status"  element={<Protected><ApplicationsPage /></Protected>} />
+      <Route path="/applications/by-offer"   element={<Protected><ApplicationsPage /></Protected>} />
 
       {/* ── Badges ────────────────────────────── */}
-      <Route path="/badges/pending"    element={<Protected><ComingSoon title="En attente de badge" /></Protected>} />
-      <Route path="/badges/candidates" element={<Protected><ComingSoon title="Candidats vérifiés" /></Protected>} />
-      <Route path="/badges/companies"  element={<Protected><ComingSoon title="Entreprises vérifiées" /></Protected>} />
+      <Route path="/badges/pending"    element={<Protected><PendingBadges /></Protected>} />
+      <Route path="/badges/candidates" element={<Protected><VerifiedProfiles userType="candidate" /></Protected>} />
+      <Route path="/badges/companies"  element={<Protected><VerifiedProfiles userType="company" /></Protected>} />
 
       {/* ── Paiements ─────────────────────────── */}
       <Route path="/payments/transactions" element={<Protected><ComingSoon title="Transactions" /></Protected>} />
@@ -74,6 +78,7 @@ function App() {
       <Route path="/notifications/target"  element={<Protected><ComingSoon title="Ciblage notifications" /></Protected>} />
 
       {/* ── CMS & Contenu ───────────────────────── */}
+      <Route path="/cms/ads"          element={<Protected><AdPages /></Protected>} />
       <Route path="/cms/pages"        element={<Protected><ComingSoon title="Pages dynamiques" /></Protected>} />
       <Route path="/cms/languages"    element={<Protected><LanguagesPage /></Protected>} />
       <Route path="/cms/translations" element={<Protected><StaticContentsPage /></Protected>} />

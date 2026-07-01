@@ -3,15 +3,22 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { 
   Plus, MoreVertical, MapPin, Clock, Calendar, Info, 
-  ChevronLeft, ChevronRight, CheckCircle, Users, Map
+  ChevronLeft, ChevronRight, CheckCircle, Users, Map,
+  Globe, RefreshCw, Tag, ExternalLink, User
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import CreateEventModal from '../components/events/CreateEventModal';
 
 export const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+  
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isPrompt: false, promptValue: '' });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState(null);
   
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [activeTab, setActiveTab] = useState('Détails');
@@ -44,40 +51,69 @@ export const EventsPage = () => {
   
   const [activeMenuId, setActiveMenuId] = useState(null);
 
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleChangeStatus = async (id, newStatus, e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     try {
-      if (newStatus === 'published' && selectedEvent?.status === 'pending') {
-        // Use validate endpoint
+      if (newStatus === 'published' && e?.target?.innerText?.includes('Valider')) {
         const res = await apiClient.post(`/v1/admin/events/${id}/validate`);
         setEvents(events.map(ev => ev.id === id ? res.data.data : ev));
-      } else if (newStatus === 'rejected' && selectedEvent?.status === 'pending') {
-        const reason = window.prompt("Raison du rejet :");
-        if (!reason) return;
-        const res = await apiClient.post(`/v1/admin/events/${id}/reject`, { rejection_reason: reason });
-        setEvents(events.map(ev => ev.id === id ? res.data.data : ev));
+        showToast('Événement validé avec succès.');
+      } else if (newStatus === 'rejected') {
+        setConfirmModal({
+          isOpen: true,
+          title: 'Rejeter l\'événement',
+          message: 'Veuillez indiquer la raison du rejet :',
+          isPrompt: true,
+          promptValue: '',
+          onConfirm: async (reason) => {
+            if (!reason) return;
+            try {
+              const res = await apiClient.post(`/v1/admin/events/${id}/reject`, { rejection_reason: reason });
+              setEvents(events.map(ev => ev.id === id ? res.data.data : ev));
+              showToast('Événement rejeté.');
+            } catch (err) {
+              showToast(err.response?.data?.message || 'Erreur lors du rejet', 'error');
+            }
+          }
+        });
       } else {
         const res = await apiClient.put(`/v1/admin/events/${id}/status`, { status: newStatus });
         setEvents(events.map(ev => ev.id === id ? res.data.data : ev));
+        showToast('Statut modifié avec succès.');
       }
       setActiveMenuId(null);
     } catch (err) {
       console.error('Erreur changement statut', err);
-      alert(err.response?.data?.message || 'Erreur lors du changement de statut');
+      showToast(err.response?.data?.message || 'Erreur lors du changement de statut', 'error');
     }
   };
 
   const handleDelete = async (id, e) => {
-    e.stopPropagation();
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet événement ?")) return;
-    try {
-      await apiClient.delete(`/v1/admin/events/${id}`);
-      setEvents(events.filter(ev => ev.id !== id));
-      if (selectedEventId === id) setSelectedEventId(null);
-      setActiveMenuId(null);
-    } catch (err) {
-      console.error('Erreur suppression', err);
-    }
+    if (e) e.stopPropagation();
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Supprimer l\'événement',
+      message: 'Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.',
+      isPrompt: false,
+      onConfirm: async () => {
+        try {
+          await apiClient.delete(`/v1/admin/events/${id}`);
+          setEvents(events.filter(ev => ev.id !== id));
+          if (selectedEventId === id) setSelectedEventId(null);
+          showToast('Événement supprimé avec succès.');
+        } catch (err) {
+          console.error('Erreur suppression', err);
+          showToast('Erreur lors de la suppression.', 'error');
+        }
+      }
+    });
+    setActiveMenuId(null);
   };
 
   useEffect(() => {
@@ -166,7 +202,20 @@ export const EventsPage = () => {
               <option value="recent">Trier par: Récents</option>
               <option value="oldest">Trier par: Anciens</option>
             </select>
-            {/* Modal button could go here in the future */}
+            <button 
+              onClick={() => {
+                setEventToEdit(null);
+                setIsCreateModalOpen(true);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
+                background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px',
+                fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              <Plus size={18} />
+              Nouvel événement
+            </button>
           </div>
         </div>
 
@@ -286,8 +335,21 @@ export const EventsPage = () => {
                           {ev.status === 'pending' && (
                             <>
                               <div onClick={(e) => handleChangeStatus(ev.id, 'published', e)} style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>✅ Valider</div>
-                              <div onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)} style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>❌ Rejeter</div>
                             </>
+                          )}
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEventToEdit(ev);
+                              setIsCreateModalOpen(true);
+                              setActiveMenuId(null);
+                            }} 
+                            style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                          >
+                            ✏️ Modifier
+                          </div>
+                          {(ev.status === 'pending' || ev.status === 'published') && (
+                            <div onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)} style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>❌ Rejeter</div>
                           )}
                           {(ev.status === 'published' || ev.status === 'pending') && (
                             <div 
@@ -305,12 +367,14 @@ export const EventsPage = () => {
                               ▶️ Republier
                             </div>
                           )}
-                          <div 
-                            onClick={(e) => handleDelete(ev.id, e)}
-                            style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer' }}
-                          >
-                            🗑️ Supprimer
-                          </div>
+                          {ev.status !== 'published' && (
+                            <div 
+                              onClick={(e) => handleDelete(ev.id, e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer' }}
+                            >
+                              🗑️ Supprimer
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -357,9 +421,13 @@ export const EventsPage = () => {
                       width: '80px', height: '80px', borderRadius: '12px',
                       border: '1px solid #f1f5f9', background: '#f8fafc',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                      color: '#475569'
+                      color: '#475569', overflow: 'hidden'
                     }}>
-                      <Calendar size={40} />
+                      {selectedEvent.cover_image_url ? (
+                        <img src={selectedEvent.cover_image_url} alt="Cover" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Calendar size={40} />
+                      )}
                     </div>
                     <div>
                       <h2 style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', margin: '0 0 6px 0' }}>
@@ -420,7 +488,7 @@ export const EventsPage = () => {
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
-                          <Calendar size={16} /> Date
+                          <Calendar size={16} /> Date de début
                         </div>
                         <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
                           {new Date(selectedEvent.event_date).toLocaleDateString()}
@@ -428,10 +496,64 @@ export const EventsPage = () => {
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <Clock size={16} /> Date de fin
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.end_date ? new Date(selectedEvent.end_date).toLocaleDateString() : 'Non précisée'}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Quick Info Grid - Row 2 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', borderRadius: '0 0 12px 12px', padding: '0 20px 20px 20px', borderTop: '1px solid #e2e8f0' }}>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
                           <Users size={16} /> Participants
                         </div>
                         <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
                           {selectedEvent.participations_count || 0} / {selectedEvent.max_participants || '∞'}
+                        </div>
+                      </div>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <Info size={16} /> Vues
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.views_count || 0}
+                        </div>
+                      </div>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <Info size={16} /> Partages
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.shares_count || 0}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Quick Info Grid - Row 3 */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', borderRadius: '0 0 12px 12px', padding: '0 20px 20px 20px', borderTop: '1px solid #e2e8f0' }}>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <Tag size={16} /> Prix
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.is_free ? 'Gratuit' : `${selectedEvent.price} ${selectedEvent.currency || 'XOF'}`}
+                        </div>
+                      </div>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <Globe size={16} /> Langue
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.event_language || 'Non précisée'}
+                        </div>
+                      </div>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <RefreshCw size={16} /> Récurrence
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.recurrence_rule || 'Événement unique'}
                         </div>
                       </div>
                     </div>
@@ -444,12 +566,72 @@ export const EventsPage = () => {
                       </p>
                     </div>
 
-                    {selectedEvent.is_online && selectedEvent.online_link && (
-                      <div style={{ marginBottom: '32px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '16px', borderRadius: '8px' }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#166534', margin: '0 0 8px 0' }}>Lien de l'événement</h3>
-                        <a href={selectedEvent.online_link} target="_blank" rel="noreferrer" style={{ color: '#15803d', textDecoration: 'underline', fontSize: '14px' }}>
-                          {selectedEvent.online_link}
-                        </a>
+                    {/* Tags */}
+                    {selectedEvent.tags && selectedEvent.tags.length > 0 && (
+                      <div style={{ margin: '32px 0' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Mots-clés</h3>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {selectedEvent.tags.map((tag, i) => (
+                            <span key={i} style={{ background: '#f1f5f9', color: '#475569', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: '500' }}>
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Agenda */}
+                    {selectedEvent.translations?.find(t => t.language_id === 1)?.agenda && (
+                      <div style={{ margin: '32px 0' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Programme / Agenda</h3>
+                        <div style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', background: '#f8fafc', padding: '16px', borderRadius: '8px', whiteSpace: 'pre-wrap', border: '1px solid #e2e8f0' }}>
+                          {selectedEvent.translations?.find(t => t.language_id === 1)?.agenda}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Speakers */}
+                    {selectedEvent.speakers && selectedEvent.speakers.length > 0 && (
+                      <div style={{ margin: '32px 0' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Intervenants</h3>
+                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                          {selectedEvent.speakers.map((speaker, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', border: '1px solid #e2e8f0', padding: '12px', borderRadius: '8px', minWidth: '200px' }}>
+                              <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e2e8f0', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {speaker.photo_url ? <img src={speaker.photo_url} alt={speaker.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#64748b" />}
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{speaker.name}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>{speaker.role}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Online / Registration Links */}
+                    {((selectedEvent.is_online && selectedEvent.online_link) || selectedEvent.registration_url) && (
+                      <div style={{ display: 'flex', gap: '16px', flexDirection: 'column' }}>
+                        {selectedEvent.is_online && selectedEvent.online_link && (
+                          <div style={{ marginBottom: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '16px', borderRadius: '8px' }}>
+                            <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#166534', margin: '0 0 8px 0' }}>Lien de l'événement en ligne</h3>
+                            <a href={selectedEvent.online_link} target="_blank" rel="noreferrer" style={{ color: '#15803d', textDecoration: 'underline', fontSize: '14px' }}>
+                              {selectedEvent.online_link}
+                            </a>
+                          </div>
+                        )}
+                        {selectedEvent.registration_url && (
+                          <div style={{ marginBottom: '32px', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '16px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                              <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#1e40af', margin: '0 0 4px 0' }}>Billetterie externe</h3>
+                              <p style={{ margin: 0, fontSize: '13px', color: '#3b82f6' }}>Lien vers la plateforme de paiement/inscription</p>
+                            </div>
+                            <a href={selectedEvent.registration_url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#2563eb', color: '#fff', padding: '8px 16px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', textDecoration: 'none' }}>
+                              <ExternalLink size={16} /> S'inscrire / Payer
+                            </a>
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -465,6 +647,88 @@ export const EventsPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', width: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>{confirmModal.title}</h3>
+            <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>{confirmModal.message}</p>
+            
+            {confirmModal.isPrompt && (
+              <textarea
+                value={confirmModal.promptValue}
+                onChange={(e) => setConfirmModal({...confirmModal, promptValue: e.target.value})}
+                placeholder="Ex: Le contenu ne respecte pas nos conditions..."
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', marginBottom: '20px', fontSize: '14px', fontFamily: 'inherit', resize: 'vertical', minHeight: '80px', outline: 'none' }}
+                autoFocus
+              />
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', color: '#475569', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={() => {
+                  if (confirmModal.isPrompt && !confirmModal.promptValue.trim()) {
+                    showToast("Veuillez remplir le champ.", "error");
+                    return;
+                  }
+                  confirmModal.onConfirm(confirmModal.isPrompt ? confirmModal.promptValue : null);
+                  setConfirmModal({ ...confirmModal, isOpen: false });
+                }}
+                style={{ padding: '8px 16px', borderRadius: '8px', border: 'none', background: confirmModal.isPrompt ? '#f59e0b' : '#ef4444', color: '#fff', fontWeight: '600', cursor: 'pointer', fontSize: '14px' }}
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Global Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
+          color: '#fff', padding: '12px 24px', borderRadius: '8px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)', zIndex: 1100,
+          display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500',
+          backdropFilter: 'blur(8px)', border: toast.type === 'success' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
+          animation: 'slideUp 0.3s ease-out forwards'
+        }}>
+          {toast.type === 'success' ? <CheckCircle size={20} /> : <Info size={20} />}
+          {toast.message}
+        </div>
+      )}
+
+      {isCreateModalOpen && (
+        <CreateEventModal 
+          categories={categories}
+          eventToEdit={eventToEdit}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setEventToEdit(null);
+          }} 
+          onSuccess={() => {
+            setIsCreateModalOpen(false);
+            setEventToEdit(null);
+            showToast(eventToEdit ? 'Événement modifié avec succès !' : 'Événement créé avec succès !');
+            fetchEvents(meta?.current_page || 1);
+          }} 
+        />
+      )}
+
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </MainLayout>
   );
 };

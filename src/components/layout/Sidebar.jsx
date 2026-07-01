@@ -74,7 +74,7 @@ const NAV = [
     label: 'Badges & Vérifications',
     icon: BadgeCheck,
     children: [
-      { label: 'En attente de badge',   path: '/badges/pending',    icon: Clock,       badge: true },
+      { label: 'En attente de badge',   path: '/badges/pending',    icon: Clock,       badge: true, badgeKey: 'pending_verifications_count' },
       { label: 'Candidats vérifiés',    path: '/badges/candidates', icon: UserCheck },
       { label: 'Entreprises vérifiées', path: '/badges/companies',  icon: Building2 },
     ],
@@ -168,6 +168,7 @@ export const Sidebar = () => {
       } catch (err) {
         console.error('Erreur stats sidebar', err);
         setSidebarStats({});
+      }
     };
     fetchStats();
   }, []);
@@ -244,17 +245,11 @@ export const Sidebar = () => {
           flexShrink: 0,
         }}>
           {!collapsed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '8px',
-                background: 'linear-gradient(135deg, #1A6FD4, #0052ff)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '13px', fontWeight: '800', color: '#fff',
-                flexShrink: 0,
-              }}>S</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <img src="/logo-samre.png" alt="SAMRE Logo" style={{ height: '74px', objectFit: 'contain' }} />
               <span style={{
                 fontFamily: 'var(--font-poppins)',
-                fontSize: '17px', fontWeight: '700',
+                fontSize: '20px', fontWeight: '800',
                 color: '#fff', letterSpacing: '0.02em',
               }}>SAMRE</span>
             </div>
