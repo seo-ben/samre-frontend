@@ -143,6 +143,7 @@ const NAV = [
     label: 'Paramètres',
     icon: Settings,
     children: [
+      { label: 'Paramètres système', path: '/settings/system', icon: Settings },
       { label: 'Comptes admin',    path: '/settings/staff',    icon: UserCog },
       { label: 'Mon profil',       path: '/settings/profile',  icon: UserCheck },
       { label: 'Mot de passe',     path: '/settings/password', icon: Settings },

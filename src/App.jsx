@@ -20,6 +20,7 @@ import { ApplicationsPage } from './pages/Applications'
 import { PendingBadges } from './pages/PendingBadges'
 import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
+import { SystemSettings } from './pages/SystemSettings'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
@@ -105,6 +106,7 @@ function App() {
 
       {/* ── Paramètres ────────────────────────── */}
       <Route path="/settings/language" element={<Protected><ComingSoon title="Langue du panel" /></Protected>} />
+      <Route path="/settings/system"   element={<Protected><SystemSettings /></Protected>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
