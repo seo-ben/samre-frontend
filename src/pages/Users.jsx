@@ -84,7 +84,7 @@ export const UsersPage = () => {
     borderRadius: '8px',
     fontSize: '13.5px',
     fontFamily: 'var(--font-inter)',
-    color: 'var(--black-deep)',
+    color: '#0f172a',
     outline: 'none',
     marginTop: '4px',
     boxSizing: 'border-box'
@@ -99,7 +99,7 @@ export const UsersPage = () => {
     borderRadius: '8px',
     fontSize: '13.5px',
     fontFamily: 'var(--font-inter)',
-    color: 'var(--black-deep)',
+    color: '#0f172a',
     outline: 'none',
     marginTop: '4px',
     resize: 'none',
@@ -176,25 +176,48 @@ export const UsersPage = () => {
     // Charger toutes les listes de contenu pour l'édition et l'affichage
     const loadAllContent = async () => {
       try {
+        const cacheBuster = `_t=${Date.now()}`;
         const [resCountries, resRegions, resPrefectures, resCommunes] = await Promise.all([
-          apiClient.get('/v1/content/countries'),
-          apiClient.get('/v1/content/regions'),
-          apiClient.get('/v1/content/prefectures'),
-          apiClient.get('/v1/content/communes')
+          apiClient.get(`/v1/content/countries?${cacheBuster}`),
+          apiClient.get(`/v1/content/regions?${cacheBuster}`),
+          apiClient.get(`/v1/content/prefectures?${cacheBuster}`),
+          apiClient.get(`/v1/content/communes?${cacheBuster}`)
         ]);
-        const rawCountries = resCountries.data.data || [];
-        setCountries(Array.isArray(rawCountries) ? rawCountries : Object.values(rawCountries));
-
-        const rawRegions = resRegions.data.data || [];
-        setRegions(Array.isArray(rawRegions) ? rawRegions : Object.values(rawRegions));
-
-        const rawPrefectures = resPrefectures.data.data || [];
-        setPrefectures(Array.isArray(rawPrefectures) ? rawPrefectures : Object.values(rawPrefectures));
-
-        const rawCommunes = resCommunes.data.data || [];
-        setCommunes(Array.isArray(rawCommunes) ? rawCommunes : Object.values(rawCommunes));
-      } catch {
-        // Fallback silencieux
+        
+        // Helper to extract data from any response format
+        const extractData = (res) => {
+          let data = res?.data?.data || [];
+          
+          if (Array.isArray(data)) return data;
+          
+          if (typeof data === 'object' && data !== null) {
+            // Check for common array patterns inside objects
+            if (Array.isArray(data.items)) return data.items;
+            if (Array.isArray(data.data)) return data.data;
+            if (Array.isArray(data.values)) return data.values;
+            
+            // If it's a plain object with numeric keys
+            const keys = Object.keys(data);
+            if (keys.length > 0 && keys.every(k => !isNaN(parseInt(k)))) {
+              return Object.values(data);
+            }
+            
+            // If it looks like it has ID properties as values
+            const values = Object.values(data);
+            if (values.length > 0 && typeof values[0] === 'object' && values[0]?.id) {
+              return values;
+            }
+          }
+          
+          return [];
+        };
+        
+        setCountries(extractData(resCountries));
+        setRegions(extractData(resRegions));
+        setPrefectures(extractData(resPrefectures));
+        setCommunes(extractData(resCommunes));
+      } catch (err) {
+        console.error('Error loading content:', err);
       }
     };
     loadAllContent();
@@ -310,8 +333,13 @@ export const UsersPage = () => {
   };
 
   const getCountryName = (id) => {
-    const found = countries.find(c => String(c.id) === String(id))?.name;
-    if (found) return found;
+    const found = countries.find(c => String(c.id) === String(id));
+    if (found) {
+      if (found.name) return found.name;
+      if (found.translations && found.translations.length > 0) {
+        return found.translations[0]?.name || found.translations.find(t => t.language_id === 1)?.name || found.code;
+      }
+    }
     const fallbackMap = {
       '1': 'Togo',
       '2': 'Bénin',
@@ -324,8 +352,8 @@ export const UsersPage = () => {
   };
 
   const getCountryCode = (id) => {
-    const found = countries.find(c => String(c.id) === String(id))?.code;
-    if (found) return found;
+    const found = countries.find(c => String(c.id) === String(id));
+    if (found?.code) return found.code;
     const fallbackMap = {
       '1': 'TG',
       '2': 'BJ',
@@ -364,6 +392,7 @@ export const UsersPage = () => {
       form.has_badge = !!prof.has_badge;
       form.badge_granted_at = prof.badge_granted_at ? prof.badge_granted_at.substring(0, 19).replace('T', ' ') : '';
       form.prefecture_id = prof.prefecture_id || '';
+      form.region_id = form.prefecture_id ? (prefectures.find(p => String(p.id) === String(form.prefecture_id))?.region_id || '') : '';
       form.commune_id = prof.commune_id || '';
       form.latitude = prof.latitude || '';
       form.longitude = prof.longitude || '';
@@ -380,6 +409,7 @@ export const UsersPage = () => {
       form.has_badge = !!prof.has_badge;
       form.badge_granted_at = prof.badge_granted_at ? prof.badge_granted_at.substring(0, 19).replace('T', ' ') : '';
       form.prefecture_id = prof.prefecture_id || '';
+      form.region_id = form.prefecture_id ? (prefectures.find(p => String(p.id) === String(form.prefecture_id))?.region_id || '') : '';
       form.commune_id = prof.commune_id || '';
       form.latitude = prof.latitude || '';
       form.longitude = prof.longitude || '';
@@ -1603,21 +1633,6 @@ export const UsersPage = () => {
                         />
                       </div>
                       <div>
-                        <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)', fontWeight: '500' }}>Pays</span>
-                        <select
-                          style={inputStyle}
-                          value={editForm.country_id}
-                          onChange={e => setEditForm({ ...editForm, country_id: e.target.value })}
-                        >
-                          <option value="">Sélectionner...</option>
-                          {(countries.length > 0 ? countries : staticCountries).map((c, idx) => (
-                            <option key={c.id || idx} value={c.id}>
-                              {c.name} ({c.code})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
                         <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)', fontWeight: '500' }}>Statut du compte</span>
                         <select
                           style={inputStyle}
@@ -1639,105 +1654,97 @@ export const UsersPage = () => {
                       Localisation
                     </h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      
-                      {selectedUser.user_type === 'visitor' ? (
+                      {/* Unified Localisation Fields for all user types */}
+                      <div>
+                        <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Pays</span>
+                        <select
+                          style={inputStyle}
+                          value={editForm.country_id}
+                          onChange={e => setEditForm({ ...editForm, country_id: e.target.value })}
+                        >
+                          <option value="">Sélectionner...</option>
+                          {(countries.length > 0 ? countries : staticCountries).filter(c => c.id && (c.name || c.code || (c.translations && c.translations.length > 0))).map((c, idx) => {
+                            const displayName = getCountryName(c.id);
+                            const displayCode = getCountryCode(c.id);
+                            return (
+                              <option key={c.id || idx} value={c.id}>
+                                {displayName} {displayCode && displayName !== displayCode ? `(${displayCode})` : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                        <div>
+                          <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Région</span>
+                          <select
+                            style={inputStyle}
+                            value={editForm.region_id}
+                            onChange={e => setEditForm({ ...editForm, region_id: e.target.value, prefecture_id: '', commune_id: '' })}
+                          >
+                            <option value="">Sélectionner...</option>
+                            {regions.map((r, idx) => (
+                              <option key={r.id || idx} value={r.id}>{r.translations?.[0]?.name || r.name || r.id}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Préfecture</span>
+                          <select
+                            style={inputStyle}
+                            value={editForm.prefecture_id}
+                            onChange={e => setEditForm({ ...editForm, prefecture_id: e.target.value, commune_id: '' })}
+                            disabled={!editForm.region_id}
+                          >
+                            <option value="">Sélectionner...</option>
+                            {prefectures.filter(p => String(p.region_id) === String(editForm.region_id)).map((p, idx) => (
+                              <option key={p.id || idx} value={p.id}>{p.translations?.[0]?.name || p.name || p.id}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Commune</span>
+                        <select
+                          style={inputStyle}
+                          value={editForm.commune_id}
+                          onChange={e => setEditForm({ ...editForm, commune_id: e.target.value })}
+                          disabled={!editForm.prefecture_id}
+                        >
+                          <option value="">Sélectionner...</option>
+                          {communes.filter(c => String(c.prefecture_id) === String(editForm.prefecture_id)).map((c, idx) => (
+                            <option key={c.id || idx} value={c.id}>{c.translations?.[0]?.name || c.name || c.id}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {selectedUser.user_type !== 'visitor' ? (
                         <>
-                          <div>
-                            <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Région</span>
-                            <select
-                              style={inputStyle}
-                              value={editForm.region_id}
-                              onChange={e => setEditForm({ ...editForm, region_id: e.target.value, prefecture_id: '', commune_id: '' })}
-                            >
-                              <option value="">Sélectionner...</option>
-                              {regions.map((r, idx) => (
-                                <option key={r.id || idx} value={r.id}>{r.translations?.[0]?.name || r.name || r.id}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Préfecture</span>
-                            <select
-                              style={inputStyle}
-                              value={editForm.prefecture_id}
-                              onChange={e => setEditForm({ ...editForm, prefecture_id: e.target.value, commune_id: '' })}
-                              disabled={!editForm.region_id}
-                            >
-                              <option value="">Sélectionner...</option>
-                              {prefectures.filter(p => p.region_id === Number(editForm.region_id)).map((p, idx) => (
-                                <option key={p.id || idx} value={p.id}>{p.translations?.[0]?.name || p.name || p.id}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Commune</span>
-                            <select
-                              style={inputStyle}
-                              value={editForm.commune_id}
-                              onChange={e => setEditForm({ ...editForm, commune_id: e.target.value })}
-                              disabled={!editForm.prefecture_id}
-                            >
-                              <option value="">Sélectionner...</option>
-                              {communes.filter(c => c.prefecture_id === Number(editForm.prefecture_id)).map((c, idx) => (
-                                <option key={c.id || idx} value={c.id}>{c.translations?.[0]?.name || c.name || c.id}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                            <div>
-                              <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Préfecture</span>
-                              <select
-                                style={inputStyle}
-                                value={editForm.prefecture_id}
-                                onChange={e => setEditForm({ ...editForm, prefecture_id: e.target.value, commune_id: '' })}
-                              >
-                                <option value="">Sélectionner...</option>
-                                {prefectures.map((p, idx) => (
-                                  <option key={p.id || idx} value={p.id}>{p.translations?.[0]?.name || p.name || p.id}</option>
-                                ))}
-                              </select>
-                            </div>
-                            <div>
-                              <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Commune</span>
-                              <select
-                                style={inputStyle}
-                                value={editForm.commune_id}
-                                onChange={e => setEditForm({ ...editForm, commune_id: e.target.value })}
-                                disabled={!editForm.prefecture_id}
-                              >
-                                <option value="">Sélectionner...</option>
-                                {communes.filter(c => c.prefecture_id === Number(editForm.prefecture_id)).map((c, idx) => (
-                                  <option key={c.id || idx} value={c.id}>{c.translations?.[0]?.name || c.name || c.id}</option>
-                                ))}
-                              </select>
-                            </div>
-                          </div>
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                             <div>
                               <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Latitude GPS</span>
                               <input
                                 type="number"
-                                step="0.000001"
+                                step={0.000001}
                                 style={inputStyle}
-                                value={editForm.latitude}
-                                onChange={e => setEditForm({ ...editForm, latitude: e.target.value })}
+                                value={editForm.latitude || ''}
+                                onChange={(e) => setEditForm({ ...editForm, latitude: e.target.value })}
                               />
                             </div>
                             <div>
                               <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Longitude GPS</span>
                               <input
                                 type="number"
-                                step="0.000001"
+                                step={0.000001}
                                 style={inputStyle}
-                                value={editForm.longitude}
-                                onChange={e => setEditForm({ ...editForm, longitude: e.target.value })}
+                                value={editForm.longitude || ''}
+                                onChange={(e) => setEditForm({ ...editForm, longitude: e.target.value })}
                               />
                             </div>
                           </div>
-                          {selectedUser.user_type === 'company' && (
+                          {selectedUser.user_type === 'company' ? (
                             <div>
                               <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Adresse physique</span>
                               <input
@@ -1747,9 +1754,9 @@ export const UsersPage = () => {
                                 onChange={e => setEditForm({ ...editForm, address: e.target.value })}
                               />
                             </div>
-                          )}
+                          ) : null}
                         </>
-                      )}
+                      ) : null}
 
                     </div>
                   </div>
