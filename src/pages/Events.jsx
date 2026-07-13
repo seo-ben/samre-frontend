@@ -4,7 +4,7 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { 
   Plus, MoreVertical, MapPin, Clock, Calendar, Info, 
   ChevronLeft, ChevronRight, CheckCircle, Users, Map,
-  Globe, RefreshCw, Tag, ExternalLink, User
+  Globe, RefreshCw, Tag, ExternalLink, User, Heart
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import CreateEventModal from '../components/events/CreateEventModal';
@@ -504,7 +504,7 @@ export const EventsPage = () => {
                       </div>
                     </div>
                     {/* Quick Info Grid - Row 2 */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', background: '#f8fafc', borderRadius: '0 0 12px 12px', padding: '0 20px 20px 20px', borderTop: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', background: '#f8fafc', borderRadius: '0 0 12px 12px', padding: '0 20px 20px 20px', borderTop: '1px solid #e2e8f0' }}>
                       <div style={{ paddingTop: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
                           <Users size={16} /> Participants
@@ -523,7 +523,15 @@ export const EventsPage = () => {
                       </div>
                       <div style={{ paddingTop: '16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
-                          <Info size={16} /> Partages
+                          <Heart size={16} /> Likes
+                        </div>
+                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
+                          {selectedEvent.likes_count || 0}
+                        </div>
+                      </div>
+                      <div style={{ paddingTop: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
+                          <ExternalLink size={16} /> Partages
                         </div>
                         <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
                           {selectedEvent.shares_count || 0}
