@@ -22,6 +22,8 @@ export const EventsPage = () => {
   
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [activeTab, setActiveTab] = useState('Détails');
+  const [eventParticipants, setEventParticipants] = useState([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -156,6 +158,23 @@ export const EventsPage = () => {
     fetchEvents(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterStatus, filterCategory, sortOrder]);
+
+  useEffect(() => {
+    if (activeTab === 'Participants' && selectedEventId) {
+      const fetchParticipants = async () => {
+        setLoadingParticipants(true);
+        try {
+          const res = await apiClient.get(`/v1/admin/events/${selectedEventId}/participants`);
+          setEventParticipants(res.data.data || []);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoadingParticipants(false);
+        }
+      };
+      fetchParticipants();
+    }
+  }, [activeTab, selectedEventId]);
 
   const selectedEvent = events.find(ev => ev.id === selectedEventId) || events[0];
 
@@ -646,8 +665,29 @@ export const EventsPage = () => {
                 )}
 
                 {activeTab === 'Participants' && (
-                  <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#64748b', textAlign: 'center' }}>
-                    La liste détaillée des participants sera bientôt disponible.
+                  <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#64748b' }}>
+                    {loadingParticipants ? (
+                      <div style={{ textAlign: 'center' }}>Chargement des participants...</div>
+                    ) : eventParticipants.length === 0 ? (
+                      <div style={{ textAlign: 'center' }}>Aucun participant pour le moment.</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {eventParticipants.map(participant => (
+                          <div key={participant.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e2e8f0', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {participant.user?.profile_picture_url ? <img src={participant.user.profile_picture_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#64748b" />}
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{participant.user?.first_name} {participant.user?.last_name}</div>
+                              <div style={{ fontSize: '13px', color: '#64748b' }}>{participant.user?.email || participant.user?.phone}</div>
+                            </div>
+                            <div style={{ marginLeft: 'auto', fontSize: '12px', color: '#94a3b8' }}>
+                              Inscrit le {new Date(participant.created_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </>
