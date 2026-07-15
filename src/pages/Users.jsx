@@ -9,6 +9,7 @@ import {
   Briefcase, Activity, Landmark, Edit, Save, Printer,
   Camera, ImageIcon, User
 } from 'lucide-react';
+import { UserWalletTab } from '../components/users/UserWalletTab';
 
 const staticCountries = [
   { id: 1, name: 'Togo', code: 'TG' },
@@ -58,6 +59,7 @@ export const UsersPage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, type: '', message: '', targetId: null });
+  const [modalTab, setModalTab] = useState('profil'); // 'profil' or 'wallet'
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -329,6 +331,7 @@ export const UsersPage = () => {
     };
     setSelectedUser(normalizedUser);
     setIsEditing(false);
+    setModalTab('profil');
     setShowModal(true);
   };
 
@@ -1242,10 +1245,48 @@ export const UsersPage = () => {
                 </div>
               </div>
 
-              {/* ─── MODE VISIONNAGE ─── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                
-                {/* Section: Informations Générales */}
+              {/* ─── ONGLETS DE LA MODALE ─── */}
+              <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '2px solid var(--gray-border)' }}>
+                <button
+                  onClick={() => setModalTab('profil')}
+                  style={{
+                    padding: '8px 16px', background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: '14px', fontWeight: '600', color: modalTab === 'profil' ? '#0052ff' : 'var(--gray-medium)',
+                    borderBottom: modalTab === 'profil' ? '3px solid #0052ff' : '3px solid transparent',
+                    marginBottom: '-2px', transition: '0.2s'
+                  }}
+                >
+                  Profil
+                </button>
+                <button
+                  onClick={() => setModalTab('wallet')}
+                  style={{
+                    padding: '8px 16px', background: 'none', border: 'none', cursor: 'pointer',
+                    fontSize: '14px', fontWeight: '600', color: modalTab === 'wallet' ? '#0052ff' : 'var(--gray-medium)',
+                    borderBottom: modalTab === 'wallet' ? '3px solid #0052ff' : '3px solid transparent',
+                    marginBottom: '-2px', transition: '0.2s'
+                  }}
+                >
+                  Portefeuille & Transactions
+                </button>
+              </div>
+
+              {/* ─── CONTENU DES ONGLETS ─── */}
+              {modalTab === 'wallet' && (
+                <UserWalletTab 
+                  user={selectedUser} 
+                  refreshUser={() => {
+                    fetchUsers();
+                    // update selectedUser to reflect new balance (we could refetch the specific user if needed)
+                    // But fetchUsers refreshes the list in the background.
+                  }} 
+                />
+              )}
+
+              {modalTab === 'profil' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  
+                  {/* Section: Informations Générales */}
                 <div>
                   <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Informations de Contact
@@ -1503,6 +1544,8 @@ export const UsersPage = () => {
                 </div>
 
               </div>
+              )}
+
             </div>
 
             {/* Modal Actions Footer */}
