@@ -21,6 +21,9 @@ import { PendingBadges } from './pages/PendingBadges'
 import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
 import { SystemSettings } from './pages/SystemSettings'
+import { SuggestedLocationsPage } from './pages/SuggestedLocations'
+import { WalletsPage } from './pages/Payments/Wallets'
+import { TransactionsPage } from './pages/Payments/Transactions'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
@@ -63,8 +66,8 @@ function App() {
       <Route path="/badges/companies"  element={<Protected><VerifiedProfiles userType="company" /></Protected>} />
 
       {/* ── Paiements ─────────────────────────── */}
-      <Route path="/payments/transactions" element={<Protected><ComingSoon title="Transactions" /></Protected>} />
-      <Route path="/payments/wallets"      element={<Protected><ComingSoon title="Wallets" /></Protected>} />
+      <Route path="/payments/transactions" element={<Protected><TransactionsPage /></Protected>} />
+      <Route path="/payments/wallets"      element={<Protected><WalletsPage /></Protected>} />
       <Route path="/payments/revenue"      element={<Protected><ComingSoon title="Revenus" /></Protected>} />
       <Route path="/payments/conversion"   element={<Protected><ComingSoon title="Taux de conversion" /></Protected>} />
 
@@ -84,12 +87,12 @@ function App() {
       <Route path="/cms/languages"    element={<Protected><LanguagesPage /></Protected>} />
       <Route path="/cms/translations" element={<Protected><StaticContentsPage /></Protected>} />
       <Route path="/cms/locations"    element={<Protected><LocationsPage /></Protected>} />
+      <Route path="/cms/suggested-locations" element={<Protected><SuggestedLocationsPage /></Protected>} />
       <Route path="/cms/categories"   element={<Protected><CategoriesPage /></Protected>} />
       <Route path="/cms/quotas"       element={<Protected><QuotasPage /></Protected>} />
       <Route path="/cms/blur"         element={<Protected><BlurFieldsPage /></Protected>} />
 
       {/* ── Facturation ───────────────────────── */}
-      <Route path="/payments/wallets"    element={<Protected><ComingSoon title="Wallets" /></Protected>} />
       <Route path="/payments/history"    element={<Protected><ComingSoon title="Historique paiements" /></Protected>} />
       <Route path="/payments/invoices"   element={<Protected><ComingSoon title="Factures" /></Protected>} />
       <Route path="/payments/payouts"    element={<Protected><ComingSoon title="Payouts" /></Protected>} />

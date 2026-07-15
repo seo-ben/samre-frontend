@@ -119,6 +119,7 @@ const NAV = [
       { label: 'Langues',             path: '/cms/languages',  icon: Languages },
       { label: 'Traductions App',     path: '/cms/translations', icon: Type },
       { label: 'Zones géographiques', path: '/cms/locations',  icon: MapPin },
+      { label: 'Zones suggérées',     path: '/cms/suggested-locations', icon: MapPin },
       { label: 'Catégories',          path: '/cms/categories', icon: Tag },
       { label: 'Règles de quota',     path: '/cms/quotas',     icon: ListFilter },
       { label: 'Champs floutés',      path: '/cms/blur',       icon: Eye },
