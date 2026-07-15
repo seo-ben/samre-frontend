@@ -3,6 +3,7 @@ import apiClient from '../../lib/apiClient';
 import { Landmark, ArrowRight, ArrowLeft, Eye, Clock, X, Lock } from 'lucide-react';
 
 export const UserWalletTab = ({ user, refreshUser }) => {
+  const [walletBalance, setWalletBalance] = useState(user.wallet?.balance || 0);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +34,11 @@ export const UserWalletTab = ({ user, refreshUser }) => {
       setError(null);
       const res = await apiClient.get(`/v1/admin/transactions?user_id=${user.id}`);
       if (res.data.status === 'success') {
-        setTransactions(res.data.data.data); // data.data because it's paginated
+        const txs = res.data.data.data;
+        setTransactions(txs);
+        if (txs.length > 0 && txs[0].wallet) {
+          setWalletBalance(txs[0].wallet.balance);
+        }
       } else {
         setError("Erreur lors du chargement des transactions");
       }
@@ -72,6 +77,9 @@ export const UserWalletTab = ({ user, refreshUser }) => {
         setShowManualModal(false);
         setAmount('');
         setPurpose('');
+        if (res.data.data?.balance !== undefined) {
+          setWalletBalance(res.data.data.balance);
+        }
         refreshUser();
         fetchTransactions();
       }
@@ -114,7 +122,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
           <div>
             <div style={{ fontSize: '13px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Solde actuel</div>
             <div style={{ fontSize: '24px', fontWeight: '700' }}>
-              {user.wallet ? formatCurrency(user.wallet.balance) : '0 FCFA'}
+              {user.wallet ? formatCurrency(walletBalance) : '0 FCFA'}
             </div>
           </div>
         </div>
