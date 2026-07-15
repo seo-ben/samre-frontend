@@ -17,8 +17,7 @@ export const FinanceDashboard = () => {
     total_revenue: 0,
     conversion_rate: 0,
     total_credit_distributed: 0,
-    users_with_wallet: 0,
-    total_users: 0
+    users_with_wallet: 0
   });
 
   const [wallets, setWallets] = useState([]);
@@ -75,63 +74,14 @@ export const FinanceDashboard = () => {
     return () => clearTimeout(delay);
   }, [walletSearch, txSearch]);
 
-  // --- Chart Data Calculations ---
-  
-  // 1. Transaction Breakdown (Donut)
-  const txBreakdown = useMemo(() => {
-    if (!Array.isArray(transactions)) return [{ name: 'Aucun', value: 1, color: '#E2E8F0' }];
-    const credits = transactions.filter(t => t.type === 'credit').length;
-    const debits = transactions.filter(t => t.type === 'debit').length;
-    return [
-      { name: 'Crédits', value: credits || 1, color: '#3B82F6' },
-      { name: 'Débits', value: debits || 1, color: '#EF4444' }
-    ];
-  }, [transactions]);
-
-  // 2. Payment Methods
-  const paymentMethods = useMemo(() => {
-    if (!Array.isArray(transactions)) return [];
-    const counts = {};
-    transactions.forEach(t => {
-      const provider = t.payment_provider || 'Inconnu';
-      counts[provider] = (counts[provider] || 0) + 1;
-    });
-    const total = Math.max(1, transactions.length);
-    return Object.entries(counts).map(([name, count], index) => {
-      const colors = ['#4F46E5', '#10B981', '#F59E0B', '#8B5CF6'];
-      return {
-        name: name === 'system_admin' ? 'Admin' : name,
-        percent: ((count / total) * 100).toFixed(1),
-        count,
-        color: colors[index % colors.length]
-      };
-    }).sort((a, b) => b.count - a.count).slice(0, 4);
-  }, [transactions]);
-
-  // 3. Revenue Evolution (Mocked from recent tx for visual)
-  const revenueData = useMemo(() => {
-    if (!Array.isArray(transactions) || transactions.length === 0) return Array.from({length: 7}, (_, i) => ({ name: `J-${6-i}`, total: 0 }));
-    const recent = [...transactions].reverse().slice(0, 10);
-    return recent.map((t, i) => ({
-      name: `TX-${i}`,
-      total: parseFloat(t.amount || 0)
-    }));
-  }, [transactions]);
-
-  // 4. Alerts
-  const alerts = useMemo(() => {
-    if (!Array.isArray(transactions)) return [];
-    return transactions.slice(0, 4).map(t => ({
-      id: t.id,
-      title: t.status === 'failed' ? 'Transaction échouée' : t.type === 'credit' ? 'Crédit important' : 'Nouveau retrait',
-      desc: `${t.type === 'credit' ? '+' : '-'}${formatCurrency(t.amount || 0)} par ${t.wallet?.user?.name || 'Inconnu'}`,
-      type: t.status === 'failed' ? 'error' : t.type === 'credit' ? 'success' : 'warning',
-      time: 'Récemment'
-    }));
-  }, [transactions]);
+  // No charts needed, bottom 4 cards removed.
 
 
   // --- Formatting Helpers ---
+  const formatCurrencyNumberOnly = (val) => {
+    return new Intl.NumberFormat('fr-FR').format(Number(val) || 0);
+  };
+  
   const formatCurrency = (val) => {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(Number(val) || 0);
   };
@@ -148,15 +98,15 @@ export const FinanceDashboard = () => {
   // --- Styles ---
   const cardStyle = {
     background: '#FFFFFF',
-    borderRadius: '16px',
-    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+    borderRadius: '12px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.01)',
     border: '1px solid #E2E8F0',
     overflow: 'hidden'
   };
 
   return (
     <MainLayout>
-      <div style={{ padding: '32px', maxWidth: '1600px', margin: '0 auto', background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+      <div style={{ width: '100%', background: '#F4F6FA', minHeight: '100vh', fontFamily: "'Inter', sans-serif", boxSizing: 'border-box' }}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
@@ -177,97 +127,67 @@ export const FinanceDashboard = () => {
           </button>
         </div>
 
-        {/* Top KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+        {/* Top KPIs - 4 Columns */}
+        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
           
           {/* Revenu Total */}
-          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #4338CA, #3B82F6)', color: 'white', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
-              <TrendingUp size={120} />
+          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #4338CA, #3B82F6)', color: 'white', padding: '20px', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '20px', right: '20px', opacity: 0.1 }}>
+              <TrendingUp size={64} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '8px' }}><TrendingUp size={20} color="white" /></div>
-              <span style={{ fontSize: '14px', fontWeight: '500', opacity: 0.9 }}>Revenu Total</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.2)' }}><TrendingUp size={16} color="white" /></div>
+              <span style={{ fontSize: '13px', fontWeight: '500', opacity: 0.9 }}>Revenu Total</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
-              {formatCurrency(stats?.total_revenue || 0).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#D1D5DB', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={14} color="#34D399" /> <span style={{ color: '#34D399', fontWeight: '600' }}>+12.5%</span> vs mois précédent
+            <div style={{ fontSize: '26px', fontWeight: '800', marginBottom: '8px' }}>
+              {formatCurrencyNumberOnly(stats?.total_revenue || 0)} <span style={{ fontSize: '14px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
             </div>
           </div>
 
           {/* Crédit Distribué */}
-          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #047857, #10B981)', color: 'white', padding: '24px', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
-              <Wallet size={120} />
+          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #064E3B, #059669)', color: 'white', padding: '20px', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: '20px', right: '20px', opacity: 0.1 }}>
+              <Wallet size={64} />
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '8px' }}><Wallet size={20} color="white" /></div>
-              <span style={{ fontSize: '14px', fontWeight: '500', opacity: 0.9 }}>Crédit Distribué</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.2)' }}><Wallet size={16} color="white" /></div>
+              <span style={{ fontSize: '13px', fontWeight: '500', opacity: 0.9 }}>Crédit Distribué</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
-              {formatCurrency(stats?.total_credit_distributed || 0).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
-            </div>
-            <div style={{ fontSize: '12px', color: '#D1D5DB', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={14} color="#A7F3D0" /> <span style={{ color: '#A7F3D0', fontWeight: '600' }}>+18.7%</span> vs mois précédent
+            <div style={{ fontSize: '26px', fontWeight: '800', marginBottom: '8px' }}>
+              {formatCurrencyNumberOnly(stats?.total_credit_distributed || 0)} <span style={{ fontSize: '14px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
             </div>
           </div>
 
           {/* Taux de Conversion */}
-          <div style={{ ...cardStyle, padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ background: '#EFF6FF', padding: '8px', borderRadius: '8px' }}><Activity size={20} color="#3B82F6" /></div>
-                <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Taux de Conversion</span>
-              </div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
-                {stats?.conversion_rate || 0}%
-              </div>
-              <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+5.3%</span> vs hier
-              </div>
+          <div style={{ ...cardStyle, padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ padding: '6px', borderRadius: '6px', background: '#EFF6FF' }}><Activity size={16} color="#3B82F6" /></div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B' }}>Taux de Conversion</span>
             </div>
-            {/* Circular Progress */}
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `conic-gradient(#3B82F6 ${stats?.conversion_rate || 0}%, #E2E8F0 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>
-                {stats?.conversion_rate || 0}%
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: `conic-gradient(#3B82F6 ${stats?.conversion_rate || 0}%, #F1F5F9 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>
+                  {stats?.conversion_rate || 0}%
+                </div>
               </div>
             </div>
           </div>
 
           {/* Portefeuilles Actifs */}
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ background: '#FFF7ED', padding: '8px', borderRadius: '8px' }}><CreditCard size={20} color="#EA580C" /></div>
-              <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Portefeuilles Actifs</span>
+          <div style={{ ...cardStyle, padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ padding: '6px', borderRadius: '6px', background: '#FFF7ED' }}><CreditCard size={16} color="#EA580C" /></div>
+              <span style={{ fontSize: '13px', fontWeight: '600', color: '#64748B' }}>Portefeuilles Actifs</span>
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
+            <div style={{ fontSize: '26px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
               {new Intl.NumberFormat('fr-FR').format(stats?.users_with_wallet || 0)}
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+9.1%</span> vs mois précédent
-            </div>
-          </div>
-
-          {/* Utilisateurs Totaux */}
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <div style={{ background: '#FAF5FF', padding: '8px', borderRadius: '8px' }}><Users size={20} color="#9333EA" /></div>
-              <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Utilisateurs Totaux</span>
-            </div>
-            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
-              {new Intl.NumberFormat('fr-FR').format(stats?.total_users || 0)}
-            </div>
-            <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+11.4%</span> vs mois précédent
             </div>
           </div>
 
         </div>
 
         {/* Middle Section: Tables */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px', marginBottom: '24px' }}>
           
           {/* Wallets Table */}
           <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
@@ -399,109 +319,6 @@ export const FinanceDashboard = () => {
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Bottom Section: Charts Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-          
-          {/* Pie Chart */}
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: '0 0 24px 0' }}>Répartition des Transactions</h3>
-            <div style={{ height: '200px', width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={txBreakdown} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {txBreakdown.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => new Intl.NumberFormat('fr-FR').format(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
-              {txBreakdown.map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }}></div>
-                  <span style={{ fontSize: '14px', color: '#64748B', fontWeight: '500' }}>{item.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Bar Chart (Payment Methods) */}
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: '0 0 24px 0' }}>Volume par Méthode</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
-              {paymentMethods.map((pm, i) => (
-                <div key={i}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-                    <span style={{ fontWeight: '500', color: '#334155' }}>{pm.name}</span>
-                    <span style={{ color: '#64748B', fontWeight: '600' }}>{pm.percent}%</span>
-                  </div>
-                  <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${pm.percent}%`, height: '100%', background: pm.color, borderRadius: '4px' }}></div>
-                  </div>
-                </div>
-              ))}
-              {paymentMethods.length === 0 && <div style={{ color: '#94A3B8', textAlign: 'center', marginTop: '40px' }}>Pas assez de données</div>}
-            </div>
-          </div>
-
-          {/* Line Chart */}
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: '0 0 24px 0' }}>Évolution du Revenu</h3>
-            <div style={{ height: '220px', width: '100%', marginLeft: '-20px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenueData}>
-                  <defs>
-                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} tickFormatter={(value) => value > 1000 ? `${(value/1000).toFixed(0)}k` : value} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                    formatter={(value) => [formatCurrency(value), 'Montant']}
-                  />
-                  <Area type="monotone" dataKey="total" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Alerts */}
-          <div style={{ ...cardStyle, padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: 0 }}>Alertes & Activités</h3>
-              <MoreVertical size={18} color="#94A3B8" style={{ cursor: 'pointer' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {alerts.map((alert, i) => (
-                <div key={i} style={{ display: 'flex', gap: '12px' }}>
-                  <div style={{ 
-                    width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: alert.type === 'error' ? '#FEE2E2' : alert.type === 'success' ? '#DCFCE7' : '#FEF3C7',
-                    color: alert.type === 'error' ? '#DC2626' : alert.type === 'success' ? '#16A34A' : '#D97706'
-                  }}>
-                    <BellRing size={20} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A' }}>{alert.title}</span>
-                      <span style={{ fontSize: '12px', color: '#94A3B8' }}>{alert.time}</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>{alert.desc}</p>
-                  </div>
-                </div>
-              ))}
-              {alerts.length === 0 && <div style={{ color: '#94A3B8', textAlign: 'center', marginTop: '20px' }}>Aucune alerte</div>}
             </div>
           </div>
 
