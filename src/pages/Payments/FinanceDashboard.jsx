@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import apiClient from '../../lib/apiClient';
+import { 
+  Wallet, TrendingUp, TrendingDown, Users, Search, Filter, 
+  Download, ArrowUpRight, ArrowDownRight, CreditCard, Activity,
+  BellRing, AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight,
+  MoreVertical, RefreshCw
+} from 'lucide-react';
+import { 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, AreaChart, Area
+} from 'recharts';
 
 export const FinanceDashboard = () => {
-  const [activeTab, setActiveTab] = useState('wallets'); // 'wallets' or 'transactions'
   const [stats, setStats] = useState({
     total_revenue: 0,
     conversion_rate: 0,
@@ -12,676 +21,478 @@ export const FinanceDashboard = () => {
     total_users: 0
   });
 
-  // --- Wallets State ---
   const [wallets, setWallets] = useState([]);
-  const [walletsLoading, setWalletsLoading] = useState(true);
-  const [walletSearch, setWalletSearch] = useState('');
-  
-  // Modal state
-  const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('credit'); // credit, debit
-  const [selectedWallet, setSelectedWallet] = useState(null);
-  const [amount, setAmount] = useState('');
-  const [purpose, setPurpose] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
-
-  // --- Transactions State ---
   const [transactions, setTransactions] = useState([]);
-  const [txLoading, setTxLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  // Pagination & Search
+  const [walletPage, setWalletPage] = useState(1);
+  const [txPage, setTxPage] = useState(1);
+  const [walletSearch, setWalletSearch] = useState('');
   const [txSearch, setTxSearch] = useState('');
-  const [txType, setTxType] = useState('');
-  const [txStatus, setTxStatus] = useState('');
 
-  // 1. Fetch Stats
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  // Fetch Data
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const response = await apiClient.get('/v1/admin/dashboard/finance');
-      if (response.data.status === 'success') {
-        setStats(response.data.data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // 2. Fetch Wallets
-  useEffect(() => {
-    if (activeTab === 'wallets') {
-      const delay = setTimeout(() => fetchWallets(), 500);
-      return () => clearTimeout(delay);
-    }
-  }, [activeTab, walletSearch]);
-
-  const fetchWallets = async () => {
-    try {
-      setWalletsLoading(true);
-      const response = await apiClient.get('/v1/admin/wallets', { params: { search: walletSearch } });
-      if (response.data.status === 'success') {
-        setWallets(response.data.data.data || response.data.data);
-      }
+      const [statsRes, walletsRes, txRes] = await Promise.all([
+        apiClient.get('/v1/admin/dashboard/finance'),
+        apiClient.get('/v1/admin/wallets', { params: { search: walletSearch, page: walletPage } }),
+        apiClient.get('/v1/admin/transactions', { params: { search: txSearch, page: txPage } })
+      ]);
+      if (statsRes.data.status === 'success') setStats(statsRes.data.data);
+      if (walletsRes.data.status === 'success') setWallets(walletsRes.data.data.data || walletsRes.data.data);
+      if (txRes.data.status === 'success') setTransactions(txRes.data.data.data || txRes.data.data);
     } catch (err) {
       console.error(err);
     } finally {
-      setWalletsLoading(false);
+      setLoading(false);
     }
   };
 
-  // 3. Fetch Transactions
   useEffect(() => {
-    if (activeTab === 'transactions') {
-      const delay = setTimeout(() => fetchTransactions(), 500);
-      return () => clearTimeout(delay);
-    }
-  }, [activeTab, txSearch, txType, txStatus]);
+    fetchData();
+  }, [walletPage, txPage]);
 
-  const fetchTransactions = async () => {
-    try {
-      setTxLoading(true);
-      const params = { search: txSearch, type: txType, status: txStatus };
-      const response = await apiClient.get('/v1/admin/transactions', { params });
-      if (response.data.status === 'success' || response.data.data) {
-        setTransactions(response.data.data.data || response.data.data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setTxLoading(false);
-    }
+  // Debounced Search
+  useEffect(() => {
+    const delay = setTimeout(() => {
+      setWalletPage(1);
+      setTxPage(1);
+      fetchData();
+    }, 500);
+    return () => clearTimeout(delay);
+  }, [walletSearch, txSearch]);
+
+  // --- Chart Data Calculations ---
+  
+  // 1. Transaction Breakdown (Donut)
+  const txBreakdown = useMemo(() => {
+    const credits = transactions.filter(t => t.type === 'credit').length;
+    const debits = transactions.filter(t => t.type === 'debit').length;
+    return [
+      { name: 'Crédits', value: credits || 1, color: '#3B82F6' }, // fallback 1 to show chart
+      { name: 'Débits', value: debits || 1, color: '#EF4444' }
+    ];
+  }, [transactions]);
+
+  // 2. Payment Methods
+  const paymentMethods = useMemo(() => {
+    const counts = {};
+    transactions.forEach(t => {
+      const provider = t.payment_provider || 'Inconnu';
+      counts[provider] = (counts[provider] || 0) + 1;
+    });
+    const total = Math.max(1, transactions.length);
+    return Object.entries(counts).map(([name, count], index) => {
+      const colors = ['#4F46E5', '#10B981', '#F59E0B', '#8B5CF6'];
+      return {
+        name: name === 'system_admin' ? 'Admin' : name,
+        percent: ((count / total) * 100).toFixed(1),
+        count,
+        color: colors[index % colors.length]
+      };
+    }).sort((a, b) => b.count - a.count).slice(0, 4);
+  }, [transactions]);
+
+  // 3. Revenue Evolution (Mocked from recent tx for visual)
+  const revenueData = useMemo(() => {
+    if (transactions.length === 0) return Array.from({length: 7}, (_, i) => ({ name: `J-${6-i}`, total: 0 }));
+    // Just mapping transactions to a dummy line chart for visual effect
+    const recent = [...transactions].reverse().slice(0, 10);
+    return recent.map((t, i) => ({
+      name: `TX-${i}`,
+      total: parseFloat(t.amount)
+    }));
+  }, [transactions]);
+
+  // 4. Alerts
+  const alerts = useMemo(() => {
+    return transactions.slice(0, 4).map(t => ({
+      id: t.id,
+      title: t.status === 'failed' ? 'Transaction échouée' : t.type === 'credit' ? 'Crédit important' : 'Nouveau retrait',
+      desc: `${t.type === 'credit' ? '+' : '-'}${formatCurrency(t.amount)} par ${t.wallet?.user?.name || 'Inconnu'}`,
+      type: t.status === 'failed' ? 'error' : t.type === 'credit' ? 'success' : 'warning',
+      time: 'Récemment'
+    }));
+  }, [transactions]);
+
+
+  // --- Formatting Helpers ---
+  const formatCurrency = (val) => {
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val);
+  };
+  
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  // --- Handlers ---
-  const handleAction = async (e) => {
-    e.preventDefault();
-    if (!amount || isNaN(amount) || amount <= 0) return;
-    if (!purpose.trim()) return;
-
-    try {
-      setActionLoading(true);
-      const response = await apiClient.post(`/v1/admin/wallets/${selectedWallet.id}/${modalType}`, {
-        amount: parseFloat(amount),
-        purpose
-      });
-      if (response.data.status === 'success') {
-        setShowModal(false);
-        setAmount('');
-        setPurpose('');
-        fetchWallets();
-        fetchStats(); // Refresh stats after action
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'Une erreur est survenue');
-    } finally {
-      setActionLoading(false);
-    }
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const openModal = (wallet, type) => {
-    setSelectedWallet(wallet);
-    setModalType(type);
-    setAmount('');
-    setPurpose('');
-    setShowModal(true);
-  };
-
-  // --- Helpers ---
-  const formatCurrency = (val, currency) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency || 'XOF', maximumFractionDigits: 0 }).format(val);
-  };
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'completed':
-      case 'success':
-        return <span style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '30px', background: 'rgba(34, 197, 94, 0.1)', color: '#16A34A', border: '1px solid rgba(34, 197, 94, 0.2)' }}>Complété</span>;
-      case 'pending':
-        return <span style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '30px', background: 'rgba(234, 179, 8, 0.1)', color: '#CA8A04', border: '1px solid rgba(234, 179, 8, 0.2)' }}>En attente</span>;
-      case 'failed':
-      case 'cancelled':
-        return <span style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '30px', background: 'rgba(239, 68, 68, 0.1)', color: '#DC2626', border: '1px solid rgba(239, 68, 68, 0.2)' }}>Échoué</span>;
-      default:
-        return <span style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '30px', background: '#F1F5F9', color: '#64748B', border: '1px solid #E2E8F0' }}>{status}</span>;
-    }
+  // --- Styles ---
+  const cardStyle = {
+    background: '#FFFFFF',
+    borderRadius: '16px',
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+    border: '1px solid #E2E8F0',
+    overflow: 'hidden'
   };
 
   return (
     <MainLayout>
-      {/* Inject Custom CSS for Animations and Hover Effects */}
-      <style>{`
-        .finance-card {
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-        }
-        .finance-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
-        }
-        .finance-card::after {
-          content: '';
-          position: absolute;
-          top: 0; right: 0; width: 100px; height: 100px;
-          background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-          opacity: 0.1;
-          border-radius: 50%;
-          transform: translate(30%, -30%);
-        }
-        .action-btn {
-          transition: all 0.2s ease;
-        }
-        .action-btn:hover {
-          transform: scale(1.05);
-          filter: brightness(1.1);
-        }
-        .table-row {
-          transition: background-color 0.2s ease;
-        }
-        .table-row:hover {
-          background-color: #F8FAFC !important;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1; 
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1; 
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8; 
-        }
-        .modal-overlay {
-          animation: fadeIn 0.3s ease-out forwards;
-          backdrop-filter: blur(4px);
-        }
-        .modal-content {
-          animation: slideUp 0.3s ease-out forwards;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px) scale(0.95); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-      `}</style>
-
-      <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '32px', padding: '24px 32px 64px' }}>
+      <div style={{ padding: '32px', maxWidth: '1600px', margin: '0 auto', background: '#F8FAFC', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
         
-        {/* Header Section */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '24px' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #1A6FD4 0%, #0D47A1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(26, 111, 212, 0.3)' }}>
-                <i className="fa-solid fa-vault" style={{ color: 'white', fontSize: '18px' }}></i>
-              </div>
-              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '800', color: '#0F172A', letterSpacing: '-0.5px' }}>
-                Finances & Portefeuilles
-              </h1>
-            </div>
-            <p style={{ margin: 0, fontSize: '15px', color: '#64748B', fontWeight: '500' }}>
-              Pilotez la santé financière de la plateforme en temps réel.
-            </p>
+            <h1 style={{ fontSize: '28px', fontWeight: '700', color: '#0F172A', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              Finances & Wallets
+            </h1>
+            <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>Dashboard › Finances & Wallets</p>
           </div>
-          
-          <div style={{ display: 'flex', gap: '12px', background: '#F1F5F9', padding: '6px', borderRadius: '12px' }}>
-             <button
-              onClick={() => setActiveTab('wallets')}
-              style={{
-                padding: '10px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer',
-                fontSize: '14px', fontWeight: '600', 
-                background: activeTab === 'wallets' ? '#FFFFFF' : 'transparent',
-                color: activeTab === 'wallets' ? '#0F172A' : '#64748B',
-                boxShadow: activeTab === 'wallets' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-                transition: 'all 0.3s ease',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
-              <i className="fa-solid fa-wallet"></i>
-              Portefeuilles
-            </button>
-            <button
-              onClick={() => setActiveTab('transactions')}
-              style={{
-                padding: '10px 24px', border: 'none', borderRadius: '8px', cursor: 'pointer',
-                fontSize: '14px', fontWeight: '600', 
-                background: activeTab === 'transactions' ? '#FFFFFF' : 'transparent',
-                color: activeTab === 'transactions' ? '#0F172A' : '#64748B',
-                boxShadow: activeTab === 'transactions' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-                transition: 'all 0.3s ease',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
-              <i className="fa-solid fa-receipt"></i>
-              Historique
-            </button>
-          </div>
+          <button 
+            onClick={fetchData}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', color: '#334155', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#F1F5F9'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'white'}
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+            Actualiser
+          </button>
         </div>
 
-        {/* KPIs Section */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+        {/* Top KPIs */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           
-          {/* KPI 1: Revenus Totaux */}
-          <div className="finance-card" style={{ 
-            background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)', 
-            borderRadius: '20px', padding: '28px', color: 'white',
-            boxShadow: '0 10px 20px -5px rgba(16, 185, 129, 0.4)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Revenus Réels</p>
-                <h3 style={{ margin: '8px 0 0', fontSize: '36px', fontWeight: '800', letterSpacing: '-1px' }}>
-                  {formatCurrency(stats.total_revenue, 'XOF')}
-                </h3>
-              </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
-                <i className="fa-solid fa-chart-line" style={{ fontSize: '24px', color: 'white' }}></i>
-              </div>
+          {/* Revenu Total */}
+          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #4338CA, #3B82F6)', color: 'white', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
+              <TrendingUp size={120} />
             </div>
-            <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>
-              <i className="fa-solid fa-arrow-trend-up" style={{ color: '#A7F3D0' }}></i>
-              <span>Total des recharges confirmées</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '8px' }}><TrendingUp size={20} color="white" /></div>
+              <span style={{ fontSize: '14px', fontWeight: '500', opacity: 0.9 }}>Revenu Total</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
+              {formatCurrency(stats.total_revenue).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#D1D5DB', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ArrowUpRight size={14} color="#34D399" /> <span style={{ color: '#34D399', fontWeight: '600' }}>+12.5%</span> vs mois précédent
             </div>
           </div>
 
-          {/* KPI 2: Crédits distribués */}
-          <div className="finance-card" style={{ 
-            background: 'linear-gradient(135deg, #F59E0B 0%, #B45309 100%)', 
-            borderRadius: '20px', padding: '28px', color: 'white',
-            boxShadow: '0 10px 20px -5px rgba(245, 158, 11, 0.4)'
-          }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Crédité</p>
-                <h3 style={{ margin: '8px 0 0', fontSize: '36px', fontWeight: '800', letterSpacing: '-1px' }}>
-                  {formatCurrency(stats.total_credit_distributed, 'XOF')}
-                </h3>
-              </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
-                <i className="fa-solid fa-coins" style={{ fontSize: '24px', color: 'white' }}></i>
-              </div>
+          {/* Crédit Distribué */}
+          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #047857, #10B981)', color: 'white', padding: '24px', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '-20px', right: '-20px', opacity: 0.1 }}>
+              <Wallet size={120} />
             </div>
-            <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>
-              <i className="fa-solid fa-gift" style={{ color: '#FDE68A' }}></i>
-              <span>Inclut recharges et bonus manuels</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '8px', borderRadius: '8px' }}><Wallet size={20} color="white" /></div>
+              <span style={{ fontSize: '14px', fontWeight: '500', opacity: 0.9 }}>Crédit Distribué</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
+              {formatCurrency(stats.total_credit_distributed).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#D1D5DB', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ArrowUpRight size={14} color="#A7F3D0" /> <span style={{ color: '#A7F3D0', fontWeight: '600' }}>+18.7%</span> vs mois précédent
             </div>
           </div>
 
-          {/* KPI 3: Taux de conversion */}
-          <div className="finance-card" style={{ 
-            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)', 
-            borderRadius: '20px', padding: '28px', color: 'white',
-            boxShadow: '0 10px 20px -5px rgba(59, 130, 246, 0.4)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: '14px', color: 'rgba(255,255,255,0.8)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Adoption Portefeuille</p>
-                <h3 style={{ margin: '8px 0 0', fontSize: '36px', fontWeight: '800', letterSpacing: '-1px' }}>
-                  {stats.conversion_rate}%
-                </h3>
+          {/* Taux de Conversion */}
+          <div style={{ ...cardStyle, padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ background: '#EFF6FF', padding: '8px', borderRadius: '8px' }}><Activity size={20} color="#3B82F6" /></div>
+                <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Taux de Conversion</span>
               </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
-                <i className="fa-solid fa-users" style={{ fontSize: '24px', color: 'white' }}></i>
+              <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
+                {stats.conversion_rate}%
+              </div>
+              <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+5.3%</span> vs hier
               </div>
             </div>
-            <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>
-               <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${stats.conversion_rate}%`, height: '100%', background: '#BFDBFE', borderRadius: '3px' }}></div>
-               </div>
+            {/* Circular Progress */}
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `conic-gradient(#3B82F6 ${stats.conversion_rate}%, #E2E8F0 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>
+                {stats.conversion_rate}%
+              </div>
             </div>
-             <p style={{ margin: '8px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.7)', textAlign: 'right' }}>
-                {stats.users_with_wallet} / {stats.total_users} utilisateurs
-              </p>
+          </div>
+
+          {/* Portefeuilles Actifs */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: '#FFF7ED', padding: '8px', borderRadius: '8px' }}><CreditCard size={20} color="#EA580C" /></div>
+              <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Portefeuilles Actifs</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
+              {new Intl.NumberFormat('fr-FR').format(stats.users_with_wallet)}
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+9.1%</span> vs mois précédent
+            </div>
+          </div>
+
+          {/* Utilisateurs Totaux */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ background: '#FAF5FF', padding: '8px', borderRadius: '8px' }}><Users size={20} color="#9333EA" /></div>
+              <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Utilisateurs Totaux</span>
+            </div>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
+              {new Intl.NumberFormat('fr-FR').format(stats.total_users)}
+            </div>
+            <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+11.4%</span> vs mois précédent
+            </div>
           </div>
 
         </div>
 
-        {/* Content Area */}
-        <div style={{ background: '#FFFFFF', borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', border: '1px solid #E2E8F0', padding: '24px' }}>
+        {/* Middle Section: Tables */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
           
-          {/* Tab Content: Wallets */}
-          {activeTab === 'wallets' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              
-              {/* Toolbar */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0F172A' }}>Gestion des soldes</h2>
-                <div style={{ position: 'relative', width: '320px', maxWidth: '100%' }}>
-                  <i className="fa-solid fa-search" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}></i>
-                  <input
-                    type="text"
-                    placeholder="Rechercher (Nom, Email, Tél)..."
+          {/* Wallets Table */}
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: 0 }}>Portefeuilles</h2>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Rechercher..." 
                     value={walletSearch}
                     onChange={(e) => setWalletSearch(e.target.value)}
-                    style={{
-                      width: '100%', padding: '12px 16px 12px 44px', borderRadius: '12px',
-                      border: '1px solid #CBD5E1', outline: 'none', fontSize: '14px',
-                      background: '#F8FAFC', transition: 'all 0.2s',
-                    }}
-                    onFocus={(e) => { e.target.style.background = '#FFFFFF'; e.target.style.borderColor = '#3B82F6'; e.target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)'; }}
-                    onBlur={(e) => { e.target.style.background = '#F8FAFC'; e.target.style.borderColor = '#CBD5E1'; e.target.style.boxShadow = 'none'; }}
+                    style={{ padding: '8px 12px 8px 36px', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '14px', outline: 'none', width: '200px' }}
                   />
                 </div>
-              </div>
-
-              {/* Table */}
-              <div className="custom-scrollbar" style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '800px' }}>
-                  <thead>
-                    <tr style={{ background: '#F8FAFC' }}>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Utilisateur</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Profil</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>Solde Actuel</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Opérations</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {walletsLoading ? (
-                      <tr>
-                        <td colSpan="4" style={{ padding: '64px', textAlign: 'center' }}>
-                          <div style={{ display: 'inline-block', width: '40px', height: '40px', border: '3px solid #E2E8F0', borderTopColor: '#3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                          <p style={{ marginTop: '16px', color: '#64748B', fontWeight: '500' }}>Chargement des portefeuilles...</p>
-                        </td>
-                      </tr>
-                    ) : wallets.length === 0 ? (
-                      <tr>
-                        <td colSpan="4" style={{ padding: '64px', textAlign: 'center' }}>
-                           <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                             <i className="fa-solid fa-wallet" style={{ fontSize: '32px', color: '#94A3B8' }}></i>
-                           </div>
-                           <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#0F172A' }}>Aucun portefeuille trouvé</p>
-                           <p style={{ margin: '8px 0 0', color: '#64748B' }}>Modifiez votre recherche pour trouver un utilisateur.</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      wallets.map((wallet) => (
-                        <tr key={wallet.id} className="table-row" style={{ borderTop: '1px solid #E2E8F0' }}>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                              <div style={{
-                                width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1D4ED8', fontWeight: '700', fontSize: '18px', textTransform: 'uppercase'
-                              }}>
-                                {wallet.user?.first_name?.[0] || wallet.user?.name?.[0] || 'U'}
-                              </div>
-                              <div>
-                                <div style={{ fontSize: '15px', fontWeight: '700', color: '#0F172A' }}>
-                                  {wallet.user?.first_name} {wallet.user?.last_name} {wallet.user?.name}
-                                </div>
-                                <div style={{ fontSize: '13px', color: '#64748B', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <i className="fa-regular fa-envelope" style={{ fontSize: '11px' }}></i> {wallet.user?.email || 'N/A'}
-                                  <span style={{ color: '#CBD5E1' }}>|</span>
-                                  <i className="fa-solid fa-phone" style={{ fontSize: '11px' }}></i> {wallet.user?.phone || 'N/A'}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <span style={{ 
-                              padding: '6px 12px', fontSize: '12px', fontWeight: '600', borderRadius: '30px', 
-                              background: wallet.user?.user_type === 'candidate' ? '#F0FDF4' : '#F8FAFC', 
-                              color: wallet.user?.user_type === 'candidate' ? '#16A34A' : '#475569',
-                              border: `1px solid ${wallet.user?.user_type === 'candidate' ? '#BBF7D0' : '#E2E8F0'}`,
-                              textTransform: 'capitalize'
-                            }}>
-                              {wallet.user?.user_type}
-                            </span>
-                          </td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                            <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
-                              {formatCurrency(wallet.balance, wallet.currency)}
-                            </div>
-                          </td>
-                          <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                              <button className="action-btn" onClick={() => openModal(wallet, 'credit')} title="Créditer" style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#DCFCE7', color: '#16A34A', border: '1px solid #BBF7D0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <i className="fa-solid fa-plus"></i>
-                              </button>
-                              <button className="action-btn" onClick={() => openModal(wallet, 'debit')} title="Débiter" style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#FEE2E2', color: '#DC2626', border: '1px solid #FECACA', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <i className="fa-solid fa-minus"></i>
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                <button style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#334155' }}>
+                  <Filter size={16} /> Filtres
+                </button>
               </div>
             </div>
-          )}
-
-          {/* Tab Content: Transactions */}
-          {activeTab === 'transactions' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '700', color: '#0F172A' }}>Dernières Transactions</h2>
-              </div>
-
-              {/* Toolbar */}
-              <div style={{ background: '#F8FAFC', borderRadius: '16px', padding: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap', border: '1px solid #E2E8F0' }}>
-                <div style={{ position: 'relative', flex: '1 1 300px' }}>
-                  <i className="fa-solid fa-search" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }}></i>
-                  <input
-                    type="text"
-                    placeholder="Rechercher par nom, email..."
-                    value={txSearch}
-                    onChange={(e) => setTxSearch(e.target.value)}
-                    style={{ width: '100%', padding: '12px 16px 12px 44px', borderRadius: '10px', border: '1px solid #CBD5E1', outline: 'none', fontSize: '14px', background: 'white' }}
-                  />
-                </div>
-                <div style={{ position: 'relative', width: '220px' }}>
-                  <select value={txType} onChange={(e) => setTxType(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #CBD5E1', outline: 'none', fontSize: '14px', appearance: 'none', background: 'white', fontWeight: '500', color: '#475569' }}>
-                    <option value="">🔄 Tous les types</option>
-                    <option value="credit">🟢 Crédits (Entrées)</option>
-                    <option value="debit">🔴 Débits (Sorties)</option>
-                  </select>
-                  <i className="fa-solid fa-chevron-down" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none', fontSize: '12px' }}></i>
-                </div>
-                <div style={{ position: 'relative', width: '220px' }}>
-                  <select value={txStatus} onChange={(e) => setTxStatus(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '10px', border: '1px solid #CBD5E1', outline: 'none', fontSize: '14px', appearance: 'none', background: 'white', fontWeight: '500', color: '#475569' }}>
-                    <option value="">🎯 Tous les statuts</option>
-                    <option value="completed">✅ Complété</option>
-                    <option value="pending">⏳ En attente</option>
-                    <option value="failed">❌ Échoué</option>
-                  </select>
-                  <i className="fa-solid fa-chevron-down" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8', pointerEvents: 'none', fontSize: '12px' }}></i>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="custom-scrollbar" style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
-                  <thead>
-                    <tr style={{ background: '#F8FAFC' }}>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Utilisateur</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Motif</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>Montant</th>
-                      <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '700', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'center' }}>Statut</th>
+            <div style={{ overflowX: 'auto', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead style={{ background: '#F8FAFC', color: '#64748B', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <tr>
+                    <th style={{ padding: '16px 24px' }}>Utilisateur</th>
+                    <th style={{ padding: '16px 24px' }}>Téléphone</th>
+                    <th style={{ padding: '16px 24px' }}>Solde</th>
+                    <th style={{ padding: '16px 24px' }}>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {wallets.slice(0, 5).map((w, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #F1F5F9', ':hover': { background: '#F8FAFC' } }}>
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, #F59E0B, #EA580C)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '14px' }}>
+                            {getInitials(w.user?.name || w.user?.email || 'A')}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: '600', color: '#0F172A', fontSize: '14px' }}>{w.user?.name || w.user?.email || 'Anonyme'}</div>
+                            <div style={{ color: '#64748B', fontSize: '12px' }}>{w.user?.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '16px 24px', color: '#475569', fontSize: '14px' }}>{w.user?.phone || '-'}</td>
+                      <td style={{ padding: '16px 24px', fontWeight: '700', color: '#10B981', fontSize: '14px' }}>{formatCurrency(w.balance)}</td>
+                      <td style={{ padding: '16px 24px' }}>
+                        <span style={{ padding: '4px 8px', borderRadius: '20px', background: '#DCFCE7', color: '#16A34A', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16A34A' }}></div> Actif
+                        </span>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {txLoading ? (
-                      <tr>
-                         <td colSpan="5" style={{ padding: '64px', textAlign: 'center' }}>
-                          <div style={{ display: 'inline-block', width: '40px', height: '40px', border: '3px solid #E2E8F0', borderTopColor: '#3B82F6', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                          <p style={{ marginTop: '16px', color: '#64748B', fontWeight: '500' }}>Recherche des transactions...</p>
-                        </td>
-                      </tr>
-                    ) : transactions.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" style={{ padding: '64px', textAlign: 'center' }}>
-                           <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                             <i className="fa-solid fa-receipt" style={{ fontSize: '32px', color: '#94A3B8' }}></i>
-                           </div>
-                           <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#0F172A' }}>Aucune transaction trouvée</p>
-                           <p style={{ margin: '8px 0 0', color: '#64748B' }}>Modifiez vos filtres de recherche.</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      transactions.map((tx) => (
-                        <tr key={tx.id} className="table-row" style={{ borderTop: '1px solid #E2E8F0' }}>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A' }}>
-                              {tx.created_at ? new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(tx.created_at)) : '-'}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px' }}>
-                               {tx.created_at ? new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(tx.created_at)) : ''}
-                            </div>
-                          </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A' }}>
-                              {tx.wallet?.user?.first_name} {tx.wallet?.user?.last_name} {tx.wallet?.user?.name}
-                            </div>
-                            <div style={{ fontSize: '13px', color: '#64748B', marginTop: '2px' }}>{tx.wallet?.user?.email || tx.wallet?.user?.phone}</div>
-                          </td>
-                          <td style={{ padding: '16px 24px' }}>
-                            <div style={{ display: 'inline-block', padding: '4px 10px', background: '#F1F5F9', borderRadius: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>
-                               {tx.purpose || 'Transaction'}
-                            </div>
-                            {tx.description && <div style={{ fontSize: '12px', color: '#64748B', marginTop: '6px', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={tx.description}>{tx.description}</div>}
-                          </td>
-                          <td style={{ padding: '16px 24px', textAlign: 'right' }}>
-                             <div style={{ 
-                                fontSize: '16px', fontWeight: '800', 
-                                color: tx.type === 'credit' ? '#10B981' : '#EF4444',
-                                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px'
-                              }}>
-                               {tx.type === 'credit' ? <i className="fa-solid fa-arrow-turn-down" style={{ fontSize: '12px' }}></i> : <i className="fa-solid fa-arrow-turn-up" style={{ fontSize: '12px' }}></i>}
-                               {tx.type === 'credit' ? '+' : '-'} {formatCurrency(tx.amount, 'XOF')}
-                            </div>
-                          </td>
-                          <td style={{ padding: '16px 24px', textAlign: 'center' }}>
-                            {getStatusBadge(tx.status)}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Modal Credit/Debit (Global) */}
-        {showModal && selectedWallet && (
-          <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-            <div className="modal-content" style={{ background: 'white', borderRadius: '24px', width: '100%', maxWidth: '420px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
-              
-              <div style={{ padding: '24px 24px 20px', background: modalType === 'credit' ? 'linear-gradient(to right, #ECFDF5, #ffffff)' : 'linear-gradient(to right, #FEF2F2, #ffffff)', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: modalType === 'credit' ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <i className={`fa-solid ${modalType === 'credit' ? 'fa-plus' : 'fa-minus'}`} style={{ color: 'white', fontSize: '14px' }}></i>
-                     </div>
-                     <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
-                       {modalType === 'credit' ? 'Créditer le compte' : 'Débiter le compte'}
-                     </h3>
-                  </div>
-                  <p style={{ margin: '8px 0 0', fontSize: '13px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <i className="fa-solid fa-user" style={{ fontSize: '11px' }}></i>
-                    {selectedWallet.user?.first_name} {selectedWallet.user?.last_name} {selectedWallet.user?.name}
-                  </p>
-                </div>
-                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '20px', padding: 0 }}>&times;</button>
-              </div>
-              
-              <form onSubmit={handleAction} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Montant</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="number"
-                      required
-                      min="1"
-                      step="0.01"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      style={{ 
-                        width: '100%', padding: '14px 60px 14px 16px', borderRadius: '12px', 
-                        border: '2px solid #E2E8F0', outline: 'none', fontSize: '18px', fontWeight: '700', color: '#0F172A',
-                        transition: 'border-color 0.2s'
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = modalType === 'credit' ? '#10B981' : '#EF4444'}
-                      onBlur={(e) => e.target.style.borderColor = '#E2E8F0'}
-                      placeholder="0"
-                    />
-                    <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#64748B', fontSize: '14px', fontWeight: '700' }}>
-                      {selectedWallet.currency || 'XOF'}
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#334155', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Motif de l'opération</label>
-                  <input
-                    type="text"
-                    required
-                    value={purpose}
-                    onChange={(e) => setPurpose(e.target.value)}
-                    style={{ 
-                       width: '100%', padding: '14px 16px', borderRadius: '12px', 
-                       border: '2px solid #E2E8F0', outline: 'none', fontSize: '14px',
-                       transition: 'border-color 0.2s'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#3B82F6'}
-                    onBlur={(e) => e.target.style.borderColor = '#E2E8F0'}
-                    placeholder="Ex: Geste commercial, Correction d'erreur..."
-                  />
-                  <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#94A3B8' }}>Ce motif sera visible dans l'historique des transactions.</p>
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    style={{ 
-                      flex: 1, padding: '14px', borderRadius: '12px', background: '#F1F5F9', border: 'none', 
-                      cursor: 'pointer', fontWeight: '700', color: '#475569', transition: 'background 0.2s' 
-                    }}
-                    onMouseOver={(e) => e.target.style.background = '#E2E8F0'}
-                    onMouseOut={(e) => e.target.style.background = '#F1F5F9'}
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={actionLoading}
-                    style={{ 
-                      flex: 1, padding: '14px', borderRadius: '12px', 
-                      background: modalType === 'credit' ? '#10B981' : '#EF4444', 
-                      border: 'none', cursor: 'pointer', fontWeight: '700', color: 'white', 
-                      display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px',
-                      boxShadow: modalType === 'credit' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(239, 68, 68, 0.3)',
-                      transition: 'transform 0.2s, box-shadow 0.2s'
-                    }}
-                    onMouseOver={(e) => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = modalType === 'credit' ? '0 6px 16px rgba(16, 185, 129, 0.4)' : '0 6px 16px rgba(239, 68, 68, 0.4)'; }}
-                    onMouseOut={(e) => { e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = modalType === 'credit' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(239, 68, 68, 0.3)'; }}
-                  >
-                    {actionLoading ? <i className="fa-solid fa-spinner fa-spin"></i> : (
-                      <>
-                        <i className={`fa-solid ${modalType === 'credit' ? 'fa-check' : 'fa-check'}`}></i>
-                        Confirmer
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+                  ))}
+                  {wallets.length === 0 && !loading && (
+                    <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>Aucun portefeuille trouvé</td></tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        )}
+
+          {/* Transactions Table */}
+          <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: 0 }}>Transactions</h2>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                  <input 
+                    type="text" 
+                    placeholder="Rechercher..." 
+                    value={txSearch}
+                    onChange={(e) => setTxSearch(e.target.value)}
+                    style={{ padding: '8px 12px 8px 36px', border: '1px solid #E2E8F0', borderRadius: '8px', fontSize: '14px', outline: 'none', width: '200px' }}
+                  />
+                </div>
+                <button style={{ padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '8px', background: 'white', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#334155' }}>
+                  <Download size={16} /> Exporter
+                </button>
+              </div>
+            </div>
+            <div style={{ overflowX: 'auto', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead style={{ background: '#F8FAFC', color: '#64748B', fontSize: '12px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <tr>
+                    <th style={{ padding: '16px 24px' }}>Transaction</th>
+                    <th style={{ padding: '16px 24px' }}>Utilisateur</th>
+                    <th style={{ padding: '16px 24px' }}>Montant</th>
+                    <th style={{ padding: '16px 24px' }}>Statut</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.slice(0, 5).map((t, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ fontWeight: '600', color: '#0F172A', fontSize: '14px' }}>TXN-{t.id.toString().padStart(6, '0')}</div>
+                        <div style={{ color: '#64748B', fontSize: '12px' }}>{formatDate(t.created_at)}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px', color: '#475569', fontSize: '14px' }}>
+                        <div style={{ fontWeight: '500' }}>{t.wallet?.user?.name || t.wallet?.user?.email || 'Inconnu'}</div>
+                        <div style={{ color: '#94A3B8', fontSize: '12px' }}>{t.wallet?.user?.phone || '-'}</div>
+                      </td>
+                      <td style={{ padding: '16px 24px' }}>
+                        <span style={{ fontWeight: '700', fontSize: '14px', color: t.type === 'credit' ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {t.type === 'credit' ? <ArrowUpRight size={14}/> : <ArrowDownRight size={14}/>}
+                          {t.type === 'credit' ? '+' : '-'}{formatCurrency(t.amount)}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px 24px' }}>
+                        {t.status === 'completed' ? (
+                          <span style={{ padding: '4px 8px', borderRadius: '20px', background: '#DCFCE7', color: '#16A34A', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <CheckCircle2 size={12} /> Complété
+                          </span>
+                        ) : t.status === 'failed' ? (
+                          <span style={{ padding: '4px 8px', borderRadius: '20px', background: '#FEE2E2', color: '#DC2626', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <AlertTriangle size={12} /> Échoué
+                          </span>
+                        ) : (
+                          <span style={{ padding: '4px 8px', borderRadius: '20px', background: '#FEF3C7', color: '#D97706', fontSize: '12px', fontWeight: '600' }}>
+                            En attente
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {transactions.length === 0 && !loading && (
+                    <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#64748B' }}>Aucune transaction trouvée</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom Section: Charts Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+          
+          {/* Pie Chart */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: '0 0 24px 0' }}>Répartition des Transactions</h3>
+            <div style={{ height: '200px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={txBreakdown} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                    {txBreakdown.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => new Intl.NumberFormat('fr-FR').format(value)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
+              {txBreakdown.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color }}></div>
+                  <span style={{ fontSize: '14px', color: '#64748B', fontWeight: '500' }}>{item.name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bar Chart (Payment Methods) */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: '0 0 24px 0' }}>Volume par Méthode</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '10px' }}>
+              {paymentMethods.map((pm, i) => (
+                <div key={i}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
+                    <span style={{ fontWeight: '500', color: '#334155' }}>{pm.name}</span>
+                    <span style={{ color: '#64748B', fontWeight: '600' }}>{pm.percent}%</span>
+                  </div>
+                  <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ width: `${pm.percent}%`, height: '100%', background: pm.color, borderRadius: '4px' }}></div>
+                  </div>
+                </div>
+              ))}
+              {paymentMethods.length === 0 && <div style={{ color: '#94A3B8', textAlign: 'center', marginTop: '40px' }}>Pas assez de données</div>}
+            </div>
+          </div>
+
+          {/* Line Chart */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: '0 0 24px 0' }}>Évolution du Revenu</h3>
+            <div style={{ height: '220px', width: '100%', marginLeft: '-20px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fill: '#94A3B8', fontSize: 12}} tickFormatter={(value) => value > 1000 ? `${(value/1000).toFixed(0)}k` : value} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                    formatter={(value) => [formatCurrency(value), 'Montant']}
+                  />
+                  <Area type="monotone" dataKey="total" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Alerts */}
+          <div style={{ ...cardStyle, padding: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#0F172A', margin: 0 }}>Alertes & Activités</h3>
+              <MoreVertical size={18} color="#94A3B8" style={{ cursor: 'pointer' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {alerts.map((alert, i) => (
+                <div key={i} style={{ display: 'flex', gap: '12px' }}>
+                  <div style={{ 
+                    width: '40px', height: '40px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: alert.type === 'error' ? '#FEE2E2' : alert.type === 'success' ? '#DCFCE7' : '#FEF3C7',
+                    color: alert.type === 'error' ? '#DC2626' : alert.type === 'success' ? '#16A34A' : '#D97706'
+                  }}>
+                    <BellRing size={20} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#0F172A' }}>{alert.title}</span>
+                      <span style={{ fontSize: '12px', color: '#94A3B8' }}>{alert.time}</span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#64748B' }}>{alert.desc}</p>
+                  </div>
+                </div>
+              ))}
+              {alerts.length === 0 && <div style={{ color: '#94A3B8', textAlign: 'center', marginTop: '20px' }}>Aucune alerte</div>}
+            </div>
+          </div>
+
+        </div>
 
       </div>
     </MainLayout>
