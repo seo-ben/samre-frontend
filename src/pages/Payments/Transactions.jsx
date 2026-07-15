@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import apiClient from '../../lib/apiClient';
-import { ReceiptText, Loader2, AlertCircle, Search, Filter } from 'lucide-react';
 
 export const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
@@ -28,9 +27,8 @@ export const TransactionsPage = () => {
         type: typeFilter,
         status: statusFilter
       };
-      const response = await apiClient.get('/admin/transactions', { params });
+      const response = await apiClient.get('/v1/admin/transactions', { params });
       if (response.data.status === 'success' || response.data.data) {
-        // Handle both standardized formats and raw paginate objects
         setTransactions(response.data.data.data || response.data.data);
       }
     } catch (err) {
@@ -44,131 +42,150 @@ export const TransactionsPage = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'completed':
-        return <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Complété</span>;
+      case 'success':
+        return <span style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', borderRadius: '20px', background: '#DCFCE7', color: '#166534' }}>Complété</span>;
       case 'pending':
-        return <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">En attente</span>;
+        return <span style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', borderRadius: '20px', background: '#FEF9C3', color: '#854D0E' }}>En attente</span>;
       case 'failed':
-        return <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Échoué</span>;
+      case 'cancelled':
+        return <span style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', borderRadius: '20px', background: '#FEE2E2', color: '#991B1B' }}>Échoué</span>;
       default:
-        return <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">{status}</span>;
+        return <span style={{ padding: '4px 10px', fontSize: '12px', fontWeight: '600', borderRadius: '20px', background: 'var(--gray-light)', color: 'var(--gray-medium)' }}>{status}</span>;
     }
   };
 
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <ReceiptText className="h-6 w-6" />
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '48px', height: '48px', borderRadius: '12px',
+              background: 'rgba(26, 111, 212, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <i className="fa-solid fa-receipt" style={{ fontSize: '20px', color: 'var(--primary-blue)' }}></i>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Historique des Transactions</h1>
-              <p className="text-gray-500 mt-1">Consultez tous les mouvements financiers</p>
+              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: 'var(--black-deep)', fontFamily: 'var(--font-poppins)' }}>
+                Historique des Transactions
+              </h1>
+              <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--gray-medium)' }}>
+                Consultez tous les mouvements financiers
+              </p>
             </div>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-4">
-          <div className="relative flex-1 min-w-[200px]">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-4 w-4 text-gray-400" />
-            </div>
+        <div style={{ background: '#ffffff', borderRadius: 'var(--radius-md)', padding: '16px', display: 'flex', gap: '16px', flexWrap: 'wrap', border: '1px solid var(--gray-border)' }}>
+          
+          {/* Search */}
+          <div style={{ position: 'relative', flex: '1 1 300px' }}>
+            <i className="fa-solid fa-search" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-medium)' }}></i>
             <input
               type="text"
               placeholder="Rechercher utilisateur (email, nom)..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-blue-500 focus:border-blue-500"
+              style={{
+                width: '100%', padding: '10px 16px 10px 42px', borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--gray-border)', outline: 'none', fontSize: '14px',
+              }}
             />
           </div>
-          <div className="w-full sm:w-auto flex gap-4">
-            <div className="relative">
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2 appearance-none focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="">Tous les types</option>
-                <option value="credit">Crédit (+)</option>
-                <option value="debit">Débit (-)</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <Filter className="h-4 w-4" />
-              </div>
-            </div>
-            <div className="relative">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2 appearance-none focus:ring-blue-500 focus:border-blue-500 bg-white"
-              >
-                <option value="">Tous les statuts</option>
-                <option value="completed">Complété</option>
-                <option value="pending">En attente</option>
-                <option value="failed">Échoué</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <Filter className="h-4 w-4" />
-              </div>
-            </div>
+
+          {/* Type Filter */}
+          <div style={{ position: 'relative', width: '200px' }}>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              style={{
+                width: '100%', padding: '10px 16px', borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--gray-border)', outline: 'none', fontSize: '14px',
+                appearance: 'none', background: 'white'
+              }}
+            >
+              <option value="">Tous les types</option>
+              <option value="credit">Crédit (+)</option>
+              <option value="debit">Débit (-)</option>
+            </select>
+            <i className="fa-solid fa-chevron-down" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-medium)', pointerEvents: 'none', fontSize: '12px' }}></i>
+          </div>
+
+          {/* Status Filter */}
+          <div style={{ position: 'relative', width: '200px' }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={{
+                width: '100%', padding: '10px 16px', borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--gray-border)', outline: 'none', fontSize: '14px',
+                appearance: 'none', background: 'white'
+              }}
+            >
+              <option value="">Tous les statuts</option>
+              <option value="completed">Complété</option>
+              <option value="pending">En attente</option>
+              <option value="failed">Échoué</option>
+            </select>
+            <i className="fa-solid fa-chevron-down" style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-medium)', pointerEvents: 'none', fontSize: '12px' }}></i>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
-            <p className="text-red-700">{error}</p>
+          <div style={{ background: '#FEF2F2', borderLeft: '4px solid #EF4444', padding: '16px', borderRadius: '0 var(--radius-md) var(--radius-md) 0', color: '#B91C1C', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <i className="fa-solid fa-triangle-exclamation" style={{ marginTop: '2px' }}></i>
+            <p style={{ margin: 0 }}>{error}</p>
           </div>
         )}
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Utilisateur</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Motif</th>
-                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Montant</th>
-                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Statut</th>
+        {/* Table Container */}
+        <div style={{ background: '#ffffff', borderRadius: 'var(--radius-md)', border: '1px solid var(--gray-border)', overflow: 'hidden' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ background: 'var(--gray-light)', borderBottom: '1px solid var(--gray-border)' }}>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Utilisateur</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Motif</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'right' }}>Montant</th>
+                  <th style={{ padding: '16px 24px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Statut</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
-                      <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600 mb-2" />
-                      Chargement...
+                    <td colSpan="5" style={{ padding: '48px', textAlign: 'center', color: 'var(--gray-medium)' }}>
+                      <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '24px', marginBottom: '8px', color: 'var(--primary-blue)' }}></i>
+                      <p>Chargement...</p>
                     </td>
                   </tr>
                 ) : transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-gray-500">Aucune transaction trouvée</td>
+                    <td colSpan="5" style={{ padding: '48px', textAlign: 'center', color: 'var(--gray-medium)' }}>Aucune transaction trouvée</td>
                   </tr>
                 ) : (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <tr key={tx.id} style={{ borderBottom: '1px solid var(--gray-border)' }}>
+                      <td style={{ padding: '16px 24px', fontSize: '13px', color: 'var(--gray-medium)' }}>
                         {tx.created_at ? new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(tx.created_at)) : '-'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--black-deep)' }}>
                           {tx.wallet?.user?.first_name} {tx.wallet?.user?.last_name} {tx.wallet?.user?.name}
                         </div>
-                        <div className="text-xs text-gray-500">{tx.wallet?.user?.email || tx.wallet?.user?.phone}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--gray-medium)' }}>{tx.wallet?.user?.email || tx.wallet?.user?.phone}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{tx.purpose || '-'}</div>
-                        {tx.description && <div className="text-xs text-gray-500 truncate max-w-[200px]">{tx.description}</div>}
+                      <td style={{ padding: '16px 24px' }}>
+                        <div style={{ fontSize: '14px', color: 'var(--black-deep)' }}>{tx.purpose || '-'}</div>
+                        {tx.description && <div style={{ fontSize: '12px', color: 'var(--gray-medium)', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tx.description}</div>}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right font-medium">
-                        <span className={tx.type === 'credit' ? 'text-green-600' : 'text-red-600'}>
-                          {tx.type === 'credit' ? '+' : '-'} {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(tx.amount)}
-                        </span>
+                      <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '600', color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)' }}>
+                        {tx.type === 'credit' ? '+' : '-'} {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(tx.amount)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td style={{ padding: '16px 24px', textAlign: 'center' }}>
                         {getStatusBadge(tx.status)}
                       </td>
                     </tr>
