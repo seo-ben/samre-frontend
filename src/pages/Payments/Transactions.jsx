@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '../../components/layout/MainLayout';
 import apiClient from '../../lib/apiClient';
 import { ReceiptText, Loader2, AlertCircle, Search, Filter } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 
 export const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
@@ -153,7 +151,7 @@ export const TransactionsPage = () => {
                   transactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {tx.created_at ? format(new Date(tx.created_at), 'dd MMM yyyy, HH:mm', { locale: fr }) : '-'}
+                        {tx.created_at ? new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(tx.created_at)) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
