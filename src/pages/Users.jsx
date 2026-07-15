@@ -1267,7 +1267,7 @@ export const UsersPage = () => {
                     marginBottom: '-2px', transition: '0.2s'
                   }}
                 >
-                  Portefeuille & Transactions
+                  Portefeuille
                 </button>
               </div>
 
