@@ -36,13 +36,24 @@ export const FinanceDashboard = () => {
     setLoading(true);
     try {
       const [statsRes, walletsRes, txRes] = await Promise.all([
-        apiClient.get('/v1/admin/dashboard/finance'),
-        apiClient.get('/v1/admin/wallets', { params: { search: walletSearch, page: walletPage } }),
-        apiClient.get('/v1/admin/transactions', { params: { search: txSearch, page: txPage } })
+        apiClient.get('/v1/admin/dashboard/finance').catch(() => null),
+        apiClient.get('/v1/admin/wallets', { params: { search: walletSearch, page: walletPage } }).catch(() => null),
+        apiClient.get('/v1/admin/transactions', { params: { search: txSearch, page: txPage } }).catch(() => null)
       ]);
-      if (statsRes.data.status === 'success') setStats(statsRes.data.data);
-      if (walletsRes.data.status === 'success') setWallets(walletsRes.data.data.data || walletsRes.data.data);
-      if (txRes.data.status === 'success') setTransactions(txRes.data.data.data || txRes.data.data);
+      
+      if (statsRes?.data?.status === 'success') {
+          setStats(statsRes.data.data || {});
+      }
+      
+      if (walletsRes?.data?.status === 'success') {
+          const wData = walletsRes.data.data?.data || walletsRes.data.data;
+          setWallets(Array.isArray(wData) ? wData : []);
+      }
+      
+      if (txRes?.data?.status === 'success') {
+          const tData = txRes.data.data?.data || txRes.data.data;
+          setTransactions(Array.isArray(tData) ? tData : []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -68,16 +79,18 @@ export const FinanceDashboard = () => {
   
   // 1. Transaction Breakdown (Donut)
   const txBreakdown = useMemo(() => {
+    if (!Array.isArray(transactions)) return [{ name: 'Aucun', value: 1, color: '#E2E8F0' }];
     const credits = transactions.filter(t => t.type === 'credit').length;
     const debits = transactions.filter(t => t.type === 'debit').length;
     return [
-      { name: 'Crédits', value: credits || 1, color: '#3B82F6' }, // fallback 1 to show chart
+      { name: 'Crédits', value: credits || 1, color: '#3B82F6' },
       { name: 'Débits', value: debits || 1, color: '#EF4444' }
     ];
   }, [transactions]);
 
   // 2. Payment Methods
   const paymentMethods = useMemo(() => {
+    if (!Array.isArray(transactions)) return [];
     const counts = {};
     transactions.forEach(t => {
       const provider = t.payment_provider || 'Inconnu';
@@ -97,21 +110,21 @@ export const FinanceDashboard = () => {
 
   // 3. Revenue Evolution (Mocked from recent tx for visual)
   const revenueData = useMemo(() => {
-    if (transactions.length === 0) return Array.from({length: 7}, (_, i) => ({ name: `J-${6-i}`, total: 0 }));
-    // Just mapping transactions to a dummy line chart for visual effect
+    if (!Array.isArray(transactions) || transactions.length === 0) return Array.from({length: 7}, (_, i) => ({ name: `J-${6-i}`, total: 0 }));
     const recent = [...transactions].reverse().slice(0, 10);
     return recent.map((t, i) => ({
       name: `TX-${i}`,
-      total: parseFloat(t.amount)
+      total: parseFloat(t.amount || 0)
     }));
   }, [transactions]);
 
   // 4. Alerts
   const alerts = useMemo(() => {
+    if (!Array.isArray(transactions)) return [];
     return transactions.slice(0, 4).map(t => ({
       id: t.id,
       title: t.status === 'failed' ? 'Transaction échouée' : t.type === 'credit' ? 'Crédit important' : 'Nouveau retrait',
-      desc: `${t.type === 'credit' ? '+' : '-'}${formatCurrency(t.amount)} par ${t.wallet?.user?.name || 'Inconnu'}`,
+      desc: `${t.type === 'credit' ? '+' : '-'}${formatCurrency(t.amount || 0)} par ${t.wallet?.user?.name || 'Inconnu'}`,
       type: t.status === 'failed' ? 'error' : t.type === 'credit' ? 'success' : 'warning',
       time: 'Récemment'
     }));
@@ -120,7 +133,7 @@ export const FinanceDashboard = () => {
 
   // --- Formatting Helpers ---
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(val);
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(Number(val) || 0);
   };
   
   const formatDate = (dateString) => {
@@ -177,7 +190,7 @@ export const FinanceDashboard = () => {
               <span style={{ fontSize: '14px', fontWeight: '500', opacity: 0.9 }}>Revenu Total</span>
             </div>
             <div style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
-              {formatCurrency(stats.total_revenue).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
+              {formatCurrency(stats?.total_revenue || 0).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
             </div>
             <div style={{ fontSize: '12px', color: '#D1D5DB', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ArrowUpRight size={14} color="#34D399" /> <span style={{ color: '#34D399', fontWeight: '600' }}>+12.5%</span> vs mois précédent
@@ -194,7 +207,7 @@ export const FinanceDashboard = () => {
               <span style={{ fontSize: '14px', fontWeight: '500', opacity: 0.9 }}>Crédit Distribué</span>
             </div>
             <div style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
-              {formatCurrency(stats.total_credit_distributed).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
+              {formatCurrency(stats?.total_credit_distributed || 0).replace('FCFA', '')} <span style={{ fontSize: '16px', fontWeight: '600', opacity: 0.8 }}>FCFA</span>
             </div>
             <div style={{ fontSize: '12px', color: '#D1D5DB', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ArrowUpRight size={14} color="#A7F3D0" /> <span style={{ color: '#A7F3D0', fontWeight: '600' }}>+18.7%</span> vs mois précédent
@@ -209,16 +222,16 @@ export const FinanceDashboard = () => {
                 <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Taux de Conversion</span>
               </div>
               <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
-                {stats.conversion_rate}%
+                {stats?.conversion_rate || 0}%
               </div>
               <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+5.3%</span> vs hier
               </div>
             </div>
             {/* Circular Progress */}
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `conic-gradient(#3B82F6 ${stats.conversion_rate}%, #E2E8F0 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `conic-gradient(#3B82F6 ${stats?.conversion_rate || 0}%, #E2E8F0 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '700', color: '#0F172A' }}>
-                {stats.conversion_rate}%
+                {stats?.conversion_rate || 0}%
               </div>
             </div>
           </div>
@@ -230,7 +243,7 @@ export const FinanceDashboard = () => {
               <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Portefeuilles Actifs</span>
             </div>
             <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
-              {new Intl.NumberFormat('fr-FR').format(stats.users_with_wallet)}
+              {new Intl.NumberFormat('fr-FR').format(stats?.users_with_wallet || 0)}
             </div>
             <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+9.1%</span> vs mois précédent
@@ -244,7 +257,7 @@ export const FinanceDashboard = () => {
               <span style={{ fontSize: '14px', fontWeight: '600', color: '#64748B' }}>Utilisateurs Totaux</span>
             </div>
             <div style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>
-              {new Intl.NumberFormat('fr-FR').format(stats.total_users)}
+              {new Intl.NumberFormat('fr-FR').format(stats?.total_users || 0)}
             </div>
             <div style={{ fontSize: '12px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ArrowUpRight size={14} color="#10B981" /> <span style={{ color: '#10B981', fontWeight: '600' }}>+11.4%</span> vs mois précédent
@@ -301,7 +314,7 @@ export const FinanceDashboard = () => {
                         </div>
                       </td>
                       <td style={{ padding: '16px 24px', color: '#475569', fontSize: '14px' }}>{w.user?.phone || '-'}</td>
-                      <td style={{ padding: '16px 24px', fontWeight: '700', color: '#10B981', fontSize: '14px' }}>{formatCurrency(w.balance)}</td>
+                      <td style={{ padding: '16px 24px', fontWeight: '700', color: '#10B981', fontSize: '14px' }}>{formatCurrency(w.balance || 0)}</td>
                       <td style={{ padding: '16px 24px' }}>
                         <span style={{ padding: '4px 8px', borderRadius: '20px', background: '#DCFCE7', color: '#16A34A', fontSize: '12px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#16A34A' }}></div> Actif
@@ -351,8 +364,8 @@ export const FinanceDashboard = () => {
                   {transactions.slice(0, 5).map((t, i) => (
                     <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
                       <td style={{ padding: '16px 24px' }}>
-                        <div style={{ fontWeight: '600', color: '#0F172A', fontSize: '14px' }}>TXN-{t.id.toString().padStart(6, '0')}</div>
-                        <div style={{ color: '#64748B', fontSize: '12px' }}>{formatDate(t.created_at)}</div>
+                        <div style={{ fontWeight: '600', color: '#0F172A', fontSize: '14px' }}>TXN-{(t?.id || 0).toString().padStart(6, '0')}</div>
+                        <div style={{ color: '#64748B', fontSize: '12px' }}>{formatDate(t.created_at || new Date())}</div>
                       </td>
                       <td style={{ padding: '16px 24px', color: '#475569', fontSize: '14px' }}>
                         <div style={{ fontWeight: '500' }}>{t.wallet?.user?.name || t.wallet?.user?.email || 'Inconnu'}</div>
