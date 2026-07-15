@@ -80,15 +80,10 @@ const NAV = [
     ],
   },
   {
-    id: 'payments',
-    label: 'Paiements & Wallets',
-    icon: CreditCard,
-    children: [
-      { label: 'Transactions',    path: '/payments/transactions', icon: ReceiptText },
-      { label: 'Wallets',         path: '/payments/wallets',      icon: Wallet },
-      { label: 'Revenus',         path: '/payments/revenue',      icon: TrendingUp },
-      { label: 'Taux conversion', path: '/payments/conversion',   icon: Percent },
-    ],
+    id: 'finances',
+    label: 'Finances & Wallets',
+    path: '/finances',
+    icon: Wallet,
   },
   {
     id: 'subscriptions',

@@ -22,8 +22,7 @@ import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
 import { SystemSettings } from './pages/SystemSettings'
 import { SuggestedLocationsPage } from './pages/SuggestedLocations'
-import { WalletsPage } from './pages/Payments/Wallets'
-import { TransactionsPage } from './pages/Payments/Transactions'
+import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
@@ -65,11 +64,8 @@ function App() {
       <Route path="/badges/candidates" element={<Protected><VerifiedProfiles userType="candidate" /></Protected>} />
       <Route path="/badges/companies"  element={<Protected><VerifiedProfiles userType="company" /></Protected>} />
 
-      {/* ── Paiements ─────────────────────────── */}
-      <Route path="/payments/transactions" element={<Protected><TransactionsPage /></Protected>} />
-      <Route path="/payments/wallets"      element={<Protected><WalletsPage /></Protected>} />
-      <Route path="/payments/revenue"      element={<Protected><ComingSoon title="Revenus" /></Protected>} />
-      <Route path="/payments/conversion"   element={<Protected><ComingSoon title="Taux de conversion" /></Protected>} />
+      {/* ── Paiements & Finances ─────────────────────────── */}
+      <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />
 
       {/* ── Abonnements ───────────────────────── */}
       <Route path="/subscriptions/plans"   element={<Protected><SubscriptionPlansPage /></Protected>} />
