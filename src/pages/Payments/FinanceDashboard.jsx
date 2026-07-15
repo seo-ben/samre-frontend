@@ -79,11 +79,25 @@ export const FinanceDashboard = () => {
 
   // --- Formatting Helpers ---
   const formatCurrencyNumberOnly = (val) => {
-    return new Intl.NumberFormat('fr-FR').format(Number(val) || 0);
+    const num = Number(val) || 0;
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'M';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'k';
+    }
+    return new Intl.NumberFormat('fr-FR').format(num);
   };
   
   const formatCurrency = (val) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(Number(val) || 0);
+    const num = Number(val) || 0;
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'M FCFA';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'k FCFA';
+    }
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(num);
   };
   
   const formatDate = (dateString) => {

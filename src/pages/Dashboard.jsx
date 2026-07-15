@@ -11,10 +11,10 @@ const formatNumber = (num) => {
   if (isNaN(val)) return num;
 
   if (val >= 1000000) {
-    return (val / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    return (val / 1000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'M';
   }
   if (val >= 1000) {
-    return (val / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return (val / 1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'k';
   }
   return val.toLocaleString('fr-FR');
 };

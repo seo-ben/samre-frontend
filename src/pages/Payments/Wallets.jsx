@@ -71,7 +71,14 @@ export const WalletsPage = () => {
   };
 
   const formatCurrency = (val, currency) => {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency || 'XOF' }).format(val);
+    const num = Number(val) || 0;
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'M ' + (currency || 'XOF');
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'k ' + (currency || 'XOF');
+    }
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency || 'XOF', maximumFractionDigits: 0 }).format(num);
   };
 
   return (
