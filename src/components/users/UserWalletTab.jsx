@@ -14,14 +14,24 @@ export const UserWalletTab = ({ user, refreshUser }) => {
   const [purpose, setPurpose] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   
-  // Details Modal
   const [selectedTx, setSelectedTx] = useState(null);
+
+  const formatCurrency = (val) => {
+    const num = Number(val) || 0;
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'M FCFA';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '').replace('.', ',') + 'k FCFA';
+    }
+    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF', maximumFractionDigits: 0 }).format(num).replace('XOF', 'FCFA');
+  };
 
   const fetchTransactions = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await apiClient.get(`/admin/transactions?user_id=${user.id}`);
+      const res = await apiClient.get(`/v1/admin/transactions?user_id=${user.id}`);
       if (res.data.status === 'success') {
         setTransactions(res.data.data.data); // data.data because it's paginated
       } else {
@@ -53,7 +63,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
 
     try {
       setActionLoading(true);
-      const res = await apiClient.post(`/admin/wallets/${user.wallet.id}/${actionType}`, {
+      const res = await apiClient.post(`/v1/admin/wallets/${user.wallet.id}/${actionType}`, {
         amount: parseFloat(amount),
         purpose: purpose.trim()
       });
@@ -104,7 +114,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
           <div>
             <div style={{ fontSize: '13px', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Solde actuel</div>
             <div style={{ fontSize: '24px', fontWeight: '700' }}>
-              {user.wallet ? (user.wallet.balance || 0).toLocaleString('fr-FR') : '0'} XOF
+              {user.wallet ? formatCurrency(user.wallet.balance) : '0 FCFA'}
             </div>
           </div>
         </div>
@@ -183,7 +193,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                         : (tx.purpose || 'Transaction')}
                     </td>
                     <td style={{ padding: '12px 16px', fontWeight: '700', color: tx.type === 'credit' ? '#16a34a' : '#dc2626' }}>
-                      {tx.type === 'credit' ? '+' : '-'}{parseFloat(tx.amount).toLocaleString('fr-FR')} XOF
+                      {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {getStatusBadge(tx.status)}
@@ -323,7 +333,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                 <div>
                   <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Montant</span>
                   <div style={{ fontSize: '18px', fontWeight: '700', color: selectedTx.type === 'credit' ? '#16a34a' : '#dc2626' }}>
-                    {selectedTx.type === 'credit' ? '+' : '-'}{parseFloat(selectedTx.amount).toLocaleString('fr-FR')} XOF
+                    {selectedTx.type === 'credit' ? '+' : '-'}{formatCurrency(selectedTx.amount)}
                   </div>
                 </div>
                 <div>
@@ -339,11 +349,11 @@ export const UserWalletTab = ({ user, refreshUser }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
                   <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Solde avant</span>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)' }}>{parseFloat(selectedTx.balance_before || 0).toLocaleString('fr-FR')} XOF</div>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)' }}>{formatCurrency(selectedTx.balance_before)}</div>
                 </div>
                 <div>
                   <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Solde après</span>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)' }}>{parseFloat(selectedTx.balance_after || 0).toLocaleString('fr-FR')} XOF</div>
+                  <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)' }}>{formatCurrency(selectedTx.balance_after)}</div>
                 </div>
               </div>
 
