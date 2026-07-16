@@ -34,13 +34,19 @@ export const UserWalletTab = ({ user, refreshUser }) => {
       setError(null);
       const res = await apiClient.get(`/v1/admin/transactions?user_id=${user.id}`);
       if (res.data.status === 'success') {
-        const txs = res.data.data.data;
-        setTransactions(txs);
-        if (txs.length > 0 && txs[0].wallet) {
-          setWalletBalance(txs[0].wallet.balance);
-        }
+        setTransactions(res.data.data.data);
       } else {
         setError("Erreur lors du chargement des transactions");
+      }
+      
+      // Fetch latest wallet balance directly from the user details
+      try {
+        const userRes = await apiClient.get(`/v1/admin/users/${user.id}`);
+        if (userRes.data.status === 'success' && userRes.data.data.wallet) {
+          setWalletBalance(userRes.data.data.wallet.balance);
+        }
+      } catch (e) {
+        console.error("Impossible de récupérer le solde à jour", e);
       }
     } catch (err) {
       console.error(err);
@@ -168,18 +174,19 @@ export const UserWalletTab = ({ user, refreshUser }) => {
           </div>
         ) : (
           <div style={{ background: '#fff', border: '1px solid var(--gray-border)', borderRadius: '12px', overflow: 'hidden' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: 'var(--gray-light)', borderBottom: '1px solid var(--gray-border)' }}>
-                  <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Date</th>
-                  <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Type</th>
-                  <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Motif</th>
-                  <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Montant</th>
-                  <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Statut</th>
-                  <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}></th>
-                </tr>
-              </thead>
-              <tbody>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: 'var(--gray-light)', borderBottom: '1px solid var(--gray-border)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Date</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Type</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Motif</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Montant</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}>Statut</th>
+                    <th style={{ padding: '12px 16px', fontWeight: '600', color: 'var(--gray-medium)' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
                 {transactions.map(tx => (
                   <tr key={tx.id} style={{ borderBottom: '1px solid var(--gray-border)' }}>
                     <td style={{ padding: '12px 16px', color: 'var(--black-deep)' }}>
@@ -196,9 +203,13 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', color: 'var(--gray-medium)' }}>
-                      {tx.purpose === 'manual_credit' || tx.purpose === 'manual_debit' 
-                        ? 'Opération Manuelle' 
-                        : (tx.purpose || 'Transaction')}
+                      {tx.description 
+                        ? tx.description 
+                        : (tx.purpose === 'application_unlock' ? 'Déblocage de candidature' 
+                          : tx.purpose === 'manual_credit' ? 'Crédit manuel'
+                          : tx.purpose === 'manual_debit' ? 'Débit manuel'
+                          : tx.purpose === 'subscription' ? 'Abonnement'
+                          : tx.purpose || 'Transaction')}
                     </td>
                     <td style={{ padding: '12px 16px', fontWeight: '700', color: tx.type === 'credit' ? '#16a34a' : '#dc2626' }}>
                       {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
@@ -221,6 +232,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
