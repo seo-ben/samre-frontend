@@ -7,6 +7,29 @@ import {
   Crown, Rocket, Building, Tag, Eye, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
+const AVAILABLE_FEATURES = [
+  // Candidats
+  { key: 'unlimited_applications', label: 'Candidatures illimitées', type: 'boolean', target: ['candidate', 'both'] },
+  { key: 'extra_applications_per_week', label: 'Candidatures sup. par semaine', type: 'number', target: ['candidate', 'both'] },
+  
+  // Entreprises
+  { key: 'unlimited_job_postings', label: 'Publication d\'offres illimitée', type: 'boolean', target: ['company', 'both'] },
+  { key: 'max_job_postings', label: 'Limite d\'offres publiées', type: 'number', target: ['company', 'both'] },
+  { key: 'cv_search_access', label: 'Recherche avancée de CV', type: 'boolean', target: ['company', 'both'] },
+
+  // Visibilité / Défloutage (Tous)
+  { key: 'see_email', label: 'Voir l\'email', type: 'boolean', target: ['company', 'candidate', 'both'] },
+  { key: 'see_phone', label: 'Voir le téléphone', type: 'boolean', target: ['company', 'candidate', 'both'] },
+  { key: 'see_cv', label: 'Voir le CV', type: 'boolean', target: ['company', 'both'] },
+  { key: 'see_address', label: 'Voir l\'adresse complète', type: 'boolean', target: ['company', 'candidate', 'both'] },
+  { key: 'see_website', label: 'Voir le site web', type: 'boolean', target: ['company', 'candidate', 'both'] },
+  { key: 'see_social_links', label: 'Voir les réseaux sociaux', type: 'boolean', target: ['company', 'candidate', 'both'] },
+
+  // Standard Premium
+  { key: 'profile_badge', label: 'Badge Premium sur le profil', type: 'boolean', target: ['company', 'candidate', 'both'] },
+  { key: 'priority_support', label: 'Support Prioritaire', type: 'boolean', target: ['company', 'candidate', 'both'] },
+];
+
 export const SubscriptionPlansPage = () => {
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -471,14 +494,24 @@ export const SubscriptionPlansPage = () => {
               <h5 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600', color: '#334155' }}>Fonctionnalités incluses ({selectedPlanToView.features?.length || 0})</h5>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {selectedPlanToView.features && selectedPlanToView.features.length > 0 ? (
-                  selectedPlanToView.features.map((feat, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Check size={14} color="#16a34a" />
+                  selectedPlanToView.features.map((feat, idx) => {
+                    const featureDef = AVAILABLE_FEATURES.find(f => f.key === feat.feature_key);
+                    const label = featureDef ? featureDef.label : feat.feature_key;
+                    const valueStr = feat.value === 'unlimited' 
+                      ? 'Illimité' 
+                      : (feat.value === 'true' || feat.value === true ? '' : `: ${feat.value}`);
+
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Check size={14} color="#16a34a" />
+                        </div>
+                        <span style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>
+                          {label} <span style={{ color: '#0052ff', fontWeight: '700' }}>{valueStr}</span>
+                        </span>
                       </div>
-                      <span style={{ fontSize: '14px', color: '#334155', fontWeight: '500' }}>{feat.feature_key}</span>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <p style={{ fontSize: '14px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>Aucune fonctionnalité spécifique n'est définie pour ce plan.</p>
                 )}
@@ -622,30 +655,103 @@ export const SubscriptionPlansPage = () => {
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', marginBottom: '12px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Fonctionnalités incluses</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {formData.features.map((feat, index) => (
-                    <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <input 
-                        type="text"
-                        placeholder="Ex: 5 annonces gratuites"
-                        value={feat.feature_key}
-                        onChange={(e) => {
-                          const newFeatures = [...formData.features];
-                          newFeatures[index].feature_key = e.target.value;
-                          setFormData({...formData, features: newFeatures});
-                        }}
-                        style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
-                      />
-                      <button 
-                        onClick={() => {
-                          const newFeatures = formData.features.filter((_, i) => i !== index);
-                          setFormData({...formData, features: newFeatures});
-                        }}
-                        style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                  {formData.features.map((feat, index) => {
+                    const featureDef = AVAILABLE_FEATURES.find(f => f.key === feat.feature_key);
+                    const isCustom = feat.is_custom || (feat.feature_key !== '' && !featureDef);
+                    const isUnlimited = feat.value === 'unlimited';
+
+                    return (
+                      <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <select
+                          value={isCustom ? '_custom' : feat.feature_key}
+                          onChange={(e) => {
+                            const newFeatures = [...formData.features];
+                            if (e.target.value === '_custom') {
+                              newFeatures[index].is_custom = true;
+                              newFeatures[index].feature_key = '';
+                              newFeatures[index].value = 'true';
+                            } else {
+                              newFeatures[index].is_custom = false;
+                              newFeatures[index].feature_key = e.target.value;
+                              const newDef = AVAILABLE_FEATURES.find(f => f.key === e.target.value);
+                              newFeatures[index].value = newDef && newDef.type === 'boolean' ? 'true' : '';
+                            }
+                            setFormData({...formData, features: newFeatures});
+                          }}
+                          style={{ flex: isCustom ? 'none' : 1, width: isCustom ? '250px' : 'auto', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                        >
+                          <option value="">-- Sélectionner une fonctionnalité --</option>
+                          {AVAILABLE_FEATURES.filter(f => f.target.includes(formData.target_type) || formData.target_type === 'all' || formData.target_type === 'visitor').map(f => (
+                            <option key={f.key} value={f.key}>{f.label}</option>
+                          ))}
+                          <option value="_custom" style={{ fontWeight: 'bold', color: '#0052ff' }}>➕ Fonctionnalité personnalisée</option>
+                        </select>
+
+                        {isCustom && (
+                          <input 
+                            type="text"
+                            placeholder="Entrez votre texte (ex: Cadeau de bienvenue)"
+                            value={feat.feature_key}
+                            onChange={(e) => {
+                              const newFeatures = [...formData.features];
+                              newFeatures[index].feature_key = e.target.value;
+                              newFeatures[index].value = 'true';
+                              setFormData({...formData, features: newFeatures});
+                            }}
+                            style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                          />
+                        )}
+                        
+                        {featureDef && featureDef.type === 'number' && (
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flex: 1 }}>
+                            {!isUnlimited && (
+                              <input 
+                                type="number"
+                                placeholder="Valeur (ex: 4)"
+                                value={feat.value}
+                                onChange={(e) => {
+                                  const newFeatures = [...formData.features];
+                                  newFeatures[index].value = e.target.value;
+                                  setFormData({...formData, features: newFeatures});
+                                }}
+                                style={{ width: '100px', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                              />
+                            )}
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#475569', cursor: 'pointer' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={isUnlimited}
+                                onChange={(e) => {
+                                  const newFeatures = [...formData.features];
+                                  newFeatures[index].value = e.target.checked ? 'unlimited' : '';
+                                  setFormData({...formData, features: newFeatures});
+                                }}
+                                style={{ cursor: 'pointer', width: '16px', height: '16px', accentColor: '#2563eb' }}
+                              />
+                              Illimité
+                            </label>
+                          </div>
+                        )}
+
+                        {(featureDef && featureDef.type === 'boolean') || isCustom ? (
+                          <div style={{ flex: isCustom ? 'none' : 1, display: 'flex', alignItems: 'center', color: '#10b981', fontSize: '13px', fontWeight: '500' }}>
+                            <CheckCircle2 size={16} style={{ marginRight: '4px' }} /> Inclus
+                          </div>
+                        ) : null}
+
+                        <button 
+                          onClick={() => {
+                            const newFeatures = formData.features.filter((_, i) => i !== index);
+                            setFormData({...formData, features: newFeatures});
+                          }}
+                          style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fef2f2', color: '#ef4444', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                          title="Supprimer la fonctionnalité"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
                   <button 
                     onClick={() => setFormData({...formData, features: [...formData.features, { feature_key: '', value: '' }]})}
                     style={{ padding: '8px 12px', alignSelf: 'flex-start', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}
