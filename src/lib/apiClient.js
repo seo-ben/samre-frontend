@@ -25,9 +25,36 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+const formatUrls = (data, baseUrl) => {
+  if (data === null || data === undefined) return data;
+  if (typeof data === 'string') {
+    if (data.startsWith('/storage/')) {
+      return `${baseUrl}${data}`;
+    }
+    return data;
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => formatUrls(item, baseUrl));
+  }
+  if (typeof data === 'object') {
+    const newData = {};
+    for (const key in data) {
+      newData[key] = formatUrls(data[key], baseUrl);
+    }
+    return newData;
+  }
+  return data;
+};
+
 // ─── Intercepteur de réponse : gestion globale des erreurs auth ───────────────
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response.data) {
+      const baseUrl = import.meta.env.VITE_API_URL?.replace(/\/api$/, '') ?? 'http://localhost:8000';
+      response.data = formatUrls(response.data, baseUrl);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       // Token expiré ou invalide → nettoyer et rediriger vers login
