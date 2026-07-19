@@ -670,11 +670,13 @@ export const SubscriptionPlansPage = () => {
                               newFeatures[index].is_custom = true;
                               newFeatures[index].feature_key = '';
                               newFeatures[index].value = 'true';
+                              newFeatures[index].translations = { fr: '', en: '', pt: '' };
                             } else {
                               newFeatures[index].is_custom = false;
                               newFeatures[index].feature_key = e.target.value;
                               const newDef = AVAILABLE_FEATURES.find(f => f.key === e.target.value);
                               newFeatures[index].value = newDef && newDef.type === 'boolean' ? 'true' : '';
+                              delete newFeatures[index].translations;
                             }
                             setFormData({...formData, features: newFeatures});
                           }}
@@ -688,18 +690,47 @@ export const SubscriptionPlansPage = () => {
                         </select>
 
                         {isCustom && (
-                          <input 
-                            type="text"
-                            placeholder="Entrez votre texte (ex: Cadeau de bienvenue)"
-                            value={feat.feature_key}
-                            onChange={(e) => {
-                              const newFeatures = [...formData.features];
-                              newFeatures[index].feature_key = e.target.value;
-                              newFeatures[index].value = 'true';
-                              setFormData({...formData, features: newFeatures});
-                            }}
-                            style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
-                          />
+                          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <input 
+                              type="text"
+                              placeholder="Texte (Français) ex: Cadeau"
+                              value={feat.translations?.fr || feat.feature_key}
+                              onChange={(e) => {
+                                const newFeatures = [...formData.features];
+                                if (!newFeatures[index].translations) newFeatures[index].translations = { fr: '', en: '', pt: '' };
+                                newFeatures[index].translations.fr = e.target.value;
+                                // Auto-generate technical key from FR text if empty or matches
+                                newFeatures[index].feature_key = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/(^_|_$)/g, '');
+                                newFeatures[index].value = 'true';
+                                setFormData({...formData, features: newFeatures});
+                              }}
+                              style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                            />
+                            <input 
+                              type="text"
+                              placeholder="Texte (Anglais) ex: Gift"
+                              value={feat.translations?.en || ''}
+                              onChange={(e) => {
+                                const newFeatures = [...formData.features];
+                                if (!newFeatures[index].translations) newFeatures[index].translations = { fr: '', en: '', pt: '' };
+                                newFeatures[index].translations.en = e.target.value;
+                                setFormData({...formData, features: newFeatures});
+                              }}
+                              style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                            />
+                            <input 
+                              type="text"
+                              placeholder="Texte (Portugais) ex: Presente"
+                              value={feat.translations?.pt || ''}
+                              onChange={(e) => {
+                                const newFeatures = [...formData.features];
+                                if (!newFeatures[index].translations) newFeatures[index].translations = { fr: '', en: '', pt: '' };
+                                newFeatures[index].translations.pt = e.target.value;
+                                setFormData({...formData, features: newFeatures});
+                              }}
+                              style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '14px', outline: 'none' }}
+                            />
+                          </div>
                         )}
                         
                         {featureDef && featureDef.type === 'number' && (
@@ -753,7 +784,7 @@ export const SubscriptionPlansPage = () => {
                     );
                   })}
                   <button 
-                    onClick={() => setFormData({...formData, features: [...formData.features, { feature_key: '', value: '' }]})}
+                    onClick={() => setFormData({...formData, features: [...formData.features, { feature_key: '', value: '', translations: { fr: '', en: '', pt: '' } }]})}
                     style={{ padding: '8px 12px', alignSelf: 'flex-start', background: '#eff6ff', color: '#3b82f6', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}
                   >
                     <Plus size={14} /> Ajouter une fonctionnalité
