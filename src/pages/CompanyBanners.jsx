@@ -181,46 +181,42 @@ export const CompanyBanners = () => {
   const handleAutoTranslate = async () => {
     const sourceLangId = activeLang;
     const langCodes = { 1: 'fr', 2: 'en', 3: 'pt' };
+    const sourceCode = langCodes[sourceLangId];
     
-    const targetLangs = [1, 2, 3].filter(id => id !== sourceLangId);
-    const sourceData = editForm.translations[sourceLangId];
+    const sourceTitle = editForm.translations[sourceLangId]?.title || '';
+    const sourceSubtitle = editForm.translations[sourceLangId]?.subtitle || '';
 
-    if (!sourceData.title && !sourceData.subtitle) {
+    if (!sourceTitle && !sourceSubtitle) {
       showToast("Veuillez remplir au moins un champ dans la langue source pour traduire.", "error");
       return;
     }
 
     setAutoTranslateLoading(true);
+    let newTranslations = { ...editForm.translations };
+    
     try {
-      const textsToTranslate = [];
-      const mapping = []; 
-
-      if (sourceData.title) {
-        textsToTranslate.push(sourceData.title);
-        mapping.push('title');
-      }
-      if (sourceData.subtitle) {
-        textsToTranslate.push(sourceData.subtitle);
-        mapping.push('subtitle');
-      }
-
-      const newTranslations = { ...editForm.translations };
-
-      for (const targetLangId of targetLangs) {
-        const res = await apiClient.post('/v1/admin/translate', {
-          texts: textsToTranslate,
-          source_lang: langCodes[sourceLangId],
-          target_lang: langCodes[targetLangId]
-        });
-
-        const translatedTexts = res.data.translations;
+      for (const langId of [1, 2, 3]) {
+        if (langId === sourceLangId) continue;
+        const targetCode = langCodes[langId];
         
-        mapping.forEach((field, index) => {
-          newTranslations[targetLangId] = {
-            ...newTranslations[targetLangId],
-            [field]: translatedTexts[index]
-          };
-        });
+        let translatedTitle = newTranslations[langId]?.title || '';
+        let translatedSubtitle = newTranslations[langId]?.subtitle || '';
+
+        const translateText = async (text) => {
+          if (!text.trim()) return '';
+          const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceCode}&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
+          const res = await fetch(url);
+          const data = await res.json();
+          return data && data[0] ? data[0].map(item => item[0]).join('') : text;
+        };
+
+        if (sourceTitle) translatedTitle = await translateText(sourceTitle);
+        if (sourceSubtitle) translatedSubtitle = await translateText(sourceSubtitle);
+
+        newTranslations[langId] = {
+          title: translatedTitle,
+          subtitle: translatedSubtitle
+        };
       }
 
       setEditForm(prev => ({
