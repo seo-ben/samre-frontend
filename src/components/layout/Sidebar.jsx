@@ -111,6 +111,8 @@ const NAV = [
     icon: Layers,
     children: [
       { label: 'Pages publicitaires', path: '/cms/ads',        icon: Megaphone },
+      { label: 'Bannières Entreprise', path: '/cms/company-banners', icon: LayoutTemplate },
+      { label: 'Pages dynamiques',    path: '/cms/pages',      icon: LayoutTemplate },
       { label: 'Langues',             path: '/cms/languages',  icon: Languages },
       { label: 'Traductions App',     path: '/cms/translations', icon: Type },
       { label: 'Zones géographiques', path: '/cms/locations',  icon: MapPin },

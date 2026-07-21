@@ -20,6 +20,7 @@ import { ApplicationsPage } from './pages/Applications'
 import { PendingBadges } from './pages/PendingBadges'
 import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
+import { CompanyBanners } from './pages/CompanyBanners'
 import { SystemSettings } from './pages/SystemSettings'
 import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
@@ -79,6 +80,7 @@ function App() {
 
       {/* ── CMS & Contenu ───────────────────────── */}
       <Route path="/cms/ads"          element={<Protected><AdPages /></Protected>} />
+      <Route path="/cms/company-banners" element={<Protected><CompanyBanners /></Protected>} />
       <Route path="/cms/pages"        element={<Protected><ComingSoon title="Pages dynamiques" /></Protected>} />
       <Route path="/cms/languages"    element={<Protected><LanguagesPage /></Protected>} />
       <Route path="/cms/translations" element={<Protected><StaticContentsPage /></Protected>} />
