@@ -500,11 +500,31 @@ export const OffersPage = () => {
 
                     {/* Description */}
                     <div style={{ marginBottom: '32px' }}>
-                      <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Description courte</h3>
+                      <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Description du poste</h3>
                       <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', marginBottom: '12px', whiteSpace: 'pre-wrap' }}>
-                        {selectedOffer.title || "Aucune description détaillée n'est disponible pour cette offre."}
+                        {selectedOffer.description || "Aucune description disponible."}
                       </p>
                     </div>
+
+                    {/* Exigences */}
+                    {selectedOffer.requirements && (
+                      <div style={{ marginBottom: '32px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Exigences & Qualifications</h3>
+                        <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', marginBottom: '12px', whiteSpace: 'pre-wrap' }}>
+                          {selectedOffer.requirements}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Avantages */}
+                    {selectedOffer.benefits && (
+                      <div style={{ marginBottom: '32px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Avantages du poste</h3>
+                        <div style={{ fontSize: '14px', color: '#166534', lineHeight: '1.6', whiteSpace: 'pre-wrap', background: '#f0fdf4', padding: '16px', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                          {selectedOffer.benefits}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Skills */}
                     <div style={{ marginBottom: '32px' }}>
@@ -526,6 +546,23 @@ export const OffersPage = () => {
                         </p>
                       )}
                     </div>
+
+                    {/* Profiles */}
+                    {selectedOffer.profiles && selectedOffer.profiles.length > 0 && (
+                      <div style={{ marginBottom: '32px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a', marginBottom: '12px' }}>Profils recherchés</h3>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {selectedOffer.profiles.map((profile, index) => (
+                            <span key={index} style={{
+                              padding: '6px 12px', background: '#f0f9ff', color: '#0284c7',
+                              borderRadius: '6px', fontSize: '13px', fontWeight: '500'
+                            }}>
+                              {profile}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Stats */}
                     <div style={{ display: 'flex', gap: '64px', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', padding: '24px 0', marginBottom: '32px' }}>
