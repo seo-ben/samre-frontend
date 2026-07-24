@@ -1330,13 +1330,104 @@ export const UsersPage = () => {
                         Détails Professionnels & Badges
                       </h5>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        {renderField('Moyen de transport', selectedUser.candidateProfile?.has_transport ? `Oui (${selectedUser.candidateProfile?.transport_type || 'Véhicule'})` : 'Non')}
+                        {renderField('Titre professionnel', selectedUser.candidateProfile?.professional_title, 'Non renseigné')}
+                        {renderField('Moyen de transport', selectedUser.candidateProfile?.has_transport ? `Oui (${selectedUser.candidateProfile?.transport_type || 'Véhicule'})` : 'Non (Pas de véhicule)')}
+                        {renderField('Type de déplacement', selectedUser.candidateProfile?.transport_type, 'Non renseigné')}
                         {renderField('Statut d\'embauche', selectedUser.candidateProfile?.is_hired ? 'Embauché(e)' : 'En recherche active')}
                         {renderField('Date d\'embauche', safeFormatDate(selectedUser.candidateProfile?.hired_at, null, null), '—')}
                         {renderField('Badge de vérification', selectedUser.candidateProfile?.has_badge ? 'Oui' : 'Non')}
                         {renderField('Date d\'attribution du badge', safeFormatDateTime(selectedUser.candidateProfile?.badge_granted_at, '—'), '—')}
-                        {renderField('Score de complétude', selectedUser.candidateProfile?.completeness_score ? `${selectedUser.candidateProfile.completeness_score}%` : '0%')}
                       </div>
+                    </div>
+
+                    {/* Section: Compétences du Candidat */}
+                    <div>
+                      <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Compétences & Répertoire
+                      </h5>
+                      {selectedUser.candidateProfile?.skills && selectedUser.candidateProfile.skills.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                          {selectedUser.candidateProfile.skills.map((skill, sIdx) => {
+                            const skillName = skill.skillCatalog?.name || skill.custom_skill_name || skill.name || 'Compétence';
+                            const level = skill.level || 'Non spécifié';
+                            return (
+                              <div key={skill.id || sIdx} style={{
+                                background: 'rgba(0, 82, 255, 0.08)', border: '1px solid rgba(0, 82, 255, 0.2)',
+                                borderRadius: '8px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px'
+                              }}>
+                                <span style={{ fontSize: '13px', fontWeight: '600', color: '#0052ff' }}>{skillName}</span>
+                                {level && <span style={{ fontSize: '11px', background: '#ffffff', color: '#0052ff', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(0,82,255,0.2)', fontWeight: '600' }}>{level}</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--gray-medium)', fontStyle: 'italic' }}>
+                          Aucune compétence renseignée par le candidat.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Section: Formations & Diplômes */}
+                    <div>
+                      <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Formations & Niveau d'études
+                      </h5>
+                      {selectedUser.candidateProfile?.educations && selectedUser.candidateProfile.educations.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {selectedUser.candidateProfile.educations.map((edu, eIdx) => (
+                            <div key={edu.id || eIdx} style={{
+                              background: '#f8fafc', border: '1px solid var(--gray-border)', borderRadius: '10px', padding: '12px'
+                            }}>
+                              <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--black-deep)' }}>
+                                {edu.degree || edu.title || 'Diplôme'} {edu.field_of_study ? `en ${edu.field_of_study}` : ''}
+                              </div>
+                              <div style={{ fontSize: '12.5px', color: '#0052ff', fontWeight: '600', marginTop: '2px' }}>
+                                {edu.institution_name || edu.school || 'Établissement non renseigné'}
+                              </div>
+                              <div style={{ fontSize: '11.5px', color: 'var(--gray-medium)', marginTop: '4px' }}>
+                                Années : {edu.start_year || '...'} - {edu.is_current ? 'Présent' : (edu.end_year || '...')}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--gray-medium)', fontStyle: 'italic' }}>
+                          Aucune formation renseignée.
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Section: Expériences Professionnelles */}
+                    <div>
+                      <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Expériences Professionnelles
+                      </h5>
+                      {selectedUser.candidateProfile?.experiences && selectedUser.candidateProfile.experiences.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {selectedUser.candidateProfile.experiences.map((exp, xIdx) => (
+                            <div key={exp.id || xIdx} style={{
+                              background: '#f8fafc', border: '1px solid var(--gray-border)', borderRadius: '10px', padding: '12px'
+                            }}>
+                              <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--black-deep)' }}>
+                                {exp.job_title || exp.title || 'Poste non spécifié'}
+                              </div>
+                              <div style={{ fontSize: '12.5px', color: '#059669', fontWeight: '600', marginTop: '2px' }}>
+                                {exp.company_name || exp.company || 'Entreprise non spécifiée'}
+                              </div>
+                              {exp.description && (
+                                <div style={{ fontSize: '12px', color: 'var(--black-deep)', marginTop: '6px', lineHeight: '1.4' }}>
+                                  {exp.description}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--gray-medium)', fontStyle: 'italic' }}>
+                          Aucune expérience professionnelle renseignée.
+                        </p>
+                      )}
                     </div>
 
                     <div>

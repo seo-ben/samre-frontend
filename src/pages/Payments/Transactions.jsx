@@ -76,6 +76,41 @@ export const TransactionsPage = () => {
               </p>
             </div>
           </div>
+
+          <button
+            onClick={async () => {
+              try {
+                const response = await apiClient.get('/v1/admin/transactions/export/csv', {
+                  responseType: 'blob',
+                  params: { search: searchTerm, type: typeFilter, status: statusFilter }
+                });
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `rapport_financier_samre_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              } catch (err) {
+                alert('Erreur lors du téléchargement du rapport CSV.');
+              }
+            }}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 'var(--radius-sm)',
+              background: '#166534',
+              color: 'white',
+              border: 'none',
+              fontWeight: '600',
+              fontSize: '14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <i className="fa-solid fa-file-excel"></i> Exporter en CSV
+          </button>
         </div>
 
         {/* Filters */}
