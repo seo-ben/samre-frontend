@@ -299,7 +299,15 @@ export const OffersPage = () => {
                           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0',
                           borderRadius: '8px', zIndex: 50, minWidth: '160px', overflow: 'hidden'
                         }}>
-                          {(offer.status === 'published' || offer.status === 'pending') && (
+                          {offer.status !== 'published' && (
+                            <div 
+                              onClick={(e) => handleChangeStatus(offer.id, 'published', e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                            >
+                              ▶️ Publier / Republier
+                            </div>
+                          )}
+                          {offer.status !== 'paused' && (
                             <div 
                               onClick={(e) => handleChangeStatus(offer.id, 'paused', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -307,20 +315,20 @@ export const OffersPage = () => {
                               ⏸️ Mettre en pause
                             </div>
                           )}
-                          {offer.status === 'paused' && (
-                            <div 
-                              onClick={(e) => handleChangeStatus(offer.id, 'published', e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                            >
-                              ▶️ Republier
-                            </div>
-                          )}
-                          {(offer.status === 'published' || offer.status === 'paused') && (
+                          {offer.status !== 'closed' && (
                             <div 
                               onClick={(e) => handleChangeStatus(offer.id, 'closed', e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                            >
+                              ✅ Marquer pourvue / Fermer
+                            </div>
+                          )}
+                          {offer.status !== 'pending' && (
+                            <div 
+                              onClick={(e) => handleChangeStatus(offer.id, 'pending', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer' }}
                             >
-                              ✅ Marquer pourvue
+                              ⏳ Remettre en attente
                             </div>
                           )}
                         </div>

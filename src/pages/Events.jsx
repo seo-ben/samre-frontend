@@ -367,10 +367,15 @@ export const EventsPage = () => {
                           >
                             ✏️ Modifier
                           </div>
-                          {(ev.status === 'pending' || ev.status === 'published') && (
-                            <div onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)} style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>❌ Rejeter</div>
+                          {ev.status !== 'published' && (
+                            <div 
+                              onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                            >
+                              ▶️ Publier / Valider
+                            </div>
                           )}
-                          {(ev.status === 'published' || ev.status === 'pending') && (
+                          {ev.status !== 'paused' && (
                             <div 
                               onClick={(e) => handleChangeStatus(ev.id, 'paused', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -378,12 +383,12 @@ export const EventsPage = () => {
                               ⏸️ Mettre en pause
                             </div>
                           )}
-                          {ev.status === 'paused' && (
+                          {ev.status !== 'rejected' && (
                             <div 
-                              onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                              onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
                             >
-                              ▶️ Republier
+                              ❌ Rejeter
                             </div>
                           )}
                           {ev.status !== 'published' && (
