@@ -26,6 +26,8 @@ import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 
+import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
+
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
   <ProtectedRoute>{children}</ProtectedRoute>
@@ -69,6 +71,7 @@ function App() {
       <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />
 
       {/* ── Abonnements ───────────────────────── */}
+      <Route path="/subscriptions/control-center" element={<Protected><SubscriptionControlCenterPage /></Protected>} />
       <Route path="/subscriptions/plans"   element={<Protected><SubscriptionPlansPage /></Protected>} />
       <Route path="/subscriptions/active"  element={<Protected><ActiveSubscriptionsPage /></Protected>} />
       <Route path="/subscriptions/history" element={<Protected><SubscriptionHistoryPage /></Protected>} />

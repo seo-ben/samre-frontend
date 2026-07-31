@@ -65,6 +65,9 @@ const getBreadcrumbs = (path) => {
   if (path.startsWith('/payments/conversion')) {
     return { parent: 'Paiements & Wallets', child: 'Taux de conversion' };
   }
+  if (path.startsWith('/subscriptions/control-center')) {
+    return { parent: 'Abonnements', child: 'Centre de contrôle' };
+  }
   if (path.startsWith('/subscriptions/plans')) {
     return { parent: 'Abonnements', child: 'Plans d\'abonnement' };
   }

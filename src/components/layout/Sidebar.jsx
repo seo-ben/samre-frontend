@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../lib/apiClient';
@@ -90,6 +90,7 @@ const NAV = [
     label: 'Abonnements',
     icon: Star,
     children: [
+      { label: 'Centre de contrôle', path: '/subscriptions/control-center', icon: Sliders },
       { label: 'Plans',              path: '/subscriptions/plans',   icon: Star },
       { label: 'Abonnés actifs',     path: '/subscriptions/active',  icon: Users },
       { label: 'Historique',         path: '/subscriptions/history', icon: History },
