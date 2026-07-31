@@ -38,8 +38,48 @@ export function SubscriptionControlCenterPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get('/v1/admin/subscription-control-center');
-      const responseData = res.data.data || res.data;
+      let responseData;
+      try {
+        const res = await apiClient.get('/v1/admin/subscription-control-center');
+        responseData = res.data.data || res.data;
+      } catch (e) {
+        // Fallback résilient si la route d'agrégation n'est pas encore déployée sur la prod
+        const [plansRes, blurRes, subsRes, settingsRes] = await Promise.all([
+          apiClient.get('/v1/admin/subscription-plans').catch(() => ({ data: [] })),
+          apiClient.get('/v1/admin/blur-rules').catch(() => ({ data: [] })),
+          apiClient.get('/v1/admin/user-subscriptions?status=active').catch(() => ({ data: [] })),
+          apiClient.get('/v1/admin/system-settings').catch(() => ({ data: [] }))
+        ]);
+
+        const rawPlans = plansRes.data.data || plansRes.data || [];
+        const rawBlur = blurRes.data.data || blurRes.data || [];
+        const rawSubs = subsRes.data.data || subsRes.data || [];
+        const rawSettings = settingsRes.data.data || settingsRes.data || [];
+
+        const candidateCostSetting = Array.isArray(rawSettings) ? rawSettings.find(s => s.key === 'candidate_unlock_cost_cfa') : null;
+        const companyCostSetting = Array.isArray(rawSettings) ? rawSettings.find(s => s.key === 'company_unlock_cost_cfa') : null;
+
+        const candidateRules = Array.isArray(rawBlur) ? rawBlur.filter(r => r.profile_type === 'candidate') : [];
+        const companyRules = Array.isArray(rawBlur) ? rawBlur.filter(r => r.profile_type === 'company') : [];
+
+        responseData = {
+          plans: rawPlans,
+          blur_rules: {
+            candidate: candidateRules,
+            company: companyRules
+          },
+          unlock_settings: {
+            candidate_unlock_cost_cfa: candidateCostSetting ? parseFloat(candidateCostSetting.value) : 1000,
+            company_unlock_cost_cfa: companyCostSetting ? parseFloat(companyCostSetting.value) : 1000
+          },
+          stats: {
+            active_subscriptions_count: Array.isArray(rawSubs) ? rawSubs.length : 0,
+            total_revenue_cfa: Array.isArray(rawSubs) ? rawSubs.reduce((acc, curr) => acc + (parseFloat(curr.price_paid) || 0), 0) : 0,
+            popular_plan: rawPlans[0]?.name || 'Aucun'
+          }
+        };
+      }
+
       setData(responseData);
       setCandidateCost(responseData.unlock_settings?.candidate_unlock_cost_cfa || 1000);
       setCompanyCost(responseData.unlock_settings?.company_unlock_cost_cfa || 1000);
@@ -59,10 +99,18 @@ export function SubscriptionControlCenterPage() {
     e.preventDefault();
     setSavingSettings(true);
     try {
-      const res = await apiClient.put('/v1/admin/subscription-control-center/unlock-settings', {
-        candidate_unlock_cost_cfa: parseFloat(candidateCost),
-        company_unlock_cost_cfa: parseFloat(companyCost),
-      });
+      try {
+        await apiClient.put('/v1/admin/subscription-control-center/unlock-settings', {
+          candidate_unlock_cost_cfa: parseFloat(candidateCost),
+          company_unlock_cost_cfa: parseFloat(companyCost),
+        });
+      } catch (e) {
+        // Fallback direct sur system-settings
+        await Promise.all([
+          apiClient.post('/v1/admin/system-settings', { key: 'candidate_unlock_cost_cfa', value: candidateCost }),
+          apiClient.post('/v1/admin/system-settings', { key: 'company_unlock_cost_cfa', value: companyCost })
+        ]);
+      }
       showToast("Nouveaux tarifs de déblocage enregistrés avec succès !");
     } catch (err) {
       console.error(err);
@@ -319,7 +367,7 @@ export function SubscriptionControlCenterPage() {
               {/* Profil Candidats */}
               <div>
                 <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1A6FD4', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
-                  Champs Candidats Masqués
+                  Champs Candidats Masqués ({data?.blur_rules?.candidate?.length || 0})
                 </h3>
                 <div style={{ border: '1px solid #E4E4E7', borderRadius: '12px', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
@@ -355,7 +403,7 @@ export function SubscriptionControlCenterPage() {
               {/* Profil Entreprises */}
               <div>
                 <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#9333EA', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
-                  Champs Entreprises Masqués
+                  Champs Entreprises Masqués ({data?.blur_rules?.company?.length || 0})
                 </h3>
                 <div style={{ border: '1px solid #E4E4E7', borderRadius: '12px', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
