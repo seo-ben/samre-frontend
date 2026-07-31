@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import AdminLayout from '../components/AdminLayout'
+import { MainLayout } from '../components/layout/MainLayout'
 import {
   CreditCard,
   EyeOff,
@@ -88,7 +88,7 @@ export function SubscriptionControlCenterPage() {
   }
 
   return (
-    <AdminLayout>
+    <MainLayout>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -413,7 +413,7 @@ export function SubscriptionControlCenterPage() {
           </div>
         )}
       </div>
-    </AdminLayout>
+    </MainLayout>
   )
 }
 
