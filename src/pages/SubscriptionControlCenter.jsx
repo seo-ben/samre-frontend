@@ -1,324 +1,348 @@
-import React, { useState, useEffect } from 'react'
-import { MainLayout } from '../components/layout/MainLayout'
+import React, { useState, useEffect } from 'react';
+import { MainLayout } from '../components/layout/MainLayout';
+import apiClient from '../lib/apiClient';
 import {
   CreditCard,
   EyeOff,
   Unlock,
   TrendingUp,
   Save,
-  CheckCircle,
+  CheckCircle2,
   AlertCircle,
   RefreshCw,
   Sliders,
-  DollarSign
-} from 'lucide-react'
+  DollarSign,
+  Loader2,
+  Check,
+  ShieldCheck
+} from 'lucide-react';
 
 export function SubscriptionControlCenterPage() {
-  const [loading, setLoading] = useState(true)
-  const [data, setData] = useState(null)
-  const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // States pour la modification des prix de déblocage
-  const [candidateCost, setCandidateCost] = useState(1000)
-  const [companyCost, setCompanyCost] = useState(1000)
-  const [savingSettings, setSavingSettings] = useState(false)
-  const [saveSuccessMessage, setSaveSuccessMessage] = useState('')
+  // States pour les tarifs de déblocage
+  const [candidateCost, setCandidateCost] = useState(1000);
+  const [companyCost, setCompanyCost] = useState(1000);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const fetchHubData = async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
-      const res = await fetch('https://samreapi.revolutech.pro/api/v1/admin/subscription-control-center', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
-        }
-      })
-      const result = await res.json()
-      if (res.ok && result.success) {
-        setData(result.data)
-        setCandidateCost(result.data.unlock_settings?.candidate_unlock_cost_cfa || 1000)
-        setCompanyCost(result.data.unlock_settings?.company_unlock_cost_cfa || 1000)
-      } else {
-        setError(result.message || 'Erreur lors du chargement du Hub')
-      }
+      const res = await apiClient.get('/v1/admin/subscription-control-center');
+      const responseData = res.data.data || res.data;
+      setData(responseData);
+      setCandidateCost(responseData.unlock_settings?.candidate_unlock_cost_cfa || 1000);
+      setCompanyCost(responseData.unlock_settings?.company_unlock_cost_cfa || 1000);
     } catch (err) {
-      setError('Erreur de connexion au serveur API.')
+      console.error(err);
+      setError("Erreur de connexion au serveur API.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchHubData()
-  }, [])
+    fetchHubData();
+  }, []);
 
   const handleSaveUnlockCosts = async (e) => {
-    e.preventDefault()
-    setSavingSettings(true)
-    setSaveSuccessMessage('')
+    e.preventDefault();
+    setSavingSettings(true);
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('admin_token')
-      const res = await fetch('https://samreapi.revolutech.pro/api/v1/admin/subscription-control-center/unlock-settings', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          candidate_unlock_cost_cfa: parseFloat(candidateCost),
-          company_unlock_cost_cfa: parseFloat(companyCost),
-        })
-      })
-      const result = await res.json()
-      if (res.ok && result.success) {
-        setSaveSuccessMessage('Nouveaux tarifs de déblocage enregistrés avec succès !')
-        setTimeout(() => setSaveSuccessMessage(''), 4000)
-      } else {
-        alert(result.message || 'Erreur lors de la sauvegarde.')
-      }
+      const res = await apiClient.put('/v1/admin/subscription-control-center/unlock-settings', {
+        candidate_unlock_cost_cfa: parseFloat(candidateCost),
+        company_unlock_cost_cfa: parseFloat(companyCost),
+      });
+      showToast("Nouveaux tarifs de déblocage enregistrés avec succès !");
     } catch (err) {
-      alert('Erreur lors de la mise à jour des paramètres.')
+      console.error(err);
+      alert("Erreur lors de la mise à jour des paramètres.");
     } finally {
-      setSavingSettings(false)
+      setSavingSettings(false);
     }
-  }
+  };
 
   return (
     <MainLayout>
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div style={{ padding: '24px', maxWidth: '1280px', margin: '0 auto', fontFamily: 'Inter, sans-serif' }}>
+        
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div style={{
+            position: 'fixed', top: '24px', right: '24px', zIndex: 9999,
+            backgroundColor: '#10B981', color: '#FFF', padding: '12px 20px', borderRadius: '10px',
+            boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.4)', display: 'flex', alignItems: 'center', gap: '10px',
+            fontWeight: '500', fontSize: '14px', animation: 'fadeIn 0.3s ease'
+          }}>
+            <CheckCircle2 size={18} />
+            <span>{toastMessage}</span>
+          </div>
+        )}
+
+        {/* En-tête */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Sliders className="w-7 h-7 text-indigo-600" />
+            <h1 style={{ fontSize: '24px', fontWeight: '700', color: '#09090B', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Sliders size={28} color="#1A6FD4" />
               Centre de Contrôle des Abonnements & Règles
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Gérez les forfaits, la matrice de floutage des données et les tarifs de déblocage en un seul endroit.
+            <p style={{ fontSize: '14px', color: '#71717A', marginTop: '4px' }}>
+              Gérez les forfaits, le floutage automatique des données et les tarifs de déblocage sur un seul écran.
             </p>
           </div>
+
           <button
             onClick={fetchHubData}
             disabled={loading}
-            className="flex items-center gap-2 bg-white border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              backgroundColor: '#FFFFFF', border: '1px solid #E4E4E7',
+              padding: '10px 18px', borderRadius: '10px', fontSize: '14px', fontWeight: '500',
+              color: '#09090B', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              transition: '0.2s'
+            }}
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Actualiser les données
+            <RefreshCw size={16} className={loading ? 'spin' : ''} />
+            Actualiser
           </button>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-500" />
+          <div style={{
+            backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B',
+            padding: '16px', borderRadius: '12px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px'
+          }}>
+            <AlertCircle size={20} color="#DC2626" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-              <CreditCard className="w-6 h-6" />
+        {/* Cartes d'indicateurs (KPIs) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+          
+          <div style={{ backgroundColor: '#FFF', padding: '20px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CreditCard size={24} color="#1A6FD4" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">Souscriptions Actives</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <div style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Souscriptions Actives</div>
+              <div style={{ fontSize: '22px', fontWeight: '700', color: '#09090B', marginTop: '2px' }}>
                 {loading ? '...' : (data?.stats?.active_subscriptions_count || 0)}
-              </p>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-              <TrendingUp className="w-6 h-6" />
+          <div style={{ backgroundColor: '#FFF', padding: '20px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <TrendingUp size={24} color="#10B981" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">Revenu Total Généré</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <div style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Revenu Total Généré</div>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#09090B', marginTop: '2px' }}>
                 {loading ? '...' : `${(data?.stats?.total_revenue_cfa || 0).toLocaleString()} FCFA`}
-              </p>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-              <Unlock className="w-6 h-6" />
+          <div style={{ backgroundColor: '#FFF', padding: '20px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Unlock size={24} color="#F59E0B" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">Tarif Déblocage Candidat</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">
+              <div style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Tarif Déblocage Candidat</div>
+              <div style={{ fontSize: '22px', fontWeight: '700', color: '#09090B', marginTop: '2px' }}>
                 {loading ? '...' : `${(candidateCost).toLocaleString()} FCFA`}
-              </p>
+              </div>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-              <EyeOff className="w-6 h-6" />
+          <div style={{ backgroundColor: '#FFF', padding: '20px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#F3E8FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <EyeOff size={24} color="#9333EA" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">Plan le plus Populaire</p>
-              <p className="text-lg font-bold text-gray-900 mt-1 truncate">
+              <div style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Plan le plus Populaire</div>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#09090B', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {loading ? '...' : (data?.stats?.popular_plan || 'Aucun')}
-              </p>
+              </div>
             </div>
           </div>
+
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'overview'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              1. Déblocage & Tarifs
-            </button>
-            <button
-              onClick={() => setActiveTab('rules')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'rules'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              2. Matrice de Floutage des Données
-            </button>
-            <button
-              onClick={() => setActiveTab('plans')}
-              className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === 'plans'
-                  ? 'border-indigo-600 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              3. Forfaits d'Abonnement
-            </button>
-          </nav>
+        {/* Navigation des Onglets */}
+        <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid #E4E4E7', marginBottom: '24px', paddingBottom: '2px' }}>
+          <button
+            onClick={() => setActiveTab('overview')}
+            style={{
+              padding: '12px 20px', fontSize: '14px', fontWeight: '600', border: 'none', background: 'none',
+              borderBottom: activeTab === 'overview' ? '3px solid #1A6FD4' : '3px solid transparent',
+              color: activeTab === 'overview' ? '#1A6FD4' : '#71717A', cursor: 'pointer', transition: '0.2s'
+            }}
+          >
+            1. Déblocage & Tarifs
+          </button>
+          <button
+            onClick={() => setActiveTab('rules')}
+            style={{
+              padding: '12px 20px', fontSize: '14px', fontWeight: '600', border: 'none', background: 'none',
+              borderBottom: activeTab === 'rules' ? '3px solid #1A6FD4' : '3px solid transparent',
+              color: activeTab === 'rules' ? '#1A6FD4' : '#71717A', cursor: 'pointer', transition: '0.2s'
+            }}
+          >
+            2. Matrice de Floutage des Données
+          </button>
+          <button
+            onClick={() => setActiveTab('plans')}
+            style={{
+              padding: '12px 20px', fontSize: '14px', fontWeight: '600', border: 'none', background: 'none',
+              borderBottom: activeTab === 'plans' ? '3px solid #1A6FD4' : '3px solid transparent',
+              color: activeTab === 'plans' ? '#1A6FD4' : '#71717A', cursor: 'pointer', transition: '0.2s'
+            }}
+          >
+            3. Forfaits d'Abonnement
+          </button>
         </div>
 
-        {/* Tab 1: Déblocages Unitaires */}
+        {/* TAB 1 : Déblocages Unitaires */}
         {activeTab === 'overview' && (
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-indigo-600" />
+          <div style={{ backgroundColor: '#FFF', padding: '28px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#09090B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <DollarSign size={20} color="#1A6FD4" />
                 Configuration des Tarifs de Déblocage Unitaire (Portefeuille)
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Définissez le coût débité du Portefeuille des utilisateurs pour débloquer un profil individuel sans abonnement.
+              <p style={{ fontSize: '14px', color: '#71717A', marginTop: '4px' }}>
+                Fixez la somme débitée automatiquement du solde du Portefeuille lors d'un déblocage de profil sans abonnement active.
               </p>
             </div>
 
-            {saveSuccessMessage && (
-              <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-xl flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-                <span>{saveSuccessMessage}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveUnlockCosts} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
+            <form onSubmit={handleSaveUnlockCosts} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#09090B', marginBottom: '8px' }}>
                   Déblocage d'un profil Candidat par une Entreprise (FCFA)
                 </label>
-                <div className="relative">
+                <div style={{ position: 'relative' }}>
                   <input
                     type="number"
                     min="0"
                     step="100"
                     value={candidateCost}
                     onChange={(e) => setCandidateCost(e.target.value)}
-                    className="w-full pl-4 pr-16 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-semibold text-gray-900"
+                    style={{
+                      width: '100%', padding: '12px 60px 12px 16px', borderRadius: '10px',
+                      border: '1px solid #D4D4D8', fontSize: '16px', fontWeight: '700', outline: 'none',
+                      backgroundColor: '#FAFAFA', color: '#09090B'
+                    }}
                     placeholder="1000"
                   />
-                  <span className="absolute right-4 top-3 text-sm text-gray-500 font-bold">FCFA</span>
+                  <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '700', color: '#71717A', fontSize: '13px' }}>
+                    FCFA
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Somme débitée du portefeuille entreprise lors de l'action "Débloquer le profil".
+                <p style={{ fontSize: '12px', color: '#A1A1AA', marginTop: '6px' }}>
+                  Frais prélevés sur le solde Entreprise pour afficher les coordonnées masquées d'un candidat.
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-gray-700">
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#09090B', marginBottom: '8px' }}>
                   Déblocage d'un profil Entreprise par un Utilisateur (FCFA)
                 </label>
-                <div className="relative">
+                <div style={{ position: 'relative' }}>
                   <input
                     type="number"
                     min="0"
                     step="100"
                     value={companyCost}
                     onChange={(e) => setCompanyCost(e.target.value)}
-                    className="w-full pl-4 pr-16 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-semibold text-gray-900"
+                    style={{
+                      width: '100%', padding: '12px 60px 12px 16px', borderRadius: '10px',
+                      border: '1px solid #D4D4D8', fontSize: '16px', fontWeight: '700', outline: 'none',
+                      backgroundColor: '#FAFAFA', color: '#09090B'
+                    }}
                     placeholder="1000"
                   />
-                  <span className="absolute right-4 top-3 text-sm text-gray-500 font-bold">FCFA</span>
+                  <span style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', fontWeight: '700', color: '#71717A', fontSize: '13px' }}>
+                    FCFA
+                  </span>
                 </div>
-                <p className="text-xs text-gray-500">
-                  Somme débitée pour débloquer les coordonnées d'une entreprise.
+                <p style={{ fontSize: '12px', color: '#A1A1AA', marginTop: '6px' }}>
+                  Frais prélevés pour afficher le téléphone/email d'une entreprise recruteuse.
                 </p>
               </div>
 
-              <div className="md:col-span-2 pt-2">
+              <div style={{ gridColumn: '1 / -1', paddingTop: '8px' }}>
                 <button
                   type="submit"
                   disabled={savingSettings}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-colors"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    backgroundColor: '#1A6FD4', color: '#FFF', border: 'none',
+                    padding: '12px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+                    cursor: 'pointer', boxShadow: '0 4px 12px rgba(26, 111, 212, 0.25)', transition: '0.2s'
+                  }}
                 >
-                  <Save className="w-4 h-4" />
-                  {savingSettings ? 'Enregistrement...' : 'Enregistrer les Tarifs'}
+                  {savingSettings ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
+                  {savingSettings ? 'Enregistrement en cours...' : 'Enregistrer les Tarifs'}
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Tab 2: Matrice de Floutage */}
+        {/* TAB 2 : Matrice de Floutage */}
         {activeTab === 'rules' && (
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <EyeOff className="w-5 h-5 text-indigo-600" />
-                Règles de Floutage des Données (Comptes Gratuits)
+          <div style={{ backgroundColor: '#FFF', padding: '28px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#09090B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <EyeOff size={20} color="#1A6FD4" />
+                Matrice des Données Floutées Automatiquement (Offres Gratuites)
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Liste des champs automatiquement masqués par des astérisques pour les visiteurs ou utilisateurs sans abonnement Premium.
+              <p style={{ fontSize: '14px', color: '#71717A', marginTop: '4px' }}>
+                Tous les champs marqués ci-dessous sont remplacés par des astérisques (ex: `+228 90******`) pour les comptes gratuits sans souscription.
               </p>
             </div>
 
-            <div className="space-y-6">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              
               {/* Profil Candidats */}
               <div>
-                <h3 className="text-sm font-bold uppercase text-indigo-600 tracking-wider mb-3">
-                  Données Candidats Floutées
+                <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1A6FD4', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                  Champs Candidats Masqués
                 </h3>
-                <div className="overflow-x-auto border border-gray-200 rounded-xl">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200">
+                <div style={{ border: '1px solid #E4E4E7', borderRadius: '12px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                    <thead style={{ backgroundColor: '#F4F4F5', color: '#52525B', fontWeight: '600', borderBottom: '1px solid #E4E4E7' }}>
                       <tr>
-                        <th className="p-3">Champ Identifiant (key)</th>
-                        <th className="p-3">Libellé</th>
-                        <th className="p-3">Masqué pour les comptes gratuits</th>
+                        <th style={{ padding: '12px 16px' }}>Clé du champ (Code API)</th>
+                        <th style={{ padding: '12px 16px' }}>Description du champ</th>
+                        <th style={{ padding: '12px 16px' }}>Statut de Masquage</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {(data?.blur_rules?.candidate || []).map((rule) => (
-                        <tr key={rule.id} className="hover:bg-gray-50">
-                          <td className="p-3 font-mono text-indigo-600 font-bold">{rule.field_key}</td>
-                          <td className="p-3 font-medium text-gray-800">{rule.label || rule.field_key}</td>
-                          <td className="p-3">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-                              <EyeOff className="w-3.5 h-3.5" />
-                              {rule.is_blurred_for_free ? 'Oui (Masqué)' : 'Non (Public)'}
+                    <tbody>
+                      {((data?.blur_rules?.candidate) || []).map((rule) => (
+                        <tr key={rule.id} style={{ borderBottom: '1px solid #F4F4F5' }}>
+                          <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: '700', color: '#1A6FD4' }}>{rule.field_key}</td>
+                          <td style={{ padding: '14px 16px', fontWeight: '500', color: '#09090B' }}>{rule.label || rule.field_key}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '6px',
+                              backgroundColor: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: '20px',
+                              fontSize: '12px', fontWeight: '700'
+                            }}>
+                              <EyeOff size={14} />
+                              {rule.is_blurred_for_free ? 'Flouté (Masqué)' : 'Visible (Public)'}
                             </span>
                           </td>
                         </tr>
@@ -330,27 +354,31 @@ export function SubscriptionControlCenterPage() {
 
               {/* Profil Entreprises */}
               <div>
-                <h3 className="text-sm font-bold uppercase text-purple-600 tracking-wider mb-3">
-                  Données Entreprises Floutées
+                <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#9333EA', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                  Champs Entreprises Masqués
                 </h3>
-                <div className="overflow-x-auto border border-gray-200 rounded-xl">
-                  <table className="w-full text-left text-sm">
-                    <thead className="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200">
+                <div style={{ border: '1px solid #E4E4E7', borderRadius: '12px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+                    <thead style={{ backgroundColor: '#F4F4F5', color: '#52525B', fontWeight: '600', borderBottom: '1px solid #E4E4E7' }}>
                       <tr>
-                        <th className="p-3">Champ Identifiant (key)</th>
-                        <th className="p-3">Libellé</th>
-                        <th className="p-3">Masqué pour les comptes gratuits</th>
+                        <th style={{ padding: '12px 16px' }}>Clé du champ (Code API)</th>
+                        <th style={{ padding: '12px 16px' }}>Description du champ</th>
+                        <th style={{ padding: '12px 16px' }}>Statut de Masquage</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {(data?.blur_rules?.company || []).map((rule) => (
-                        <tr key={rule.id} className="hover:bg-gray-50">
-                          <td className="p-3 font-mono text-purple-600 font-bold">{rule.field_key}</td>
-                          <td className="p-3 font-medium text-gray-800">{rule.label || rule.field_key}</td>
-                          <td className="p-3">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
-                              <EyeOff className="w-3.5 h-3.5" />
-                              {rule.is_blurred_for_free ? 'Oui (Masqué)' : 'Non (Public)'}
+                    <tbody>
+                      {((data?.blur_rules?.company) || []).map((rule) => (
+                        <tr key={rule.id} style={{ borderBottom: '1px solid #F4F4F5' }}>
+                          <td style={{ padding: '14px 16px', fontFamily: 'monospace', fontWeight: '700', color: '#9333EA' }}>{rule.field_key}</td>
+                          <td style={{ padding: '14px 16px', fontWeight: '500', color: '#09090B' }}>{rule.label || rule.field_key}</td>
+                          <td style={{ padding: '14px 16px' }}>
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '6px',
+                              backgroundColor: '#FEF3C7', color: '#92400E', padding: '4px 12px', borderRadius: '20px',
+                              fontSize: '12px', fontWeight: '700'
+                            }}>
+                              <EyeOff size={14} />
+                              {rule.is_blurred_for_free ? 'Flouté (Masqué)' : 'Visible (Public)'}
                             </span>
                           </td>
                         </tr>
@@ -359,49 +387,53 @@ export function SubscriptionControlCenterPage() {
                   </table>
                 </div>
               </div>
+
             </div>
           </div>
         )}
 
-        {/* Tab 3: Forfaits */}
+        {/* TAB 3 : Forfaits d'Abonnement */}
         {activeTab === 'plans' && (
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-indigo-600" />
-                Offres d'Abonnement Actives ({data?.plans?.length || 0})
+          <div style={{ backgroundColor: '#FFF', padding: '28px', borderRadius: '16px', border: '1px solid #E4E4E7', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#09090B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CreditCard size={20} color="#1A6FD4" />
+                Forfaits d'Abonnement Configurés ({data?.plans?.length || 0})
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Aperçu des forfaits disponibles pour les utilisateurs avec le nombre de souscriptions enregistrées.
+              <p style={{ fontSize: '14px', color: '#71717A', marginTop: '4px' }}>
+                Aperçu de la grille tarifaire et des privilèges débloqués par plan.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
               {(data?.plans || []).map((plan) => (
-                <div key={plan.id} className="border border-gray-200 rounded-2xl p-5 bg-gray-50 flex flex-col justify-between space-y-4">
+                <div key={plan.id} style={{
+                  border: '1px solid #E4E4E7', borderRadius: '16px', padding: '20px',
+                  backgroundColor: '#FAFAFA', display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+                }}>
                   <div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wide bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '4px 10px', borderRadius: '20px' }}>
                         {plan.target_type || 'Tous'}
                       </span>
-                      <span className="text-xs text-gray-500 font-medium">
+                      <span style={{ fontSize: '12px', color: '#71717A', fontWeight: '500' }}>
                         {plan.user_subscriptions_count || 0} abonnés
                       </span>
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mt-3">{plan.name || plan.key}</h3>
-                    <p className="text-2xl font-black text-indigo-600 mt-2">
+                    <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#09090B', marginTop: '12px' }}>{plan.name || plan.key}</h3>
+                    <div style={{ fontSize: '24px', fontWeight: '800', color: '#1A6FD4', marginTop: '6px' }}>
                       {parseFloat(plan.price || 0).toLocaleString()} FCFA
-                      <span className="text-xs font-normal text-gray-500"> / {plan.duration_type || 'mois'}</span>
-                    </p>
+                      <span style={{ fontSize: '13px', fontWeight: '400', color: '#71717A' }}> / {plan.duration_type || 'mois'}</span>
+                    </div>
                   </div>
 
-                  <div className="border-t border-gray-200 pt-3">
-                    <p className="text-xs font-bold text-gray-700 uppercase mb-2">Avantages inclus :</p>
-                    <ul className="space-y-1 text-xs text-gray-600">
+                  <div style={{ borderTop: '1px solid #E4E4E7', paddingTop: '14px', marginTop: '16px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#3F3F46', textTransform: 'uppercase', marginBottom: '8px' }}>Avantages inclus :</div>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#52525B' }}>
                       {(plan.features || []).map((feat, idx) => (
-                        <li key={idx} className="flex items-center gap-1.5">
-                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                        <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Check size={14} color="#10B981" />
                           <span>{feat.feature_key}: <strong>{feat.value || 'Oui'}</strong></span>
                         </li>
                       ))}
@@ -412,9 +444,10 @@ export function SubscriptionControlCenterPage() {
             </div>
           </div>
         )}
+
       </div>
     </MainLayout>
-  )
+  );
 }
 
-export default SubscriptionControlCenterPage
+export default SubscriptionControlCenterPage;
