@@ -23,10 +23,19 @@ export const CompanyBanners = () => {
   
   const getTranslationData = (banner, langId) => {
     if (banner && banner.translations) {
+      const targetLang = languages.find(l => String(l.id) === String(langId));
+      const targetCode = targetLang?.code?.toLowerCase();
+
       if (banner.translations[langId]) return banner.translations[langId];
       if (banner.translations[String(langId)]) return banner.translations[String(langId)];
+      if (targetCode && banner.translations[targetCode]) return banner.translations[targetCode];
+
       if (Array.isArray(banner.translations)) {
-        const t = banner.translations.find(t => String(t.language_id) === String(langId));
+        const t = banner.translations.find(t => 
+          String(t.language_id) === String(langId) ||
+          (targetCode && t.language && String(t.language.code).toLowerCase() === targetCode) ||
+          (targetCode && t.language_code && String(t.language_code).toLowerCase().startsWith(targetCode))
+        );
         if (t) return { title: t.title || '', subtitle: t.subtitle || '' };
       }
     }

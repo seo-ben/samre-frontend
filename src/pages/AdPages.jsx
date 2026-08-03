@@ -56,7 +56,13 @@ export const AdPages = () => {
 
   const getTranslationField = (ad, field, langId = 1) => {
     if (ad.translations && ad.translations.length > 0) {
-      const t = ad.translations.find(t => String(t.language_id) === String(langId)) || ad.translations[0];
+      const targetLang = languages.find(l => String(l.id) === String(langId));
+      const targetCode = targetLang?.code?.toLowerCase();
+      const t = ad.translations.find(t => 
+        String(t.language_id) === String(langId) ||
+        (targetCode && t.language && String(t.language.code).toLowerCase() === targetCode) ||
+        (targetCode && t.language_code && String(t.language_code).toLowerCase().startsWith(targetCode))
+      ) || ad.translations[0];
       return t[field] || '';
     }
     return '';
@@ -64,7 +70,13 @@ export const AdPages = () => {
 
   const getTranslationData = (ad, langId) => {
     if (ad.translations && ad.translations.length > 0) {
-      const t = ad.translations.find(t => String(t.language_id) === String(langId));
+      const targetLang = languages.find(l => String(l.id) === String(langId));
+      const targetCode = targetLang?.code?.toLowerCase();
+      const t = ad.translations.find(t => 
+        String(t.language_id) === String(langId) ||
+        (targetCode && t.language && String(t.language.code).toLowerCase() === targetCode) ||
+        (targetCode && t.language_code && String(t.language_code).toLowerCase().startsWith(targetCode))
+      );
       if (t) return { title: t.title || '', subtitle: t.subtitle || '', cta_label: t.cta_label || '' };
     }
     return { title: '', subtitle: '', cta_label: '' };
