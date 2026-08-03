@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { UsersPage } from './pages/Users'
+import { CompanyManagement } from './pages/CompanyManagement'
 import { LocationsPage } from './pages/Locations'
 import { LanguagesPage } from './pages/Languages'
 import { StaticContentsPage } from './pages/StaticContents'
@@ -42,8 +43,10 @@ function App() {
       {/* ── Dashboard ─────────────────────────── */}
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
 
-      {/* ── Utilisateurs ──────────────────────── */}
+      {/* ── Utilisateurs & Entreprises ──────────────────────── */}
       <Route path="/users"             element={<Protected><UsersPage /></Protected>} />
+      <Route path="/companies text"    element={<Protected><CompanyManagement /></Protected>} />
+      <Route path="/companies"         element={<Protected><CompanyManagement /></Protected>} />
 
       {/* ── Offres ────────────────────────────── */}
       <Route path="/offers"            element={<Protected><OffersPage /></Protected>} />

@@ -38,6 +38,12 @@ const NAV = [
     path: '/users',
   },
   {
+    id: 'companies',
+    label: 'Entreprises & Viabilité',
+    icon: Building2,
+    path: '/companies',
+  },
+  {
     id: 'offers',
     label: 'Offres',
     icon: Briefcase,
