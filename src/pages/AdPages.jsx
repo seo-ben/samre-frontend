@@ -91,7 +91,9 @@ export const AdPages = () => {
 
     const initialTrans = {};
     languages.forEach(l => {
-      initialTrans[l.id] = { title: '', subtitle: '', cta_label: '' };
+      const emptyObj = { title: '', subtitle: '', cta_label: '' };
+      initialTrans[l.id] = emptyObj;
+      if (l.code) initialTrans[l.code] = emptyObj;
     });
 
     setEditForm({
@@ -102,7 +104,8 @@ export const AdPages = () => {
       is_skippable: 1,
       is_active: 1,
       text_position: 'bottom',
-      image_style: 'cover'
+      image_style: 'cover',
+      target_role: 'all'
     });
     setShowModal(true);
   };
@@ -120,7 +123,9 @@ export const AdPages = () => {
 
     const transObj = {};
     languages.forEach(l => {
-      transObj[l.id] = getTranslationData(ad, l.id);
+      const data = getTranslationData(ad, l.id);
+      transObj[l.id] = data;
+      if (l.code) transObj[l.code] = data;
     });
 
     setPreviewImage(imageUrl);
@@ -133,7 +138,8 @@ export const AdPages = () => {
       is_skippable: ad.is_skippable !== undefined ? (ad.is_skippable ? 1 : 0) : 1,
       is_active: ad.is_active !== undefined ? (ad.is_active ? 1 : 0) : 1,
       text_position: ad.text_position || 'bottom',
-      image_style: ad.image_style || 'cover'
+      image_style: ad.image_style || 'cover',
+      target_role: ad.target_role || 'all'
     });
     setShowModal(true);
   };
@@ -169,15 +175,24 @@ export const AdPages = () => {
   };
 
   const handleTranslationChange = (field, value) => {
+    const currentLangObj = languages.find(l => l.id === activeLang);
+    const updatedData = {
+      ...(editForm.translations[activeLang] || {}),
+      [field]: value
+    };
+
+    const newTrans = {
+      ...editForm.translations,
+      [activeLang]: updatedData
+    };
+
+    if (currentLangObj && currentLangObj.code) {
+      newTrans[currentLangObj.code] = updatedData;
+    }
+
     setEditForm({
       ...editForm,
-      translations: {
-        ...editForm.translations,
-        [activeLang]: {
-          ...editForm.translations[activeLang],
-          [field]: value
-        }
-      }
+      translations: newTrans
     });
   };
 
@@ -220,11 +235,13 @@ export const AdPages = () => {
         if (sourceSubtitle) translatedSubtitle = await translateText(sourceSubtitle);
         if (sourceCta) translatedCta = await translateText(sourceCta);
 
-        newTranslations[lang.id] = {
+        const transData = {
           title: translatedTitle,
           subtitle: translatedSubtitle,
           cta_label: translatedCta
         };
+        newTranslations[lang.id] = transData;
+        if (lang.code) newTranslations[lang.code] = transData;
       }
       setEditForm({ ...editForm, translations: newTranslations });
       showToast("Traduction automatique terminée !", "success");
@@ -247,6 +264,7 @@ export const AdPages = () => {
     formData.append('is_active', editForm.is_active === 1 ? 1 : 0);
     formData.append('text_position', editForm.text_position);
     formData.append('image_style', editForm.image_style);
+    formData.append('target_role', editForm.target_role || 'all');
     formData.append('translations', JSON.stringify(editForm.translations));
     
     if (imageFile) {
@@ -397,6 +415,18 @@ export const AdPages = () => {
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
                 <span className="badge" style={{ background: '#E2E8F0' }}>Texte: {ad.text_position}</span>
                 <span className="badge" style={{ background: '#E2E8F0' }}>Image: {ad.image_style}</span>
+                {ad.target_role && ad.target_role !== 'all' ? (
+                  <span className="badge" style={{ 
+                    background: ad.target_role === 'visitor' ? '#EFF6FF' : ad.target_role === 'candidate' ? '#F0FDF4' : '#FFF7ED',
+                    color: ad.target_role === 'visitor' ? '#1D4ED8' : ad.target_role === 'candidate' ? '#15803D' : '#C2410C',
+                    border: `1px solid ${ad.target_role === 'visitor' ? '#BFDBFE' : ad.target_role === 'candidate' ? '#BBF7D0' : '#FED7AA'}`,
+                    fontWeight: '700'
+                  }}>
+                    {ad.target_role === 'visitor' ? '🎫 Visiteurs' : ad.target_role === 'candidate' ? '🎓 Candidats' : '🏢 Entreprises'}
+                  </span>
+                ) : (
+                  <span className="badge" style={{ background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0' }}>🌍 Global</span>
+                )}
               </div>
               
               <div className="card-actions">
@@ -550,6 +580,20 @@ export const AdPages = () => {
                   <div style={{ width: '120px' }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Ordre</label>
                     <input type="number" min={0} value={editForm.sort_order ?? ''} onChange={e => setEditForm({...editForm, sort_order: parseInt(e.target.value)})} className="input-field" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Audience Cible (Placement)</label>
+                    <select 
+                      value={editForm.target_role || 'all'} 
+                      onChange={e => setEditForm({ ...editForm, target_role: e.target.value })} 
+                      className="input-field"
+                      style={{ background: '#FFF' }}
+                    >
+                      <option value="all">🌍 Tous les utilisateurs (Global)</option>
+                      <option value="visitor">🎫 Visiteurs Uniquement (Espace Visiteur)</option>
+                      <option value="candidate">🎓 Candidats / Étudiants Uniquement</option>
+                      <option value="company">🏢 Entreprises / Recruteurs Uniquement</option>
+                    </select>
                   </div>
                 </div>
 
