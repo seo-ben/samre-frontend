@@ -22,8 +22,13 @@ export const CompanyBanners = () => {
   const [previewImage, setPreviewImage] = useState('');
   
   const getTranslationData = (banner, langId) => {
-    if (banner && banner.translations && banner.translations[langId]) {
-      return banner.translations[langId];
+    if (banner && banner.translations) {
+      if (banner.translations[langId]) return banner.translations[langId];
+      if (banner.translations[String(langId)]) return banner.translations[String(langId)];
+      if (Array.isArray(banner.translations)) {
+        const t = banner.translations.find(t => String(t.language_id) === String(langId));
+        if (t) return { title: t.title || '', subtitle: t.subtitle || '' };
+      }
     }
     return { title: '', subtitle: '' };
   };

@@ -56,7 +56,7 @@ export const AdPages = () => {
 
   const getTranslationField = (ad, field, langId = 1) => {
     if (ad.translations && ad.translations.length > 0) {
-      const t = ad.translations.find(t => t.language_id === langId) || ad.translations[0];
+      const t = ad.translations.find(t => String(t.language_id) === String(langId)) || ad.translations[0];
       return t[field] || '';
     }
     return '';
@@ -64,7 +64,7 @@ export const AdPages = () => {
 
   const getTranslationData = (ad, langId) => {
     if (ad.translations && ad.translations.length > 0) {
-      const t = ad.translations.find(t => t.language_id === langId);
+      const t = ad.translations.find(t => String(t.language_id) === String(langId));
       if (t) return { title: t.title || '', subtitle: t.subtitle || '', cta_label: t.cta_label || '' };
     }
     return { title: '', subtitle: '', cta_label: '' };
