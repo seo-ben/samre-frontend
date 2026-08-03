@@ -5,6 +5,7 @@ import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, Layou
 
 export const CompanyBanners = () => {
   const [banners, setBanners] = useState([]);
+  const [languages, setLanguages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [autoTranslateLoading, setAutoTranslateLoading] = useState(false);
@@ -16,7 +17,7 @@ export const CompanyBanners = () => {
   const [deletingId, setDeletingId] = useState(null);
 
   // Form State
-  const [activeLang, setActiveLang] = useState(1); // 1=FR, 2=EN, 3=PT
+  const [activeLang, setActiveLang] = useState(1);
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState('');
   
@@ -28,11 +29,7 @@ export const CompanyBanners = () => {
   };
 
   const [editForm, setEditForm] = useState({
-    translations: {
-      1: { title: '', subtitle: '' },
-      2: { title: '', subtitle: '' },
-      3: { title: '', subtitle: '' }
-    },
+    translations: {},
     image_url: '',
     action_url: '',
     sort_order: 1,
@@ -48,18 +45,26 @@ export const CompanyBanners = () => {
   };
 
   useEffect(() => {
-    fetchBanners();
+    fetchData();
   }, []);
 
-  const fetchBanners = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/v1/admin/company-banners');
-      const data = (res.data.data || res.data).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const [langsRes, bannersRes] = await Promise.all([
+        apiClient.get('/v1/admin/cms/dynamic/languages'),
+        apiClient.get('/v1/admin/company-banners')
+      ]);
+      const activeLangs = (langsRes.data.data || langsRes.data).filter(l => l.is_active);
+      setLanguages(activeLangs);
+      if (activeLangs.length > 0) {
+        setActiveLang(activeLangs[0].id);
+      }
+      const data = (bannersRes.data.data || bannersRes.data).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       setBanners(data);
     } catch (err) {
       console.error(err);
-      showToast("Erreur lors du chargement des bannières.", "error");
+      showToast("Erreur lors du chargement des données.", "error");
     } finally {
       setLoading(false);
     }
@@ -69,14 +74,16 @@ export const CompanyBanners = () => {
     setIsEditing(false);
     setImageFile(null);
     setPreviewImage('');
-    setActiveLang(1);
+    const initialLangId = languages.length > 0 ? languages[0].id : 1;
+    setActiveLang(initialLangId);
     
+    const initialTrans = {};
+    languages.forEach(l => {
+      initialTrans[l.id] = { title: '', subtitle: '' };
+    });
+
     setEditForm({
-      translations: {
-        1: { title: '', subtitle: '' },
-        2: { title: '', subtitle: '' },
-        3: { title: '', subtitle: '' }
-      },
+      translations: initialTrans,
       image_url: '',
       action_url: '',
       sort_order: (banners.length > 0 ? banners[banners.length - 1].sort_order + 1 : 1),
@@ -88,16 +95,18 @@ export const CompanyBanners = () => {
   const openEditModal = (banner) => {
     setIsEditing(true);
     setImageFile(null);
-    setActiveLang(1);
+    const initialLangId = languages.length > 0 ? languages[0].id : 1;
+    setActiveLang(initialLangId);
     setPreviewImage(banner.image_url || '');
+
+    const transObj = {};
+    languages.forEach(l => {
+      transObj[l.id] = getTranslationData(banner, l.id);
+    });
 
     setEditForm({
       id: banner.id,
-      translations: {
-        1: getTranslationData(banner, 1),
-        2: getTranslationData(banner, 2),
-        3: getTranslationData(banner, 3)
-      },
+      translations: transObj,
       image_url: banner.image_url || '',
       action_url: banner.action_url || '',
       sort_order: banner.sort_order || 0,
@@ -110,7 +119,7 @@ export const CompanyBanners = () => {
             ...prev,
             translations: {
                 ...prev.translations,
-                1: { title: banner.title || '', subtitle: banner.subtitle || '' }
+                [initialLangId]: { title: banner.title || '', subtitle: banner.subtitle || '' }
             }
         }));
     }
@@ -180,8 +189,9 @@ export const CompanyBanners = () => {
 
   const handleAutoTranslate = async () => {
     const sourceLangId = activeLang;
-    const langCodes = { 1: 'fr', 2: 'en', 3: 'pt' };
-    const sourceCode = langCodes[sourceLangId];
+    const sourceLang = languages.find(l => l.id === sourceLangId);
+    if (!sourceLang) return;
+    const sourceCode = sourceLang.code.split('-')[0];
     
     const sourceTitle = editForm.translations[sourceLangId]?.title || '';
     const sourceSubtitle = editForm.translations[sourceLangId]?.subtitle || '';
@@ -195,15 +205,15 @@ export const CompanyBanners = () => {
     let newTranslations = { ...editForm.translations };
     
     try {
-      for (const langId of [1, 2, 3]) {
-        if (langId === sourceLangId) continue;
-        const targetCode = langCodes[langId];
+      for (const lang of languages) {
+        if (lang.id === sourceLangId) continue;
+        const targetCode = lang.code.split('-')[0];
         
-        let translatedTitle = newTranslations[langId]?.title || '';
-        let translatedSubtitle = newTranslations[langId]?.subtitle || '';
+        let translatedTitle = newTranslations[lang.id]?.title || '';
+        let translatedSubtitle = newTranslations[lang.id]?.subtitle || '';
 
         const translateText = async (text) => {
-          if (!text.trim()) return '';
+          if (!text || !text.trim()) return '';
           const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceCode}&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
           const res = await fetch(url);
           const data = await res.json();
@@ -213,7 +223,7 @@ export const CompanyBanners = () => {
         if (sourceTitle) translatedTitle = await translateText(sourceTitle);
         if (sourceSubtitle) translatedSubtitle = await translateText(sourceSubtitle);
 
-        newTranslations[langId] = {
+        newTranslations[lang.id] = {
           title: translatedTitle,
           subtitle: translatedSubtitle
         };
@@ -540,10 +550,21 @@ export const CompanyBanners = () => {
                   {/* Traductions */}
                   <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <div className={`lang-tab ${activeLang === 1 ? 'active' : ''}`} onClick={() => setActiveLang(1)}>FR Français</div>
-                        <div className={`lang-tab ${activeLang === 2 ? 'active' : ''}`} onClick={() => setActiveLang(2)}>EN English</div>
-                        <div className={`lang-tab ${activeLang === 3 ? 'active' : ''}`} onClick={() => setActiveLang(3)}>PT Português</div>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        {languages.map((lang) => (
+                          <div 
+                            key={lang.id} 
+                            className={`lang-tab ${activeLang === lang.id ? 'active' : ''}`} 
+                            onClick={() => setActiveLang(lang.id)}
+                          >
+                            {lang.flag_url ? (
+                              <img src={lang.flag_url} alt={lang.code} style={{ width: '18px', height: '14px', objectFit: 'cover', borderRadius: '2px', display: 'inline-block', marginRight: '6px' }} />
+                            ) : (
+                              <span style={{ marginRight: '6px' }}>🌐</span>
+                            )}
+                            {lang.native_name || lang.name || lang.code.toUpperCase()}
+                          </div>
+                        ))}
                       </div>
                       <button
                         type="button"
@@ -558,10 +579,12 @@ export const CompanyBanners = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                       <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#0F1923' }}>Titre principal ({activeLang === 1 ? 'FR' : activeLang === 2 ? 'EN' : 'PT'})</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#0F1923' }}>
+                          Titre principal ({languages.find(l => l.id === activeLang)?.native_name || languages.find(l => l.id === activeLang)?.name || languages.find(l => l.id === activeLang)?.code.toUpperCase() || 'FR'})
+                        </label>
                         <input
                           type="text"
-                          value={editForm.translations[activeLang].title}
+                          value={editForm.translations[activeLang]?.title || ''}
                           onChange={e => handleTranslationChange('title', e.target.value)}
                           className="input-field"
                           placeholder="Ex: Nouvelle offre !"
@@ -569,10 +592,12 @@ export const CompanyBanners = () => {
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#0F1923' }}>Sous-titre ({activeLang === 1 ? 'FR' : activeLang === 2 ? 'EN' : 'PT'})</label>
+                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#0F1923' }}>
+                          Sous-titre ({languages.find(l => l.id === activeLang)?.native_name || languages.find(l => l.id === activeLang)?.name || languages.find(l => l.id === activeLang)?.code.toUpperCase() || 'FR'})
+                        </label>
                         <input
                           type="text"
-                          value={editForm.translations[activeLang].subtitle}
+                          value={editForm.translations[activeLang]?.subtitle || ''}
                           onChange={e => handleTranslationChange('subtitle', e.target.value)}
                           className="input-field"
                           placeholder="Une petite description..."

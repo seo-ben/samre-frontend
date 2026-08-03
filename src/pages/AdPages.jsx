@@ -5,6 +5,7 @@ import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, PlayC
 
 export const AdPages = () => {
   const [adPages, setAdPages] = useState([]);
+  const [languages, setLanguages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   
@@ -13,7 +14,7 @@ export const AdPages = () => {
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
-  const [activeLang, setActiveLang] = useState(1); // 1: FR, 2: EN, 3: PT
+  const [activeLang, setActiveLang] = useState(1);
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -28,18 +29,26 @@ export const AdPages = () => {
   };
 
   useEffect(() => {
-    fetchAdPages();
+    fetchData();
   }, []);
 
-  const fetchAdPages = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get('/v1/admin/cms/ad-pages');
-      const data = (res.data.data || res.data).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+      const [langsRes, adsRes] = await Promise.all([
+        apiClient.get('/v1/admin/cms/dynamic/languages'),
+        apiClient.get('/v1/admin/cms/ad-pages')
+      ]);
+      const activeLangs = (langsRes.data.data || langsRes.data).filter(l => l.is_active);
+      setLanguages(activeLangs);
+      if (activeLangs.length > 0) {
+        setActiveLang(activeLangs[0].id);
+      }
+      const data = (adsRes.data.data || adsRes.data).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       setAdPages(data);
     } catch (err) {
       console.error(err);
-      showToast("Erreur lors du chargement des publicités.", "error");
+      showToast("Erreur lors du chargement des données.", "error");
     } finally {
       setLoading(false);
     }
@@ -65,13 +74,16 @@ export const AdPages = () => {
     setIsEditing(false);
     setImageFile(null);
     setPreviewImage(null);
-    setActiveLang(1);
+    const initialLangId = languages.length > 0 ? languages[0].id : 1;
+    setActiveLang(initialLangId);
+
+    const initialTrans = {};
+    languages.forEach(l => {
+      initialTrans[l.id] = { title: '', subtitle: '', cta_label: '' };
+    });
+
     setEditForm({
-      translations: {
-        1: { title: '', subtitle: '', cta_label: '' },
-        2: { title: '', subtitle: '', cta_label: '' },
-        3: { title: '', subtitle: '', cta_label: '' }
-      },
+      translations: initialTrans,
       image_url: '',
       sort_order: (adPages.length > 0 ? adPages[adPages.length - 1].sort_order + 1 : 1),
       duration_seconds: 5,
@@ -86,21 +98,23 @@ export const AdPages = () => {
   const openEditModal = (ad) => {
     setIsEditing(true);
     setImageFile(null);
-    setActiveLang(1);
+    const initialLangId = languages.length > 0 ? languages[0].id : 1;
+    setActiveLang(initialLangId);
     
     let imageUrl = '';
     if (ad.translations && ad.translations.length > 0) {
       imageUrl = ad.translations[0].image_url || '';
     }
 
+    const transObj = {};
+    languages.forEach(l => {
+      transObj[l.id] = getTranslationData(ad, l.id);
+    });
+
     setPreviewImage(imageUrl);
     setEditForm({
       id: ad.id,
-      translations: {
-        1: getTranslationData(ad, 1),
-        2: getTranslationData(ad, 2),
-        3: getTranslationData(ad, 3),
-      },
+      translations: transObj,
       image_url: imageUrl,
       sort_order: ad.sort_order || 0,
       duration_seconds: ad.duration_seconds || 5,
@@ -122,7 +136,7 @@ export const AdPages = () => {
     setActionLoading(true);
     try {
       await apiClient.delete(`/v1/admin/cms/ad-pages/${deletingId}`);
-      await fetchAdPages();
+      await fetchData();
       setShowConfirmDelete(false);
       setDeletingId(null);
       showToast("Publicité supprimée avec succès.", "success");
@@ -157,15 +171,16 @@ export const AdPages = () => {
 
   const handleAutoTranslate = async () => {
     const sourceLangId = activeLang;
-    const langCodes = { 1: 'fr', 2: 'en', 3: 'pt' };
-    const sourceCode = langCodes[sourceLangId];
+    const sourceLang = languages.find(l => l.id === sourceLangId);
+    if (!sourceLang) return;
+    const sourceCode = sourceLang.code.split('-')[0];
     
     const sourceTitle = editForm.translations[sourceLangId]?.title || '';
     const sourceSubtitle = editForm.translations[sourceLangId]?.subtitle || '';
     const sourceCta = editForm.translations[sourceLangId]?.cta_label || '';
 
     if (!sourceTitle && !sourceSubtitle && !sourceCta) {
-      showToast("Veuillez remplir au moins un champ avant de traduire.", "error");
+      showToast("Veuillez remplir au moins un champ dans la langue active avant de traduire.", "error");
       return;
     }
 
@@ -173,16 +188,16 @@ export const AdPages = () => {
     let newTranslations = { ...editForm.translations };
     
     try {
-      for (const langId of [1, 2, 3]) {
-        if (langId === sourceLangId) continue;
-        const targetCode = langCodes[langId];
+      for (const lang of languages) {
+        if (lang.id === sourceLangId) continue;
+        const targetCode = lang.code.split('-')[0];
         
-        let translatedTitle = newTranslations[langId]?.title || '';
-        let translatedSubtitle = newTranslations[langId]?.subtitle || '';
-        let translatedCta = newTranslations[langId]?.cta_label || '';
+        let translatedTitle = newTranslations[lang.id]?.title || '';
+        let translatedSubtitle = newTranslations[lang.id]?.subtitle || '';
+        let translatedCta = newTranslations[lang.id]?.cta_label || '';
 
         const translateText = async (text) => {
-          if (!text.trim()) return '';
+          if (!text || !text.trim()) return '';
           const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceCode}&tl=${targetCode}&dt=t&q=${encodeURIComponent(text)}`;
           const res = await fetch(url);
           const data = await res.json();
@@ -193,7 +208,7 @@ export const AdPages = () => {
         if (sourceSubtitle) translatedSubtitle = await translateText(sourceSubtitle);
         if (sourceCta) translatedCta = await translateText(sourceCta);
 
-        newTranslations[langId] = {
+        newTranslations[lang.id] = {
           title: translatedTitle,
           subtitle: translatedSubtitle,
           cta_label: translatedCta
@@ -448,10 +463,21 @@ export const AdPages = () => {
                   </h4>
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                      <div onClick={() => setActiveLang(1)} className={`lang-tab ${activeLang === 1 ? 'active' : 'inactive'}`}>🇫🇷 Français</div>
-                      <div onClick={() => setActiveLang(2)} className={`lang-tab ${activeLang === 2 ? 'active' : 'inactive'}`}>🇬🇧 English</div>
-                      <div onClick={() => setActiveLang(3)} className={`lang-tab ${activeLang === 3 ? 'active' : 'inactive'}`}>🇵🇹 Português</div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {languages.map((lang) => (
+                        <div 
+                          key={lang.id} 
+                          onClick={() => setActiveLang(lang.id)} 
+                          className={`lang-tab ${activeLang === lang.id ? 'active' : 'inactive'}`}
+                        >
+                          {lang.flag_url ? (
+                            <img src={lang.flag_url} alt={lang.code} style={{ width: '18px', height: '14px', objectFit: 'cover', borderRadius: '2px', display: 'inline-block', marginRight: '6px' }} />
+                          ) : (
+                            <span style={{ marginRight: '6px' }}>🌐</span>
+                          )}
+                          {lang.native_name || lang.name || lang.code.toUpperCase()}
+                        </div>
+                      ))}
                     </div>
                     
                     <button 
@@ -474,7 +500,9 @@ export const AdPages = () => {
 
                   <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '20px' }}>
                     <div style={{ marginBottom: '16px' }}>
-                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>Titre principal ({activeLang === 1 ? 'FR' : activeLang === 2 ? 'EN' : 'PT'})</label>
+                      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', marginBottom: '8px', color: '#0F1923' }}>
+                        Titre principal ({languages.find(l => l.id === activeLang)?.native_name || languages.find(l => l.id === activeLang)?.name || languages.find(l => l.id === activeLang)?.code.toUpperCase() || 'FR'})
+                      </label>
                       <input 
                         type="text" required={activeLang === 1} placeholder="Trouvez votre futur..." 
                         value={editForm.translations[activeLang]?.title || ''} 
