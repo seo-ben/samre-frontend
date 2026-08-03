@@ -6,7 +6,7 @@ export const MainLayout = ({ children }) => {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--gray-light)' }}>
       <Sidebar />
-      {/* Le Sidebar rend son propre spacer, donc pas besoin de marginLeft */}
+      {/* Le Sidebar rend son propre spacer, donc pas de probleme  pas besoin de marginLeft */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <Header />
         <main className="main-content" style={{ flex: 1, overflowX: 'hidden' }}>
