@@ -3,7 +3,7 @@ import {
   Building2, CheckCircle2, XCircle, ShieldCheck, AlertCircle, 
   Search, ExternalLink, RefreshCw, FileText, Phone, Mail, MapPin, Eye
 } from 'lucide-react';
-import apiClient from '../api/client';
+import apiClient from '../lib/apiClient';
 
 export function CompanyManagement() {
   const [companies, setCompanies] = useState([]);
