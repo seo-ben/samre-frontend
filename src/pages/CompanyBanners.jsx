@@ -47,7 +47,8 @@ export const CompanyBanners = () => {
     image_url: '',
     action_url: '',
     sort_order: 1,
-    is_active: 1
+    is_active: 1,
+    target_role: 'company'
   });
 
   // Toast
@@ -102,6 +103,7 @@ export const CompanyBanners = () => {
       action_url: '',
       sort_order: (banners.length > 0 ? banners[banners.length - 1].sort_order + 1 : 1),
       is_active: 1,
+      target_role: 'visitor',
     });
     setShowModal(true);
   };
@@ -125,6 +127,7 @@ export const CompanyBanners = () => {
       action_url: banner.action_url || '',
       sort_order: banner.sort_order || 0,
       is_active: banner.is_active ? 1 : 0,
+      target_role: banner.target_role || 'company',
     });
     
     // Support legacy data
@@ -266,6 +269,7 @@ export const CompanyBanners = () => {
       formData.append('translations', JSON.stringify(editForm.translations));
       formData.append('sort_order', editForm.sort_order);
       formData.append('is_active', editForm.is_active === 1 ? 1 : 0);
+      formData.append('target_role', editForm.target_role || 'company');
       
       if (editForm.action_url) {
           formData.append('action_url', editForm.action_url);
@@ -278,7 +282,6 @@ export const CompanyBanners = () => {
       }
 
       if (isEditing) {
-        // formData can be tricky with PUT, standard approach is POST with _method=PUT
         formData.append('_method', 'PUT');
         await apiClient.post(`/v1/admin/company-banners/${editForm.id}`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
@@ -292,7 +295,7 @@ export const CompanyBanners = () => {
       }
 
       setShowModal(false);
-      fetchBanners();
+      fetchData();
     } catch (err) {
       console.error(err);
       showToast("Une erreur s'est produite lors de la sauvegarde.", "error");
@@ -302,7 +305,7 @@ export const CompanyBanners = () => {
   };
 
   return (
-    <MainLayout title="Bannières Dashboard Entreprise">
+    <MainLayout title="Bannières Dashboard">
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
@@ -413,10 +416,10 @@ export const CompanyBanners = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', animation: 'fadeIn 0.3s ease-out' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '800', fontFamily: 'var(--font-poppins)', color: '#0F1923', letterSpacing: '-0.5px' }}>
-              Bannières Entreprise
+              Bannières Dashboard
             </h2>
             <p style={{ margin: '8px 0 0 0', color: '#64748B', fontSize: '15px' }}>
-              Gérez le slider dynamique affiché sur le tableau de bord des recruteurs.
+              Gérez les sliders dynamiques affichés sur les tableaux de bord (Visiteurs, Entreprises, Candidats).
             </p>
           </div>
           
@@ -440,7 +443,7 @@ export const CompanyBanners = () => {
           <div style={{ textAlign: 'center', padding: '60px 20px', background: '#F8FAFC', borderRadius: '16px', border: '2px dashed #E2E8F0', animation: 'fadeIn 0.4s ease-out' }}>
             <LayoutTemplate size={64} color="#CBD5E1" style={{ margin: '0 auto 16px' }} />
             <h3 style={{ fontSize: '18px', color: '#0F1923', fontWeight: '700', marginBottom: '8px' }}>Aucune bannière active</h3>
-            <p style={{ color: '#64748B', maxWidth: '400px', margin: '0 auto 24px', lineHeight: '1.5' }}>Créez votre première bannière pour animer le tableau de bord des entreprises.</p>
+            <p style={{ color: '#64748B', maxWidth: '400px', margin: '0 auto 24px', lineHeight: '1.5' }}>Créez votre première bannière pour animer le tableau de bord des utilisateurs.</p>
             <button 
               onClick={openAddModal}
               style={{ background: 'white', border: '1.5px solid #E2E8F0', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', color: '#0F1923', cursor: 'pointer', transition: '0.2s' }}
@@ -460,8 +463,20 @@ export const CompanyBanners = () => {
               <div key={b.id} className="ad-card" style={{ animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` }}>
                 
                 <div className="card-header">
-                  <div className={`badge ${b.is_active ? 'active' : ''}`}>
-                    {b.is_active ? 'En ligne' : 'Brouillon'}
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <div className={`badge ${b.is_active ? 'active' : ''}`}>
+                      {b.is_active ? 'En ligne' : 'Brouillon'}
+                    </div>
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      padding: '4px 8px',
+                      borderRadius: '12px',
+                      background: b.target_role === 'visitor' ? '#E0F2FE' : b.target_role === 'candidate' ? '#FFEDD5' : b.target_role === 'all' ? '#DCFCE7' : '#F3E8FF',
+                      color: b.target_role === 'visitor' ? '#0369A1' : b.target_role === 'candidate' ? '#C2410C' : b.target_role === 'all' ? '#15803D' : '#6B21A8',
+                    }}>
+                      {b.target_role === 'visitor' ? 'Visiteur' : b.target_role === 'candidate' ? 'Candidat' : b.target_role === 'all' ? 'Tous' : 'Entreprise'}
+                    </span>
                   </div>
                   <label className="toggle-switch">
                     <input type="checkbox" checked={b.is_active} onChange={() => handleToggleActive(b)} />
@@ -619,6 +634,20 @@ export const CompanyBanners = () => {
                         />
                       </div>
                     </div>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#0F1923' }}>Rôle ciblé (Audience)</label>
+                    <select
+                      value={editForm.target_role || 'company'}
+                      onChange={e => setEditForm({...editForm, target_role: e.target.value})}
+                      className="input-field"
+                    >
+                      <option value="visitor">Visiteur (Dashboard Visiteur)</option>
+                      <option value="company">Entreprise (Dashboard Recruteur)</option>
+                      <option value="candidate">Candidat (Dashboard Candidat)</option>
+                      <option value="all">Tous (Accessible à tous)</option>
+                    </select>
                   </div>
 
                   <div>
