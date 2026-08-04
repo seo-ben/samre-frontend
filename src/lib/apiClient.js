@@ -28,10 +28,17 @@ apiClient.interceptors.request.use(
 const formatUrls = (data, baseUrl) => {
   if (data === null || data === undefined) return data;
   if (typeof data === 'string') {
-    if (data.startsWith('/storage/')) {
-      return `${baseUrl}${data}`;
+    let url = data;
+    if (url.startsWith('/storage/')) {
+      url = `${baseUrl}${url}`;
     }
-    return data;
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+      url = url.replace(/^http:\/\//i, 'https://');
+    }
+    if (typeof window !== 'undefined' && url.includes('localhost:8000') && !window.location.hostname.includes('localhost')) {
+      url = url.replace(/http:\/\/localhost:8000/g, baseUrl);
+    }
+    return url;
   }
   if (Array.isArray(data)) {
     return data.map(item => formatUrls(item, baseUrl));
