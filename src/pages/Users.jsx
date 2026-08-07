@@ -336,36 +336,25 @@ export const UsersPage = () => {
   };
 
   const getCountryName = (id) => {
-    const found = countries.find(c => String(c.id) === String(id));
+    if (!id) return '—';
+    const found = countries.find(c => String(c.id) === String(id) || String(c.code).toUpperCase() === String(id).toUpperCase());
     if (found) {
-      if (found.name) return found.name;
-      if (found.translations && found.translations.length > 0) {
-        return found.translations[0]?.name || found.translations.find(t => t.language_id === 1)?.name || found.code;
+      if (found.translations && Array.isArray(found.translations) && found.translations.length > 0) {
+        const tr = found.translations.find(t => String(t.language_id) === '1') || found.translations[0];
+        if (tr?.name) return tr.name;
       }
+      if (found.name) return found.name;
+      if (found.native_name) return found.native_name;
+      if (found.code) return found.code;
     }
-    const fallbackMap = {
-      '1': 'Togo',
-      '2': 'Bénin',
-      '3': 'Burkina Faso',
-      '4': 'Côte d\'Ivoire',
-      '5': 'Niger',
-      '6': 'Sénégal'
-    };
-    return fallbackMap[String(id)] || id || '—';
+    return String(id) || '—';
   };
 
   const getCountryCode = (id) => {
-    const found = countries.find(c => String(c.id) === String(id));
+    if (!id) return '—';
+    const found = countries.find(c => String(c.id) === String(id) || String(c.code).toUpperCase() === String(id).toUpperCase());
     if (found?.code) return found.code;
-    const fallbackMap = {
-      '1': 'TG',
-      '2': 'BJ',
-      '3': 'BF',
-      '4': 'CI',
-      '5': 'NE',
-      '6': 'SN'
-    };
-    return fallbackMap[String(id)] || id || '—';
+    return String(id) || '—';
   };
   const getRegionName = (id) => { const r = regions.find(r => String(r.id) === String(id)); return r ? (r.translations?.[0]?.name || r.name || id) : (id || '—'); };
   const getPrefectureName = (id) => { const p = prefectures.find(p => String(p.id) === String(id)); return p ? (p.translations?.[0]?.name || p.name || id) : (id || '—'); };

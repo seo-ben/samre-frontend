@@ -21,8 +21,57 @@ export const CompanyBanners = () => {
   const [imageFile, setImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState('');
   
+  const [countries, setCountries] = useState([]);
+  const [regions, setRegions] = useState([]);
   const [prefectures, setPrefectures] = useState([]);
   const [communes, setCommunes] = useState([]);
+
+  const getLocationName = (item, fallback = '') => {
+    if (!item) return fallback;
+    if (item.translations && Array.isArray(item.translations) && item.translations.length > 0) {
+      const tr = item.translations.find(t => String(t.language_id) === '1' || String(t.language_id) === String(activeLang)) || item.translations[0];
+      if (tr && tr.name) return tr.name;
+    }
+    return item.name || item.native_name || item.code || fallback;
+  };
+
+  const getGeoBadge = (b) => {
+    if (!b.country_code && !b.region_id && !b.prefecture_id && !b.commune_id) {
+      return null;
+    }
+
+    const countryObj = countries.find(c => String(c.code).toUpperCase() === String(b.country_code).toUpperCase());
+    const regionObj = regions.find(r => String(r.id) === String(b.region_id));
+    const prefObj = prefectures.find(p => String(p.id) === String(b.prefecture_id));
+    const comObj = communes.find(c => String(c.id) === String(b.commune_id));
+
+    const parts = [];
+    if (countryObj) parts.push(getLocationName(countryObj, b.country_code));
+    else if (b.country_code) parts.push(b.country_code);
+
+    if (regionObj) parts.push(getLocationName(regionObj));
+    if (prefObj) parts.push(getLocationName(prefObj));
+    if (comObj) parts.push(getLocationName(comObj));
+
+    if (parts.length === 0) return null;
+
+    return (
+      <span style={{
+        fontSize: '11px',
+        fontWeight: '700',
+        padding: '4px 8px',
+        borderRadius: '12px',
+        background: '#FEF3C7',
+        color: '#92400E',
+        border: '1px solid #FDE68A',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}>
+        📍 {parts.join(' › ')}
+      </span>
+    );
+  };
 
   const getTranslationData = (banner, langId) => {
     if (banner && banner.translations) {
@@ -73,9 +122,11 @@ export const CompanyBanners = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [langsRes, bannersRes, prefRes, comRes] = await Promise.all([
+      const [langsRes, bannersRes, countriesRes, regionsRes, prefRes, comRes] = await Promise.all([
         apiClient.get('/v1/admin/cms/dynamic/languages'),
         apiClient.get('/v1/admin/company-banners'),
+        apiClient.get('/v1/admin/cms/dynamic/countries').catch(() => ({ data: [] })),
+        apiClient.get('/v1/admin/cms/dynamic/regions').catch(() => ({ data: [] })),
         apiClient.get('/v1/admin/cms/dynamic/prefectures').catch(() => ({ data: [] })),
         apiClient.get('/v1/admin/cms/dynamic/communes').catch(() => ({ data: [] }))
       ]);
@@ -84,8 +135,12 @@ export const CompanyBanners = () => {
       if (activeLangs.length > 0) {
         setActiveLang(activeLangs[0].id);
       }
+
+      setCountries(countriesRes.data?.data || (Array.isArray(countriesRes.data) ? countriesRes.data : []));
+      setRegions(regionsRes.data?.data || (Array.isArray(regionsRes.data) ? regionsRes.data : []));
       setPrefectures(prefRes.data?.data || (Array.isArray(prefRes.data) ? prefRes.data : []));
       setCommunes(comRes.data?.data || (Array.isArray(comRes.data) ? comRes.data : []));
+
       const data = (bannersRes.data.data || bannersRes.data).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
       setBanners(data);
     } catch (err) {
@@ -486,7 +541,7 @@ export const CompanyBanners = () => {
               <div key={b.id} className="ad-card" style={{ animation: `fadeIn 0.4s ease-out ${index * 0.1}s both` }}>
                 
                 <div className="card-header">
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div className={`badge ${b.is_active ? 'active' : ''}`}>
                       {b.is_active ? 'En ligne' : 'Brouillon'}
                     </div>
@@ -500,6 +555,7 @@ export const CompanyBanners = () => {
                     }}>
                       {b.target_role === 'visitor' ? 'Visiteur' : b.target_role === 'candidate' ? 'Candidat' : b.target_role === 'all' ? 'Tous' : 'Entreprise'}
                     </span>
+                    {getGeoBadge(b)}
                   </div>
                   <label className="toggle-switch">
                     <input type="checkbox" checked={b.is_active} onChange={() => handleToggleActive(b)} />
@@ -673,67 +729,142 @@ export const CompanyBanners = () => {
                     </select>
                   </div>
 
-                  {/* Ciblage Géographique */}
+                  {/* Ciblage Géographique (Base de Données) */}
                   <div style={{ background: '#F8FAFC', padding: '20px', borderRadius: '16px', border: '1px solid #E2E8F0' }}>
                     <div style={{ fontSize: '14px', fontWeight: '700', color: '#0F1923', marginBottom: '4px' }}>
-                      📍 Ciblage Géographique (Optionnel)
+                      📍 Ciblage Géographique (Base de Données)
                     </div>
                     <div style={{ fontSize: '12px', color: '#64748B', marginBottom: '16px' }}>
-                      Laissez ces champs vides pour diffuser la bannière dans le monde entier (Global).
+                      Les pays, régions, préfectures et communes sont chargés dynamiquement depuis la base de données. Laissez vide pour une diffusion globale.
                     </div>
                     
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                      {/* Pays */}
                       <div>
                         <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Pays</label>
                         <select
                           value={editForm.country_code || ''}
-                          onChange={e => setEditForm({...editForm, country_code: e.target.value})}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setEditForm({
+                              ...editForm,
+                              country_code: val,
+                              region_id: '',
+                              prefecture_id: '',
+                              commune_id: ''
+                            });
+                          }}
                           className="input-field"
                           style={{ background: 'white' }}
                         >
                           <option value="">Tous les pays (Mondial)</option>
-                          <option value="TG">🇹🇬 Togo (TG)</option>
-                          <option value="BJ">🇧🇯 Bénin (BJ)</option>
-                          <option value="CI">🇨🇮 Côte d'Ivoire (CI)</option>
-                          <option value="SN">🇸🇳 Sénégal (SN)</option>
-                          <option value="GH">🇬🇭 Ghana (GH)</option>
-                          <option value="FR">🇫🇷 France (FR)</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Préfecture</label>
-                        <select
-                          value={editForm.prefecture_id || ''}
-                          onChange={e => setEditForm({...editForm, prefecture_id: e.target.value})}
-                          className="input-field"
-                          style={{ background: 'white' }}
-                        >
-                          <option value="">Toutes les préfectures</option>
-                          {prefectures.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name || p.code || `Préfecture #${p.id}`}
+                          {countries.map((c) => (
+                            <option key={c.id} value={c.code}>
+                              {getLocationName(c, c.code)} ({c.code})
                             </option>
                           ))}
                         </select>
                       </div>
+
+                      {/* Région */}
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Région</label>
+                        {(() => {
+                          const selectedCountryObj = countries.find(c => String(c.code).toUpperCase() === String(editForm.country_code).toUpperCase());
+                          const availableRegions = editForm.country_code
+                            ? regions.filter(r => selectedCountryObj && String(r.country_id) === String(selectedCountryObj.id))
+                            : regions;
+                          return (
+                            <select
+                              value={editForm.region_id || ''}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditForm({
+                                  ...editForm,
+                                  region_id: val,
+                                  prefecture_id: '',
+                                  commune_id: ''
+                                });
+                              }}
+                              className="input-field"
+                              style={{ background: 'white' }}
+                            >
+                              <option value="">Toutes les régions</option>
+                              {availableRegions.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {getLocationName(r, r.code || `Région #${r.id}`)}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()}
+                      </div>
                     </div>
 
-                    <div style={{ marginTop: '16px' }}>
-                      <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Commune / Ville</label>
-                      <select
-                        value={editForm.commune_id || ''}
-                        onChange={e => setEditForm({...editForm, commune_id: e.target.value})}
-                        className="input-field"
-                        style={{ background: 'white' }}
-                      >
-                        <option value="">Toutes les communes</option>
-                        {communes.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name || c.code || `Commune #${c.id}`}
-                          </option>
-                        ))}
-                      </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                      {/* Préfecture */}
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Préfecture</label>
+                        {(() => {
+                          const selectedCountryObj = countries.find(c => String(c.code).toUpperCase() === String(editForm.country_code).toUpperCase());
+                          let availablePrefectures = prefectures;
+                          if (editForm.region_id) {
+                            availablePrefectures = prefectures.filter(p => String(p.region_id) === String(editForm.region_id));
+                          } else if (editForm.country_code && selectedCountryObj) {
+                            const countryRegionIds = regions
+                              .filter(r => String(r.country_id) === String(selectedCountryObj.id))
+                              .map(r => String(r.id));
+                            availablePrefectures = prefectures.filter(p => countryRegionIds.includes(String(p.region_id)));
+                          }
+                          return (
+                            <select
+                              value={editForm.prefecture_id || ''}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setEditForm({
+                                  ...editForm,
+                                  prefecture_id: val,
+                                  commune_id: ''
+                                });
+                              }}
+                              className="input-field"
+                              style={{ background: 'white' }}
+                            >
+                              <option value="">Toutes les préfectures</option>
+                              {availablePrefectures.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {getLocationName(p, p.code || `Préfecture #${p.id}`)}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Commune / Ville */}
+                      <div>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Commune / Ville</label>
+                        {(() => {
+                          const availableCommunes = editForm.prefecture_id
+                            ? communes.filter(c => String(c.prefecture_id) === String(editForm.prefecture_id))
+                            : communes;
+                          return (
+                            <select
+                              value={editForm.commune_id || ''}
+                              onChange={e => setEditForm({ ...editForm, commune_id: e.target.value })}
+                              className="input-field"
+                              style={{ background: 'white' }}
+                            >
+                              <option value="">Toutes les communes</option>
+                              {availableCommunes.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {getLocationName(c, c.code || `Commune #${c.id}`)}
+                                </option>
+                              ))}
+                            </select>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
 
