@@ -344,10 +344,10 @@ export const CompanyBanners = () => {
       formData.append('sort_order', editForm.sort_order);
       formData.append('is_active', editForm.is_active === 1 ? 1 : 0);
       formData.append('target_role', editForm.target_role || 'company');
-      if (editForm.country_code) formData.append('country_code', editForm.country_code);
-      if (editForm.region_id) formData.append('region_id', editForm.region_id);
-      if (editForm.prefecture_id) formData.append('prefecture_id', editForm.prefecture_id);
-      if (editForm.commune_id) formData.append('commune_id', editForm.commune_id);
+      formData.append('country_code', editForm.country_code || '');
+      formData.append('region_id', editForm.region_id || '');
+      formData.append('prefecture_id', editForm.prefecture_id || '');
+      formData.append('commune_id', editForm.commune_id || '');
       
       if (editForm.action_url) {
           formData.append('action_url', editForm.action_url);
