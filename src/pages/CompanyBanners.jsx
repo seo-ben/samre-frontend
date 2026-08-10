@@ -169,7 +169,7 @@ export const CompanyBanners = () => {
       action_url: '',
       sort_order: (banners.length > 0 ? banners[banners.length - 1].sort_order + 1 : 1),
       is_active: 1,
-      target_role: 'visitor',
+      target_role: 'all',
       country_code: '',
       region_id: '',
       prefecture_id: '',
@@ -340,10 +340,14 @@ export const CompanyBanners = () => {
     
     try {
       const formData = new FormData();
+      const primaryTrans = editForm.translations[1] || editForm.translations['1'] || Object.values(editForm.translations)[0] || {};
+      if (primaryTrans.title) formData.append('title', primaryTrans.title);
+      if (primaryTrans.subtitle) formData.append('subtitle', primaryTrans.subtitle);
+
       formData.append('translations', JSON.stringify(editForm.translations));
       formData.append('sort_order', editForm.sort_order);
       formData.append('is_active', editForm.is_active === 1 ? 1 : 0);
-      formData.append('target_role', editForm.target_role || 'company');
+      formData.append('target_role', editForm.target_role || 'all');
       formData.append('country_code', editForm.country_code || '');
       formData.append('region_id', editForm.region_id || '');
       formData.append('prefecture_id', editForm.prefecture_id || '');
