@@ -4,6 +4,7 @@ import {
   Search, Filter, RefreshCw, Eye, Ban, Check, User, Calendar, Briefcase, CalendarDays, ChevronRight
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import { MainLayout } from '../components/layout/MainLayout';
 
 export const ModerationReportsPage = () => {
   const [reports, setReports] = useState([]);
@@ -127,7 +128,8 @@ export const ModerationReportsPage = () => {
   });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
+    <MainLayout>
+      <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
@@ -393,7 +395,8 @@ export const ModerationReportsPage = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 
