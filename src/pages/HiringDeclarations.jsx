@@ -134,28 +134,28 @@ export const HiringDeclarationsPage = () => {
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1280px', margin: '0 auto' }}>
         {/* Header avec indicateur temps réel */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200">
-                <Award className="w-6 h-6 text-amber-600" />
+            <div className="flex items-center gap-3 mb-1" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200" style={{ padding: '10px', backgroundColor: '#fffbeb', borderRadius: '12px', border: '1px solid #fde68a' }}>
+                <Award className="w-6 h-6 text-amber-600" color="#d97706" size={24} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
+                <h1 className="text-2xl font-bold text-slate-900" style={{ fontSize: '22px', fontWeight: '700', color: '#0f172a', margin: 0 }}>
                   Déclarations d'Embauche & Primes
                 </h1>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500" style={{ fontSize: '13px', color: '#64748b', margin: '4px 0 0 0' }}>
                   Vérification des renseignements d'embauche déclarés par les candidats et gestion des décisions de paiement.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 text-xs font-semibold" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', backgroundColor: '#ecfdf5', color: '#047857', borderRadius: '9999px', border: '1px solid #a7f3d0', fontSize: '12px', fontWeight: '600' }}>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981' }}></span>
               Synchronisation continue active
             </div>
             <button
@@ -165,97 +165,98 @@ export const HiringDeclarationsPage = () => {
               }}
               disabled={isSyncing}
               className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-95 disabled:opacity-70"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', backgroundColor: '#0f172a', color: '#ffffff', borderRadius: '12px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
             >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} size={16} />
               Actualiser
             </button>
           </div>
         </div>
 
         {/* Cartes KPI Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden">
-            <div className="flex justify-between items-start">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm relative overflow-hidden" style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+            <div className="flex justify-between items-start" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider" style={{ fontSize: '11px', fontWeight: '600', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Total Déclarations
                 </p>
-                <h3 className="text-2xl font-extrabold text-slate-900 mt-1">
+                <h3 className="text-2xl font-extrabold text-slate-900 mt-1" style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', margin: '4px 0 0 0' }}>
                   {stats.total_declarations}
                 </h3>
               </div>
-              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-                <Briefcase className="w-5 h-5" />
+              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl" style={{ padding: '10px', backgroundColor: '#eff6ff', color: '#2563eb', borderRadius: '12px' }}>
+                <Briefcase className="w-5 h-5" size={20} />
               </div>
             </div>
-            <div className="mt-3 text-xs text-slate-500 flex items-center gap-1 font-medium">
-              <span className="text-emerald-600 font-bold">{stats.validated_count} validées</span>
+            <div className="mt-3 text-xs text-slate-500 flex items-center gap-1 font-medium" style={{ marginTop: '12px', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span className="text-emerald-600 font-bold" style={{ color: '#059669', fontWeight: '700' }}>{stats.validated_count} validées</span>
               <span>•</span>
-              <span className="text-rose-600 font-bold">{stats.rejected_count} rejetées</span>
+              <span className="text-rose-600 font-bold" style={{ color: '#e11d48', fontWeight: '700' }}>{stats.rejected_count} rejetées</span>
             </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-amber-50/40">
-            <div className="flex justify-between items-start">
+          <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-amber-50/40" style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #fde68a' }}>
+            <div className="flex justify-between items-start" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-amber-800 uppercase tracking-wider" style={{ fontSize: '11px', fontWeight: '600', color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   En Attente de Traitement
                 </p>
-                <h3 className="text-2xl font-extrabold text-amber-600 mt-1">
+                <h3 className="text-2xl font-extrabold text-amber-600 mt-1" style={{ fontSize: '24px', fontWeight: '800', color: '#d97706', margin: '4px 0 0 0' }}>
                   {stats.pending_review_count}
                 </h3>
               </div>
-              <div className="p-2.5 bg-amber-100 text-amber-700 rounded-xl">
-                <Clock className="w-5 h-5" />
+              <div className="p-2.5 bg-amber-100 text-amber-700 rounded-xl" style={{ padding: '10px', backgroundColor: '#fef3c7', color: '#b45309', borderRadius: '12px' }}>
+                <Clock className="w-5 h-5" size={20} />
               </div>
             </div>
-            <p className="mt-3 text-xs text-amber-700 font-medium">
+            <p className="mt-3 text-xs text-amber-700 font-medium" style={{ marginTop: '12px', fontSize: '12px', color: '#b45309' }}>
               Nécessite la validation ou paiement admin
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-emerald-50/40">
-            <div className="flex justify-between items-start">
+          <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-emerald-50/40" style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #a7f3d0' }}>
+            <div className="flex justify-between items-start" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider" style={{ fontSize: '11px', fontWeight: '600', color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Primes Payées
                 </p>
-                <h3 className="text-2xl font-extrabold text-emerald-600 mt-1">
+                <h3 className="text-2xl font-extrabold text-emerald-600 mt-1" style={{ fontSize: '24px', fontWeight: '800', color: '#059669', margin: '4px 0 0 0' }}>
                   {stats.paid_count}
                 </h3>
               </div>
-              <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl">
-                <CheckCircle2 className="w-5 h-5" />
+              <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl" style={{ padding: '10px', backgroundColor: '#d1fae5', color: '#047857', borderRadius: '12px' }}>
+                <CheckCircle2 className="w-5 h-5" size={20} />
               </div>
             </div>
-            <p className="mt-3 text-xs text-emerald-700 font-medium">
+            <p className="mt-3 text-xs text-emerald-700 font-medium" style={{ marginTop: '12px', fontSize: '12px', color: '#047857' }}>
               {stats.unpaid_count} déclarations sans prime versée
             </p>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-purple-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-purple-50/40">
-            <div className="flex justify-between items-start">
+          <div className="bg-white p-5 rounded-2xl border border-purple-200/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-white to-purple-50/40" style={{ backgroundColor: '#ffffff', padding: '20px', borderRadius: '16px', border: '1px solid #e9d5ff' }}>
+            <div className="flex justify-between items-start" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <p className="text-xs font-semibold text-purple-800 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-purple-800 uppercase tracking-wider" style={{ fontSize: '11px', fontWeight: '600', color: '#6b21a8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   Montant Total Primes
                 </p>
-                <h3 className="text-xl font-extrabold text-purple-700 mt-1">
+                <h3 className="text-xl font-extrabold text-purple-700 mt-1" style={{ fontSize: '20px', fontWeight: '800', color: '#7e22ce', margin: '4px 0 0 0' }}>
                   {formatCFA(stats.total_paid_reward_cfa)}
                 </h3>
               </div>
-              <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl">
-                <DollarSign className="w-5 h-5" />
+              <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl" style={{ padding: '10px', backgroundColor: '#f3e8ff', color: '#7e22ce', borderRadius: '12px' }}>
+                <DollarSign className="w-5 h-5" size={20} />
               </div>
             </div>
-            <p className="mt-3 text-xs text-purple-700 font-medium">
+            <p className="mt-3 text-xs text-purple-700 font-medium" style={{ marginTop: '12px', fontSize: '12px', color: '#7e22ce' }}>
               Versé aux candidats déclarés embauchés
             </p>
           </div>
         </div>
 
         {/* Barre de Recherche et Filtres */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full md:w-80">
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between" style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="relative w-full md:w-80" style={{ position: 'relative', width: '320px' }}>
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
