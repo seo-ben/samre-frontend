@@ -19,6 +19,7 @@ import { EventsPage } from './pages/Events'
 import { EventCategoriesPage } from './pages/EventCategories'
 import { ApplicationsPage } from './pages/Applications'
 import { HiringDeclarationsPage } from './pages/HiringDeclarations'
+import ModerationReportsPage from './pages/ModerationReports'
 import { PendingBadges } from './pages/PendingBadges'
 import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
@@ -72,6 +73,10 @@ function App() {
       <Route path="/badges/pending"    element={<Protected><PendingBadges /></Protected>} />
       <Route path="/badges/candidates" element={<Protected><VerifiedProfiles userType="candidate" /></Protected>} />
       <Route path="/badges/companies"  element={<Protected><VerifiedProfiles userType="company" /></Protected>} />
+
+      {/* ── Modération & Signalements ───────────── */}
+      <Route path="/moderation/reports" element={<Protected><ModerationReportsPage /></Protected>} />
+      <Route path="/signalements"       element={<Protected><ModerationReportsPage /></Protected>} />
 
       {/* ── Paiements & Finances ─────────────────────────── */}
       <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />
