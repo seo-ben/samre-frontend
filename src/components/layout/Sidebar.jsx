@@ -10,6 +10,7 @@ import {
   Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRealtime } from '../../contexts/RealtimeContext';
 import apiClient from '../../lib/apiClient';
 
 // ─── Constantes de style ───────────────────────────────────────────────────────
@@ -67,12 +68,13 @@ const NAV = [
   },
   {
     id: 'applications',
-    label: 'Candidatures',
+    label: 'Candidatures & Embauches',
     icon: FileText,
     children: [
-      { label: 'Toutes',       path: '/applications',            icon: FileText },
-      { label: 'Par statut',   path: '/applications/by-status',  icon: ListFilter },
-      { label: 'Par offre',    path: '/applications/by-offer',   icon: Briefcase },
+      { label: 'Toutes les candidatures', path: '/applications',            icon: FileText },
+      { label: 'Par statut',              path: '/applications/by-status',  icon: ListFilter },
+      { label: 'Par offre',               path: '/applications/by-offer',   icon: Briefcase },
+      { label: 'Déclarations d\'embauche', path: '/hiring-declarations',     icon: Award,      badge: true, badgeKey: 'pending_hirings_count' },
     ],
   },
   {
@@ -160,24 +162,11 @@ const NAV = [
 // ─── Composant principal ───────────────────────────────────────────────────────
 export const Sidebar = () => {
   const { user, logout } = useAuth();
+  const { sidebarStats } = useRealtime();
   const navigate = useNavigate();
   const location = useLocation();
 
   const [collapsed, setCollapsed] = useState(false);
-  const [sidebarStats, setSidebarStats] = useState(null);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await apiClient.get('/v1/admin/sidebar-stats');
-        setSidebarStats(res.data.data || {});
-      } catch (err) {
-        console.error('Erreur stats sidebar', err);
-        setSidebarStats({});
-      }
-    };
-    fetchStats();
-  }, []);
 
   useEffect(() => {
     const handleResize = () => {

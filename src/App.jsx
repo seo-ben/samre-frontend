@@ -18,6 +18,7 @@ import { OffersPage } from './pages/Offers'
 import { EventsPage } from './pages/Events'
 import { EventCategoriesPage } from './pages/EventCategories'
 import { ApplicationsPage } from './pages/Applications'
+import { HiringDeclarationsPage } from './pages/HiringDeclarations'
 import { PendingBadges } from './pages/PendingBadges'
 import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
@@ -60,10 +61,12 @@ function App() {
       <Route path="/events/approved"   element={<Protected><EventsPage /></Protected>} />
       <Route path="/events/categories" element={<Protected><EventCategoriesPage /></Protected>} />
 
-      {/* ── Candidatures ──────────────────────── */}
+      {/* ── Candidatures & Déclarations d'embauche ──────────────── */}
       <Route path="/applications"            element={<Protected><ApplicationsPage /></Protected>} />
       <Route path="/applications/by-status"  element={<Protected><ApplicationsPage /></Protected>} />
       <Route path="/applications/by-offer"   element={<Protected><ApplicationsPage /></Protected>} />
+      <Route path="/hiring-declarations"     element={<Protected><HiringDeclarationsPage /></Protected>} />
+      <Route path="/declarations-embauche"   element={<Protected><HiringDeclarationsPage /></Protected>} />
 
       {/* ── Badges ────────────────────────────── */}
       <Route path="/badges/pending"    element={<Protected><PendingBadges /></Protected>} />

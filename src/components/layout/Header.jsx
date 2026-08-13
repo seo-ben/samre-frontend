@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell, ChevronRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRealtime } from '../../contexts/RealtimeContext';
 
 // Helper de correspondance des routes pour le fil d'Ariane (Breadcrumbs)
 const getBreadcrumbs = (path) => {
@@ -40,6 +41,9 @@ const getBreadcrumbs = (path) => {
   }
   if (path.startsWith('/applications/by-offer')) {
     return { parent: 'Candidatures', child: 'Par offre' };
+  }
+  if (path.startsWith('/hiring-declarations') || path.startsWith('/declarations-embauche')) {
+    return { parent: 'Candidatures', child: 'Déclarations d\'embauche' };
   }
   if (path.startsWith('/applications')) {
     return { parent: 'Candidatures', child: 'Toutes les candidatures' };
@@ -149,6 +153,7 @@ const getBreadcrumbs = (path) => {
 
 export const Header = () => {
   const { user } = useAuth();
+  const { isSyncing, refreshNow } = useRealtime();
   const location = useLocation();
 
   const initials = user
@@ -211,7 +216,39 @@ export const Header = () => {
         </div>
 
         {/* Right section: Search & Actions */}
-        <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px', flexShrink: 0 }}>
+        <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+          {/* Live sync badge */}
+          <button
+            onClick={refreshNow}
+            title="Synchronisation temps réel (Cliquer pour forcer l'actualisation)"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '5px 10px',
+              borderRadius: '20px',
+              background: '#f0fdf4',
+              border: '1px solid #bbf7d0',
+              fontSize: '11.5px',
+              fontWeight: '700',
+              color: '#16a34a',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+          >
+            <span style={{
+              width: '7px',
+              height: '7px',
+              borderRadius: '50%',
+              background: isSyncing ? '#eab308' : '#22c55e',
+              boxShadow: isSyncing ? '0 0 8px #eab308' : '0 0 8px #22c55e',
+              display: 'inline-block'
+            }}></span>
+            <span className="hidden sm:inline">
+              {isSyncing ? 'Actualisation...' : 'En direct'}
+            </span>
+          </button>
+
           <div className="header-search" style={{ position: 'relative' }}>
             <Search size={16} color="var(--gray-medium)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input 
@@ -222,7 +259,7 @@ export const Header = () => {
                 border: '1px solid var(--gray-border)',
                 borderRadius: '12px',
                 padding: '8px 12px 8px 36px',
-                width: '280px',
+                width: '240px',
                 fontFamily: 'var(--font-inter)',
                 fontSize: '13px'
               }}
