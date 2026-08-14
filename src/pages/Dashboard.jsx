@@ -174,14 +174,16 @@ export const Dashboard = () => {
   }, [fetchStats]);
 
   const kpis = [
-    { key: 'users_count',          label: 'Utilisateurs total',     iconClass: 'fa-solid fa-users',        color: '#0052ff' },
-    { key: 'candidates_count',     label: 'Candidats',              iconClass: 'fa-solid fa-user-check',   color: '#7c3aed' },
-    { key: 'companies_count',      label: 'Entreprises',            iconClass: 'fa-solid fa-landmark',     color: '#059669' },
-    { key: 'offers_count',         label: 'Offres publiées',        iconClass: 'fa-solid fa-briefcase',    color: '#d97706' },
-    { key: 'applications_count',   label: 'Candidatures',           iconClass: 'fa-solid fa-file-alt',     color: '#db2777' },
-    { key: 'events_count',         label: 'Événements',             iconClass: 'fa-solid fa-calendar-days', color: '#0891b2' },
-    { key: 'hired_candidates',     label: 'Embauchés',              iconClass: 'fa-solid fa-user-tie',     color: '#16a34a' },
-    { key: 'scheduled_candidates', label: 'Programmés',             iconClass: 'fa-solid fa-clock',        color: '#6366f1' },
+    { key: 'users_count',          label: 'Utilisateurs total',     iconClass: 'fa-solid fa-users',        color: '#0052ff', getValue: s => s?.users_count },
+    { key: 'candidates_count',     label: 'Candidats',              iconClass: 'fa-solid fa-user-check',   color: '#7c3aed', getValue: s => s?.candidates_count },
+    { key: 'companies_count',      label: 'Entreprises',            iconClass: 'fa-solid fa-landmark',     color: '#059669', getValue: s => s?.companies_count },
+    { key: 'offers_count',         label: 'Offres publiées',        iconClass: 'fa-solid fa-briefcase',    color: '#d97706', getValue: s => s?.offers_count },
+    { key: 'applications_count',   label: 'Candidatures',           iconClass: 'fa-solid fa-file-alt',     color: '#db2777', getValue: s => s?.applications_count },
+    { key: 'events_count',         label: 'Événements',             iconClass: 'fa-solid fa-calendar-days', color: '#0891b2', getValue: s => s?.events_count },
+    { key: 'hired_candidates',     label: 'Embauchés',              iconClass: 'fa-solid fa-user-tie',     color: '#16a34a', getValue: s => s?.hired_candidates },
+    { key: 'scheduled_candidates', label: 'Programmés',             iconClass: 'fa-solid fa-clock',        color: '#6366f1', getValue: s => s?.scheduled_candidates },
+    { key: 'special_req_total',    label: 'Demandes spéciales',     iconClass: 'fa-solid fa-wand-magic-sparkles', color: '#f59e0b', getValue: s => s?.special_requests?.total ?? 0 },
+    { key: 'special_req_pending',  label: 'Demandes en attente',    iconClass: 'fa-solid fa-clock-rotate-left', color: '#ea580c', getValue: s => s?.special_requests?.pending ?? 0 },
   ];
 
   return (
@@ -296,32 +298,6 @@ export const Dashboard = () => {
             <option value="suspended">Suspendu</option>
           </select>
 
-          {/* Filtre 4 : Préfecture */}
-          {/* <select
-            value={selectedPrefecture}
-            onChange={e => setSelectedPrefecture(e.target.value)}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '8px',
-              border: '1px solid var(--gray-border)',
-              background: '#ffffff',
-              fontSize: '13px',
-              color: 'var(--black-deep)',
-              fontWeight: '500',
-              fontFamily: 'var(--font-inter)',
-              cursor: 'pointer',
-              outline: 'none',
-              maxWidth: '160px',
-            }}
-          >
-            <option value="">Toutes les préfectures</option>
-            {prefectures.map(pref => (
-              <option key={pref.id} value={pref.id}>
-                {pref.translations?.[0]?.name ?? pref.name ?? `Préfecture ${pref.id}`}
-              </option>
-            ))}
-          </select> */}
-
           <button
             onClick={fetchStats}
             disabled={loading}
@@ -382,16 +358,72 @@ export const Dashboard = () => {
         {/* Carte revenus en pleine largeur */}
         <RevenueCard value={stats?.total_revenue} loading={loading} />
 
-        {kpis.map(({ key, label, iconClass, color }) => (
+        {kpis.map(({ key, label, iconClass, color, getValue }) => (
           <KpiCard
             key={key}
             iconClass={iconClass}
             label={label}
-            value={stats?.[key]}
+            value={getValue ? getValue(stats) : stats?.[key]}
             color={color}
             loading={loading}
           />
         ))}
+
+        {/* Section Répartition des demandes spéciales */}
+        {stats?.special_requests && (
+          <div style={{
+            background: '#ffffff',
+            border: '1px solid var(--gray-border)',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+            gridColumn: 'span 2',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <h3 style={{
+                margin: 0,
+                fontSize: '15px', fontWeight: '700',
+                fontFamily: 'var(--font-poppins)', color: 'var(--black-deep)',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}>
+                <i className="fa-solid fa-wand-magic-sparkles" style={{ color: '#f59e0b' }}></i>
+                Demandes Spéciales par catégorie
+              </h3>
+              <Link
+                to="/special-requests"
+                style={{
+                  fontSize: '12px', fontWeight: '700', color: '#0052ff',
+                  textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px'
+                }}
+              >
+                Gérer ({stats.special_requests.pending} en attente) →
+              </Link>
+            </div>
+
+            {stats.special_requests.by_category?.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {stats.special_requests.by_category.map((cat, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: 'var(--black-deep)', fontWeight: '500' }}>{cat.category_label}</span>
+                    <span style={{
+                      padding: '2px 8px', borderRadius: '12px',
+                      background: '#fef3c7', color: '#92400e',
+                      fontSize: '12px', fontWeight: '700'
+                    }}>
+                      {cat.count}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--gray-medium)' }}>
+                Aucune demande spéciale sur la période sélectionnée.
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Section d'actions rapides */}
         <div style={{
@@ -414,10 +446,10 @@ export const Dashboard = () => {
           </h3>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {[
-              { label: 'Offres en attente',    path: '/offers/pending', iconClass: 'fa-solid fa-file-contract' },
-              { label: 'Gérer les utilisateurs', path: '/users', iconClass: 'fa-solid fa-users-gear' },
-              // { label: 'CMS & Contenu',        path: '/cms/languages', iconClass: 'fa-solid fa-folder-tree' },
-              // { label: 'Envoyer notification', path: '/notifications/send', iconClass: 'fa-solid fa-bell' },
+              { label: 'Offres en attente',      path: '/offers/pending',    iconClass: 'fa-solid fa-file-contract' },
+              { label: 'Demandes spéciales',     path: '/special-requests',  iconClass: 'fa-solid fa-wand-magic-sparkles' },
+              { label: 'Déclarations d\'embauche', path: '/hiring-declarations', iconClass: 'fa-solid fa-award' },
+              { label: 'Gérer les utilisateurs', path: '/users',            iconClass: 'fa-solid fa-users-gear' },
             ].map(({ label, path, iconClass }) => (
               <Link
                 key={path}

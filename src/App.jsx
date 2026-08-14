@@ -27,6 +27,7 @@ import { CompanyBanners } from './pages/CompanyBanners'
 import { SystemSettings } from './pages/SystemSettings'
 import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
+import { SpecialRequestsPage } from './pages/SpecialRequests'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
@@ -77,6 +78,10 @@ function App() {
       {/* ── Modération & Signalements ───────────── */}
       <Route path="/moderation/reports" element={<Protected><ModerationReportsPage /></Protected>} />
       <Route path="/signalements"       element={<Protected><ModerationReportsPage /></Protected>} />
+
+      {/* ── Demandes Spéciales ──────────────────── */}
+      <Route path="/special-requests"   element={<Protected><SpecialRequestsPage /></Protected>} />
+      <Route path="/demandes-speciales" element={<Protected><SpecialRequestsPage /></Protected>} />
 
       {/* ── Paiements & Finances ─────────────────────────── */}
       <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />

@@ -13,6 +13,7 @@ export const RealtimeProvider = ({ children }) => {
     pending_events_count: 0,
     pending_verifications_count: 0,
     pending_hirings_count: 0,
+    pending_special_requests_count: 0,
   });
 
   // Intervalle de polling silencieux en secondes (10s par défaut)

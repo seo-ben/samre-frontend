@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -92,6 +92,14 @@ const NAV = [
     label: 'Modération & Signalements',
     icon: ShieldAlert,
     path: '/moderation/reports',
+  },
+  {
+    id: 'special-requests',
+    label: 'Demandes spéciales',
+    icon: Sparkles,
+    path: '/special-requests',
+    badge: true,
+    badgeKey: 'pending_special_requests_count',
   },
   {
     id: 'finances',
