@@ -184,8 +184,6 @@ export const Dashboard = () => {
     { key: 'scheduled_candidates', label: 'Programmés',             iconClass: 'fa-solid fa-clock',        color: '#6366f1', getValue: s => s?.scheduled_candidates },
     { key: 'special_req_total',    label: 'Demandes spéciales',     iconClass: 'fa-solid fa-wand-magic-sparkles', color: '#f59e0b', getValue: s => s?.special_requests?.total ?? 0 },
     { key: 'special_req_pending',  label: 'Demandes en attente',    iconClass: 'fa-solid fa-clock-rotate-left', color: '#ea580c', getValue: s => s?.special_requests?.pending ?? 0 },
-    { key: 'mod_reports_pending',  label: 'Signalements en attente', iconClass: 'fa-solid fa-triangle-exclamation', color: '#e11d48', getValue: s => s?.moderation_reports?.pending ?? 0 },
-    { key: 'mod_reports_total',    label: 'Total Signalements',     iconClass: 'fa-solid fa-shield-halved', color: '#9f1239', getValue: s => s?.moderation_reports?.total ?? 0 },
   ];
 
   return (
@@ -426,121 +424,6 @@ export const Dashboard = () => {
             )}
           </div>
         )}
-
-        {/* Section Modération & Signalements */}
-        {stats?.moderation_reports && (
-          <div style={{
-            background: '#ffffff',
-            border: '1px solid var(--gray-border)',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-            gridColumn: 'span 2',
-            display: 'flex',
-            flexDirection: 'column',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <h3 style={{
-                margin: 0,
-                fontSize: '15px', fontWeight: '700',
-                fontFamily: 'var(--font-poppins)', color: 'var(--black-deep)',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}>
-                <i className="fa-solid fa-triangle-exclamation" style={{ color: '#e11d48' }}></i>
-                Modération & Signalements
-              </h3>
-              <Link
-                to="/moderation/reports"
-                style={{
-                  fontSize: '12px', fontWeight: '700', color: '#e11d48',
-                  textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px'
-                }}
-              >
-                Traiter ({stats.moderation_reports.pending} en attente) →
-              </Link>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-              <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: '10px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#9f1239', textTransform: 'uppercase' }}>En attente</span>
-                <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#be123c' }}>
-                  {stats.moderation_reports.pending}
-                </p>
-              </div>
-
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '10px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', textTransform: 'uppercase' }}>Total Traités</span>
-                <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#2563eb' }}>
-                  {stats.moderation_reports.processed ?? ((stats.moderation_reports.banned || 0) + (stats.moderation_reports.dismissed || 0))}
-                </p>
-              </div>
-
-              <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '10px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase' }}>Bannis</span>
-                <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#dc2626' }}>
-                  {stats.moderation_reports.banned}
-                </p>
-              </div>
-
-              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#166534', textTransform: 'uppercase' }}>Classés</span>
-                <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#16a34a' }}>
-                  {stats.moderation_reports.dismissed}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Section d'actions rapides */}
-        <div style={{
-          background: '#ffffff',
-          border: '1px solid var(--gray-border)',
-          borderRadius: '12px',
-          padding: '24px',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-          gridColumn: 'span 2',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-        }}>
-          <h3 style={{
-            margin: '0 0 16px',
-            fontSize: '15px', fontWeight: '600',
-            fontFamily: 'var(--font-poppins)', color: 'var(--black-deep)',
-          }}>
-            Actions rapides
-          </h3>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {[
-              { label: 'Offres en attente',        path: '/offers/pending',     iconClass: 'fa-solid fa-file-contract' },
-              { label: 'Demandes spéciales',       path: '/special-requests',   iconClass: 'fa-solid fa-wand-magic-sparkles' },
-              { label: 'Signalements & Modération', path: '/moderation/reports', iconClass: 'fa-solid fa-triangle-exclamation' },
-              { label: 'Vérifications de badge',   path: '/badges/pending',     iconClass: 'fa-solid fa-certificate' },
-              { label: 'Déclarations d\'embauche',   path: '/hiring-declarations', iconClass: 'fa-solid fa-award' },
-              { label: 'Gérer les utilisateurs',   path: '/users',             iconClass: 'fa-solid fa-users-gear' },
-            ].map(({ label, path, iconClass }) => (
-              <Link
-                key={path}
-                to={path}
-                style={{
-                  padding: '10px 16px',
-                  background: 'var(--gray-light)',
-                  border: '1px solid var(--gray-border)',
-                  borderRadius: '8px',
-                  fontSize: '13px', fontWeight: '500',
-                  color: 'var(--black-deep)',
-                  textDecoration: 'none',
-                  transition: '0.15s',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#e8edf5'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--gray-light)'; }}
-              >
-                <i className={iconClass} style={{ marginRight: '6px', opacity: 0.7 }}></i> {label}
-              </Link>
-            ))}
-          </div>
-        </div>
       </div>
 
       <style>{`
