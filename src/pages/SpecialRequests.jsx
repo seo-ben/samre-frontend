@@ -42,14 +42,23 @@ export const SpecialRequestsPage = () => {
       params.append('page', page);
 
       const response = await apiClient.get(`/v1/admin/special-requests?${params.toString()}`);
-      if (response.data?.success) {
-        const data = response.data.data;
-        setRequests(data.requests || []);
-        if (data.stats) {
-          setStats(data.stats);
+      if (response.data?.success || response.data?.status === 'success') {
+        const payload = response.data.data || response.data;
+        const list = payload.requests || (Array.isArray(payload) ? payload : (payload.data || []));
+        setRequests(list);
+        if (payload.stats) {
+          setStats(payload.stats);
+        } else if (response.data.stats) {
+          setStats(response.data.stats);
         }
-        if (response.data.meta) {
-          setPagination(response.data.meta);
+        const meta = response.data.meta || payload;
+        if (meta) {
+          setPagination({
+            page: meta.page || meta.current_page || 1,
+            last_page: meta.last_page || 1,
+            total: meta.total || list.length,
+            per_page: meta.per_page || 15,
+          });
         }
       }
     } catch (err) {

@@ -1,15 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Flag, AlertTriangle, CheckCircle, XCircle, Clock, ShieldAlert,
-  Search, Filter, RefreshCw, Eye, Ban, Check, User, Calendar, Briefcase, CalendarDays, ChevronRight
+  ShieldAlert, AlertTriangle, CheckCircle2, XCircle, Clock, 
+  Search, Filter, RefreshCw, Eye, Ban, Check, User, Calendar, 
+  Briefcase, CalendarDays, ChevronRight, X, MessageSquare, 
+  FileText, ExternalLink, ShieldCheck, Building2, Phone, Mail,
+  AlertOctagon, CheckSquare, Sparkles, MapPin
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
+import { useRealtime } from '../contexts/RealtimeContext';
 
 export const ModerationReportsPage = () => {
+  const { syncCounter, refreshNow } = useRealtime();
   const [reports, setReports] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    banned: 0,
+    dismissed: 0,
+  });
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('pending'); // 'pending', 'resolved_banned', 'resolved_dismissed', ''
+  const [statusFilter, setStatusFilter] = useState('pending'); // 'pending', 'resolved_banned', 'resolved_dismissed', 'all'
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
@@ -19,53 +30,80 @@ export const ModerationReportsPage = () => {
   const [actionType, setActionType] = useState(null); // 'ban' or 'dismiss'
   const [adminNotes, setAdminNotes] = useState('');
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
+      if (search.trim()) params.append('search', search.trim());
       params.append('page', page);
 
-      const response = await apiClient.get(`/admin/reports?${params.toString()}`);
-      if (response.data?.success) {
-        const data = response.data.data;
-        setReports(data.data || []);
-        setPagination({
-          current_page: data.current_page,
-          last_page: data.last_page,
-          total: data.total,
-        });
+      const response = await apiClient.get(`/v1/admin/reports?${params.toString()}`);
+      if (response.data?.success || response.data?.status === 'success') {
+        const payload = response.data.data || response.data;
+        const list = payload.reports || (Array.isArray(payload) ? payload : (payload.data || []));
+        setReports(list);
+        
+        if (payload.stats) {
+          setStats(payload.stats);
+        } else if (response.data.stats) {
+          setStats(response.data.stats);
+        }
+
+        const meta = response.data.meta || payload;
+        if (meta) {
+          setPagination({
+            current_page: meta.current_page || meta.page || 1,
+            last_page: meta.last_page || 1,
+            total: meta.total || list.length,
+            per_page: meta.per_page || 15,
+          });
+        }
       }
     } catch (err) {
       console.error('Error fetching reports:', err);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, page]);
+  }, [statusFilter, search, page]);
 
   useEffect(() => {
     fetchReports();
-  }, [fetchReports]);
+  }, [fetchReports, syncCounter]);
 
-  const handleAction = async () => {
-    if (!selectedReport || !actionType) return;
+  const handleAction = async (type = actionType) => {
+    if (!selectedReport || !type) return;
     setSubmittingAction(true);
     try {
-      const endpoint = actionType === 'ban' 
-        ? `/admin/reports/${selectedReport.id}/ban`
-        : `/admin/reports/${selectedReport.id}/dismiss`;
+      const endpoint = type === 'ban' 
+        ? `/v1/admin/reports/${selectedReport.id}/ban`
+        : `/v1/admin/reports/${selectedReport.id}/dismiss`;
 
-      const res = await apiClient.post(endpoint, { admin_notes: adminNotes });
-      if (res.data?.success) {
+      const res = await apiClient.post(endpoint, { 
+        admin_notes: adminNotes || (type === 'ban' ? 'Contenu banni pour violation des règles.' : 'Signalement examiné et classé sans suite.')
+      });
+
+      if (res.data?.success || res.data?.status === 'success') {
+        showToast(
+          type === 'ban' ? 'Contenu banni et signalement traité avec succès !' : 'Signalement classé sans suite.',
+          type === 'ban' ? 'error' : 'success'
+        );
         setSelectedReport(null);
         setActionType(null);
         setAdminNotes('');
         fetchReports();
+        refreshNow();
       }
     } catch (err) {
       console.error('Action error:', err);
-      alert('Erreur lors du traitement du signalement.');
+      showToast('Erreur lors du traitement du signalement.', 'error');
     } finally {
       setSubmittingAction(false);
     }
@@ -74,19 +112,19 @@ export const ModerationReportsPage = () => {
   const getReasonLabel = (reasonId) => {
     switch (reasonId) {
       case 'suspect_event':
-        return { text: 'Événement / Offre suspecte', color: 'bg-amber-100 text-amber-800 border-amber-200' };
+        return { text: 'Événement / Offre suspecte', color: 'bg-amber-100 text-amber-900 border-amber-300' };
       case 'fake_organization':
-        return { text: 'Fausse organisation / Entreprise fictive', color: 'bg-red-100 text-red-800 border-red-200' };
+        return { text: 'Fausse organisation / Entreprise fictive', color: 'bg-red-100 text-red-900 border-red-300' };
       case 'incorrect_info':
-        return { text: 'Information incorrecte', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+        return { text: 'Information incorrecte', color: 'bg-blue-100 text-blue-900 border-blue-300' };
       case 'inappropriate':
-        return { text: 'Contenu inapproprié ou haineux', color: 'bg-purple-100 text-purple-800 border-purple-200' };
+        return { text: 'Contenu inapproprié ou illicite', color: 'bg-purple-100 text-purple-900 border-purple-300' };
       case 'fraud':
-        return { text: 'Offre / Événement frauduleux ou arnaque', color: 'bg-rose-100 text-rose-800 border-rose-200' };
+        return { text: 'Offre frauduleuse / Arnaque', color: 'bg-rose-100 text-rose-900 border-rose-300' };
       case 'terms_violation':
-        return { text: 'Violation des conditions', color: 'bg-orange-100 text-orange-800 border-orange-200' };
+        return { text: 'Violation des conditions', color: 'bg-orange-100 text-orange-900 border-orange-300' };
       default:
-        return { text: 'Autre motif', color: 'bg-slate-100 text-slate-800 border-slate-200' };
+        return { text: reasonId || 'Autre motif', color: 'bg-slate-100 text-slate-800 border-slate-200' };
     }
   };
 
@@ -94,308 +132,497 @@ export const ModerationReportsPage = () => {
     switch (status) {
       case 'pending':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={13} className="text-amber-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+            <Clock size={12} className="text-amber-500 animate-pulse" />
             En attente
           </span>
         );
       case 'resolved_banned':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-            <XCircle size={13} className="text-rose-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+            <XCircle size={12} className="text-rose-500" />
             Contenu banni
           </span>
         );
       case 'resolved_dismissed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <CheckCircle size={13} className="text-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+            <CheckCircle2 size={12} className="text-emerald-500" />
             Classé sans suite
           </span>
         );
       default:
-        return null;
+        return (
+          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+            {status}
+          </span>
+        );
     }
   };
 
-  const filteredReports = reports.filter(r => {
-    if (!search) return true;
-    const term = search.toLowerCase();
-    const title = (r.reportable?.title || r.reportable?.name || '').toLowerCase();
-    const reporter = (r.reporter?.first_name || r.reporter?.name || r.reporter?.email || '').toLowerCase();
-    const reason = getReasonLabel(r.reason).text.toLowerCase();
-    return title.includes(term) || reporter.includes(term) || reason.includes(term);
-  });
+  const getTargetTypeBadge = (reportableType) => {
+    if (reportableType?.includes('JobOffer')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          <Briefcase size={13} className="text-blue-500" />
+          Offre d'emploi
+        </span>
+      );
+    }
+    if (reportableType?.includes('Event')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+          <CalendarDays size={13} className="text-purple-500" />
+          Événement
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+        <FileText size={13} className="text-slate-500" />
+        Contenu
+      </span>
+    );
+  };
 
   return (
     <MainLayout>
-      <div className="p-6 max-w-7xl mx-auto space-y-6 font-sans">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600">
-            <ShieldAlert size={24} />
-          </div>
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        
+        {/* Header de la page */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Modération des Signalements</h1>
-            <p className="text-sm text-slate-500">Examinez les offres d'emploi et événements signalés par les utilisateurs</p>
-          </div>
-        </div>
-        <button
-          onClick={fetchReports}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-xl transition border border-slate-200"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-          Actualiser
-        </button>
-      </div>
-
-      {/* Tabs & Search */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0">
-          <button
-            onClick={() => { setStatusFilter('pending'); setPage(1); }}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
-              statusFilter === 'pending'
-                ? 'bg-amber-500 text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Clock size={16} />
-            En attente de révision
-          </button>
-          <button
-            onClick={() => { setStatusFilter('resolved_banned'); setPage(1); }}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
-              statusFilter === 'resolved_banned'
-                ? 'bg-red-600 text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <XCircle size={16} />
-            Contenus bannis
-          </button>
-          <button
-            onClick={() => { setStatusFilter('resolved_dismissed'); setPage(1); }}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
-              statusFilter === 'resolved_dismissed'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <CheckCircle size={16} />
-            Classés sans suite
-          </button>
-          <button
-            onClick={() => { setStatusFilter(''); setPage(1); }}
-            className={`px-4 py-2 text-sm font-semibold rounded-xl transition flex items-center gap-2 whitespace-nowrap ${
-              statusFilter === ''
-                ? 'bg-slate-800 text-white shadow-sm'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            Tous les signalements
-          </button>
-        </div>
-
-        <div className="relative w-full md:w-72">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Rechercher par titre, motif, utilisateur..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition"
-          />
-        </div>
-      </div>
-
-      {/* Reports Table / List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {loading ? (
-          <div className="p-12 text-center text-slate-400">
-            <RefreshCw size={28} className="animate-spin mx-auto mb-3 text-amber-500" />
-            Chargement des signalements...
-          </div>
-        ) : filteredReports.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 space-y-2">
-            <ShieldAlert size={40} className="mx-auto text-slate-300 mb-2" />
-            <h3 className="font-semibold text-slate-700">Aucun signalement trouvé</h3>
-            <p className="text-sm text-slate-400">Aucun contenu ne correspond au filtre sélectionné.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50 text-slate-500 font-semibold text-xs uppercase tracking-wider">
-                  <th className="py-3.5 px-4">Contenu Signalé</th>
-                  <th className="py-3.5 px-4">Motif de Signalement</th>
-                  <th className="py-3.5 px-4">Signaleur</th>
-                  <th className="py-3.5 px-4">Date</th>
-                  <th className="py-3.5 px-4">Statut</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredReports.map((report) => {
-                  const isOffer = report.reportable_type?.includes('JobOffer');
-                  const targetTitle = report.reportable?.title || report.reportable?.name || 'Contenu supprimé';
-                  const reasonBadge = getReasonLabel(report.reason);
-
-                  return (
-                    <tr key={report.id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-4 px-4">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            isOffer ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'
-                          }`}>
-                            {isOffer ? <Briefcase size={16} /> : <CalendarDays size={16} />}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-slate-900 line-clamp-1">{targetTitle}</div>
-                            <span className="text-xs text-slate-400 font-medium">
-                              {isOffer ? "Offre d'emploi" : "Événement"} • ID #{report.reportable_id}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <div className="space-y-1">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-semibold border ${reasonBadge.color}`}>
-                            {reasonBadge.text}
-                          </span>
-                          {report.description && (
-                            <p className="text-xs text-slate-600 italic bg-slate-50 p-2 rounded-lg border border-slate-100 max-w-xs">
-                              "{report.description}"
-                            </p>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs font-bold">
-                            <User size={14} />
-                          </div>
-                          <div>
-                            <div className="text-xs font-semibold text-slate-800">
-                              {report.reporter?.first_name ? `${report.reporter.first_name} ${report.reporter.last_name || ''}` : 'Utilisateur'}
-                            </div>
-                            <div className="text-[11px] text-slate-400">{report.reporter?.email || report.reporter?.phone}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-4 text-xs text-slate-500 whitespace-nowrap">
-                        {new Date(report.created_at).toLocaleDateString('fr-FR', {
-                          day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                        })}
-                      </td>
-
-                      <td className="py-4 px-4 whitespace-nowrap">
-                        {getStatusBadge(report.status)}
-                      </td>
-
-                      <td className="py-4 px-4 text-right whitespace-nowrap">
-                        {report.status === 'pending' ? (
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => { setSelectedReport(report); setActionType('ban'); setAdminNotes(''); }}
-                              className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition shadow-sm flex items-center gap-1.5"
-                              title="Bannir le contenu"
-                            >
-                              <Ban size={14} />
-                              Bannir
-                            </button>
-                            <button
-                              onClick={() => { setSelectedReport(report); setActionType('dismiss'); setAdminNotes(''); }}
-                              className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5"
-                              title="Classer sans suite"
-                            >
-                              <Check size={14} />
-                              Classer sans suite
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">
-                            Traité par {report.reviewer?.first_name || 'Admin'}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Action Modal */}
-      {selectedReport && actionType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl border border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                actionType === 'ban' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
-              }`}>
-                {actionType === 'ban' ? <Ban size={20} /> : <CheckCircle size={20} />}
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600 border border-rose-500/20">
+                <ShieldAlert size={26} />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900">
-                  {actionType === 'ban' ? 'Bannir ce contenu' : 'Classer sans suite'}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  {actionType === 'ban'
-                    ? 'Le contenu sera banni du flux et l\'auteur sera notifié.'
-                    : 'Le contenu restera en ligne et le signalement sera fermé.'}
+                <h1 className="text-2xl font-black tracking-tight text-slate-900 font-poppins">
+                  Modération des Signalements
+                </h1>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Examinez et traitez les signalements d'offres et d'événements déposés par la communauté
                 </p>
               </div>
             </div>
+          </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1 border border-slate-100">
-              <div className="font-semibold text-slate-700">
-                {selectedReport.reportable?.title || selectedReport.reportable?.name || 'Contenu'}
-              </div>
-              <div className="text-slate-500">Motif : {getReasonLabel(selectedReport.reason).text}</div>
+          <button
+            onClick={() => { fetchReports(); refreshNow(); }}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition shadow-sm"
+          >
+            <RefreshCw size={15} className={loading ? 'animate-spin text-rose-600' : 'text-slate-500'} />
+            Actualiser
+          </button>
+        </div>
+
+        {/* Cartes KPI */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div 
+            onClick={() => { setStatusFilter('all'); setPage(1); }}
+            className={`p-4 rounded-2xl border transition cursor-pointer ${
+              statusFilter === 'all' 
+                ? 'bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/10' 
+                : 'bg-white text-slate-900 border-slate-200 hover:border-slate-300 shadow-sm'
+            }`}
+          >
+            <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'all' ? 'text-slate-400' : 'text-slate-500'}`}>
+              Total Signalements
+            </p>
+            <p className="text-2xl font-black mt-1 font-poppins">{stats.total}</p>
+          </div>
+
+          <div 
+            onClick={() => { setStatusFilter('pending'); setPage(1); }}
+            className={`p-4 rounded-2xl border transition cursor-pointer ${
+              statusFilter === 'pending' 
+                ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20' 
+                : 'bg-white text-slate-900 border-slate-200 hover:border-amber-300 shadow-sm'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'pending' ? 'text-amber-100' : 'text-amber-600'}`}>
+                En attente
+              </p>
+              <Clock size={16} className={statusFilter === 'pending' ? 'text-white' : 'text-amber-500'} />
             </div>
+            <p className="text-2xl font-black mt-1 font-poppins">{stats.pending}</p>
+          </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Remarques administratives (facultatif)
-              </label>
-              <textarea
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                placeholder="Précisez la raison de votre décision..."
-                className="w-full text-xs p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none bg-slate-50"
-                rows={3}
-              />
+          <div 
+            onClick={() => { setStatusFilter('resolved_banned'); setPage(1); }}
+            className={`p-4 rounded-2xl border transition cursor-pointer ${
+              statusFilter === 'resolved_banned' 
+                ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20' 
+                : 'bg-white text-slate-900 border-slate-200 hover:border-rose-300 shadow-sm'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'resolved_banned' ? 'text-rose-100' : 'text-rose-600'}`}>
+                Contenus Bannis
+              </p>
+              <Ban size={16} className={statusFilter === 'resolved_banned' ? 'text-white' : 'text-rose-500'} />
             </div>
+            <p className="text-2xl font-black mt-1 font-poppins">{stats.banned}</p>
+          </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
+          <div 
+            onClick={() => { setStatusFilter('resolved_dismissed'); setPage(1); }}
+            className={`p-4 rounded-2xl border transition cursor-pointer ${
+              statusFilter === 'resolved_dismissed' 
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20' 
+                : 'bg-white text-slate-900 border-slate-200 hover:border-emerald-300 shadow-sm'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'resolved_dismissed' ? 'text-emerald-100' : 'text-emerald-600'}`}>
+                Classés sans suite
+              </p>
+              <CheckCircle2 size={16} className={statusFilter === 'resolved_dismissed' ? 'text-white' : 'text-emerald-500'} />
+            </div>
+            <p className="text-2xl font-black mt-1 font-poppins">{stats.dismissed}</p>
+          </div>
+        </div>
+
+        {/* Barre de filtres et recherche */}
+        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="relative w-full md:w-80">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Rechercher signalement, motif, utilisateur..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
+            {[
+              { id: 'pending', label: 'En attente' },
+              { id: 'resolved_banned', label: 'Bannis' },
+              { id: 'resolved_dismissed', label: 'Classés' },
+              { id: 'all', label: 'Tous' },
+            ].map((tab) => (
               <button
-                onClick={() => { setSelectedReport(null); setActionType(null); }}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleAction}
-                disabled={submittingAction}
-                className={`px-4 py-2 text-xs font-semibold text-white rounded-xl transition flex items-center gap-2 ${
-                  actionType === 'ban' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                key={tab.id}
+                onClick={() => { setStatusFilter(tab.id); setPage(1); }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                  statusFilter === tab.id
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/20'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
                 }`}
               >
-                {submittingAction && <RefreshCw size={14} className="animate-spin" />}
-                {actionType === 'ban' ? 'Confirmer le bannissement' : 'Confirmer le classement'}
+                {tab.label}
               </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Table des signalements */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="p-12 text-center text-slate-400">
+              <RefreshCw size={28} className="animate-spin mx-auto text-rose-500 mb-3" />
+              <p className="text-sm font-medium">Chargement des signalements...</p>
+            </div>
+          ) : reports.length === 0 ? (
+            <div className="p-12 text-center text-slate-500">
+              <ShieldCheck size={40} className="mx-auto text-slate-300 mb-3" />
+              <p className="text-base font-bold text-slate-700">Aucun signalement dans cette section</p>
+              <p className="text-xs text-slate-400 mt-1">Tous les signalements ont été traités ou correspondent à vos filtres</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm text-slate-600">
+                <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3.5 px-4">ID</th>
+                    <th className="py-3.5 px-4">Contenu signalé</th>
+                    <th className="py-3.5 px-4">Motif du signalement</th>
+                    <th className="py-3.5 px-4">Signalé par</th>
+                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-4">Statut</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-medium">
+                  {reports.map((report) => {
+                    const reason = getReasonLabel(report.reason);
+                    const targetTitle = report.reportable?.title || report.reportable?.name || `Élément #${report.reportable_id}`;
+                    const reporterName = report.reporter?.candidateProfile 
+                      ? `${report.reporter.candidateProfile.first_name || ''} ${report.reporter.candidateProfile.last_name || ''}`.trim()
+                      : (report.reporter?.companyProfile?.company_name || report.reporter?.email || `Utilisateur #${report.reporter_id}`);
+
+                    return (
+                      <tr key={report.id} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3.5 px-4 text-xs font-bold text-slate-400">
+                          #{report.id}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1 max-w-xs">
+                            {getTargetTypeBadge(report.reportable_type)}
+                            <p className="text-sm font-bold text-slate-900 truncate" title={targetTitle}>
+                              {targetTitle}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1 max-w-xs">
+                            <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${reason.color}`}>
+                              {reason.text}
+                            </span>
+                            {report.details && (
+                              <p className="text-xs text-slate-500 line-clamp-1 italic">
+                                "{report.details}"
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 shrink-0">
+                              {reporterName.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 truncate">{reporterName}</p>
+                              <p className="text-[11px] text-slate-400 truncate">{report.reporter?.phone || report.reporter?.email || '—'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
+                          {new Date(report.created_at).toLocaleDateString('fr-FR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {getStatusBadge(report.status)}
+                        </td>
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <button
+                            onClick={() => {
+                              setSelectedReport(report);
+                              setAdminNotes(report.admin_notes || '');
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition border border-rose-200"
+                          >
+                            <Eye size={13} />
+                            Examiner
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {pagination && pagination.last_page > 1 && (
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-xs text-slate-500 font-medium">
+                Page <span className="font-bold">{pagination.current_page}</span> sur <span className="font-bold">{pagination.last_page}</span> ({pagination.total} signalements)
+              </p>
+              <div className="flex gap-1">
+                <button
+                  disabled={pagination.current_page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="px-3 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50"
+                >
+                  Précédent
+                </button>
+                <button
+                  disabled={pagination.current_page >= pagination.last_page}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="px-3 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50"
+                >
+                  Suivant
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal d'examen et modération */}
+      {selectedReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            
+            {/* Header modal */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600">
+                  <ShieldAlert size={22} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-slate-900 font-poppins">
+                      Examen du Signalement #{selectedReport.id}
+                    </h3>
+                    {getStatusBadge(selectedReport.status)}
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Signalé le {new Date(selectedReport.created_at).toLocaleDateString('fr-FR', {
+                      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedReport(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Corps du modal */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              
+              {/* Contenu signalé */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">
+                    Contenu Cible Signalé
+                  </span>
+                  {getTargetTypeBadge(selectedReport.reportable_type)}
+                </div>
+
+                <div>
+                  <h4 className="text-base font-black text-slate-900 font-poppins">
+                    {selectedReport.reportable?.title || selectedReport.reportable?.name || `Élément #${selectedReport.reportable_id}`}
+                  </h4>
+                  {selectedReport.reportable?.description && (
+                    <p className="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed">
+                      {selectedReport.reportable.description}
+                    </p>
+                  )}
+                  {selectedReport.reportable?.company && (
+                    <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
+                      <Building2 size={13} className="text-slate-400" />
+                      Entreprise : <span className="font-semibold text-slate-700">{selectedReport.reportable.company.company_name}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Motif & Explication du signalement */}
+              <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase text-rose-600 tracking-wider flex items-center gap-1">
+                    <AlertTriangle size={13} />
+                    Motif invoqué
+                  </span>
+                  <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${getReasonLabel(selectedReport.reason).color}`}>
+                    {getReasonLabel(selectedReport.reason).text}
+                  </span>
+                </div>
+
+                {selectedReport.details ? (
+                  <div className="text-sm text-slate-800 pt-1">
+                    <p className="text-xs font-bold text-slate-500 mb-0.5">Détails fournis par l'auteur du signalement :</p>
+                    <p className="whitespace-pre-wrap bg-white/80 p-3 rounded-xl border border-rose-200/50 leading-relaxed">
+                      {selectedReport.details}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic">Aucun détail supplémentaire précisé.</p>
+                )}
+              </div>
+
+              {/* Auteur du signalement */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">
+                    <User size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase text-slate-400">Signalé par</p>
+                    <p className="text-sm font-bold text-slate-900">
+                      {selectedReport.reporter?.candidateProfile 
+                        ? `${selectedReport.reporter.candidateProfile.first_name || ''} ${selectedReport.reporter.candidateProfile.last_name || ''}`.trim()
+                        : (selectedReport.reporter?.companyProfile?.company_name || selectedReport.reporter?.email || `Utilisateur #${selectedReport.reporter_id}`)}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right text-xs space-y-1">
+                  {selectedReport.reporter?.phone && (
+                    <p className="text-slate-600 font-semibold">{selectedReport.reporter.phone}</p>
+                  )}
+                  {selectedReport.reporter?.email && (
+                    <p className="text-slate-400">{selectedReport.reporter.email}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Notes administratives */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Notes internes de modération (Admin) :
+                </label>
+                <textarea
+                  rows={2}
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  placeholder="Ex: Contenu vérifié, annonce non conforme ou motif de classement..."
+                  className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
+                />
+              </div>
+            </div>
+
+            {/* Actions du modal */}
+            <div className="p-4 px-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 gap-3">
+              <button
+                onClick={() => setSelectedReport(null)}
+                disabled={submittingAction}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition"
+              >
+                Fermer
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleAction('dismiss')}
+                  disabled={submittingAction}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Check size={14} />
+                  Classer sans suite
+                </button>
+
+                <button
+                  onClick={() => handleAction('ban')}
+                  disabled={submittingAction}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Ban size={14} />
+                  Bannir le contenu
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
-      </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center gap-2 backdrop-blur-md animate-slideUp ${
+          toast.type === 'error' ? 'bg-rose-600/95 border border-rose-500' : 'bg-emerald-600/95 border border-emerald-500'
+        }`}>
+          {toast.type === 'error' ? <AlertOctagon size={18} /> : <CheckCircle2 size={18} />}
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 opacity-80 hover:opacity-100">
+            <X size={15} />
+          </button>
+        </div>
+      )}
     </MainLayout>
   );
 };

@@ -88,20 +88,6 @@ const NAV = [
     ],
   },
   {
-    id: 'moderation',
-    label: 'Modération & Signalements',
-    icon: ShieldAlert,
-    path: '/moderation/reports',
-  },
-  {
-    id: 'special-requests',
-    label: 'Demandes spéciales',
-    icon: Sparkles,
-    path: '/special-requests',
-    badge: true,
-    badgeKey: 'pending_special_requests_count',
-  },
-  {
     id: 'finances',
     label: 'Finances & Wallets',
     path: '/finances',
@@ -120,12 +106,14 @@ const NAV = [
   },
   {
     id: 'notifications',
-    label: 'Notifications',
+    label: 'Notifications & Alertes',
     icon: Bell,
     children: [
-      { label: 'Envoyer',            path: '/notifications/send',    icon: Send },
-      { label: 'Historique',         path: '/notifications/history', icon: History },
-      { label: 'Ciblage',            path: '/notifications/target',  icon: ListFilter },
+      { label: 'Demandes spéciales',        path: '/special-requests',    icon: Sparkles,    badge: true, badgeKey: 'pending_special_requests_count' },
+      { label: 'Modération & Signalements', path: '/moderation/reports',  icon: ShieldAlert, badge: true, badgeKey: 'pending_reports_count' },
+      { label: 'Envoyer notification',      path: '/notifications/send',   icon: Send },
+      { label: 'Historique des envois',      path: '/notifications/history', icon: History },
+      { label: 'Ciblage',                   path: '/notifications/target',  icon: ListFilter },
     ],
   },
   {
