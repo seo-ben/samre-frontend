@@ -222,7 +222,7 @@ export const VerifiedProfiles = ({ userType }) => {
                   <tr>
                     <th className="py-3.5 px-4">Titulaire du Badge</th>
                     <th className="py-3.5 px-4">Type de compte</th>
-                    <th className="py-3.5 px-4">Document certifié</th>
+                    <th className="py-3.5 px-4">Localisation</th>
                     <th className="py-3.5 px-4">Date de certification</th>
                     <th className="py-3.5 px-4">Statut</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
@@ -232,6 +232,11 @@ export const VerifiedProfiles = ({ userType }) => {
                   {requests.map((req) => {
                     const userInfo = renderUserInfo(req.user);
                     const date = new Date(req.updated_at || req.created_at);
+                    const cand = req.user?.candidate_profile || req.user?.candidateProfile;
+                    const comp = req.user?.company_profile || req.user?.companyProfile;
+                    const location = isCandidate 
+                      ? ([cand?.commune?.name, cand?.prefecture?.name].filter(Boolean).join(', ') || 'Non précisée')
+                      : ([comp?.commune?.name, comp?.prefecture?.name, comp?.address].filter(Boolean).join(', ') || 'Non précisée');
 
                     return (
                       <tr key={req.id} className="hover:bg-slate-50/80 transition">
@@ -266,20 +271,11 @@ export const VerifiedProfiles = ({ userType }) => {
                             {userInfo.type}
                           </span>
                         </td>
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {req.document_url ? (
-                            <a 
-                              href={req.document_url} 
-                              target="_blank" 
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 transition"
-                            >
-                              <FileText size={13} />
-                              Voir le justificatif
-                            </a>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">Aucun fichier</span>
-                          )}
+                        <td className="py-3.5 px-4 text-xs text-slate-600 whitespace-nowrap">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-slate-400 shrink-0" />
+                            <span className="truncate max-w-[180px]">{location}</span>
+                          </span>
                         </td>
                         <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
                           {date.toLocaleDateString('fr-FR', {
@@ -591,58 +587,7 @@ export const VerifiedProfiles = ({ userType }) => {
                   </div>
                 ) : null}
 
-                {/* 3. Justificatif & Pièce fournie */}
-                <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold uppercase text-amber-800 tracking-wider flex items-center gap-1.5">
-                      <FileText size={14} />
-                      Document Justificatif Certifié
-                    </p>
-                    {selectedReq.document_url && (
-                      <a 
-                        href={selectedReq.document_url} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
-                      >
-                        <ExternalLink size={12} />
-                        Ouvrir en plein écran
-                      </a>
-                    )}
-                  </div>
-
-                  {selectedReq.document_url ? (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-amber-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
-                          <FileText size={20} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">
-                            {isDummy ? 'Pièce d\'identité (Fichier test démo)' : 'Pièce d\'identité / Extrait RCCM officiel'}
-                          </p>
-                          <p className="text-[11px] text-slate-400 truncate max-w-sm">{selectedReq.document_url}</p>
-                        </div>
-                      </div>
-
-                      <a 
-                        href={selectedReq.document_url} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5 shrink-0"
-                      >
-                        <Download size={13} />
-                        Télécharger le document
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-white rounded-xl border border-amber-200 text-xs text-slate-500 italic">
-                      Aucun document numérique associé.
-                    </div>
-                  )}
-                </div>
-
-                {/* 4. Gestion de la Certification (Révocation / Maintien) */}
+                {/* 3. Gestion de la Certification (Révocation / Maintien) */}
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <p className="text-xs font-bold uppercase text-slate-700 tracking-wider">
                     Statut du Badge SAMRE :
