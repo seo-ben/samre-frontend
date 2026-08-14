@@ -795,23 +795,54 @@ export const PendingBadges = () => {
               </div>
 
               {/* Footer du modal */}
-              <div className="p-4 px-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div 
+                style={{
+                  padding: '16px 24px',
+                  borderTop: '1px solid #f1f5f9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#f8fafc'
+                }}
+              >
                 <button
+                  type="button"
                   onClick={() => setShowStatusModal(false)}
                   disabled={submitting}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition"
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: '0.2s'
+                  }}
                 >
                   Fermer
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => submitStatusChange()}
                   disabled={submitting}
-                  className={`px-5 py-2.5 rounded-xl text-white text-sm font-bold shadow-md transition flex items-center gap-2 disabled:opacity-50 ${
-                    statusForm.status === 'approved'
-                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
-                      : (statusForm.status === 'rejected' ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20')
-                  }`}
+                  style={{
+                    padding: '11px 22px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    backgroundColor: statusForm.status === 'approved' ? '#16a34a' : (statusForm.status === 'rejected' ? '#dc2626' : '#2563eb'),
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    transition: '0.2s'
+                  }}
                 >
                   {submitting ? (
                     <>
@@ -832,17 +863,35 @@ export const PendingBadges = () => {
         );
       })()}
 
-      {/* Toast Notification */}
+      {/* Toast Notification 100% opaque et visible */}
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center gap-2 backdrop-blur-md animate-slideUp ${
-            toast.type === 'error' ? 'bg-rose-600/95 border border-rose-500' : 'bg-emerald-600/95 border border-emerald-500'
-          }`}
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 999999,
+            backgroundColor: toast.type === 'error' ? '#e11d48' : '#059669',
+            color: '#ffffff',
+            padding: '14px 20px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 20px 35px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            fontSize: '14px',
+            fontWeight: '600',
+            animation: 'slideUp 0.3s ease-out forwards'
+          }}
         >
-          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+          {toast.type === 'error' ? <AlertCircle size={18} color="#ffffff" /> : <CheckCircle2 size={18} color="#ffffff" />}
           <span>{toast.message}</span>
-          <button onClick={() => setToast(null)} className="ml-2 opacity-80 hover:opacity-100">
-            <X size={15} />
+          <button 
+            onClick={() => setToast(null)} 
+            style={{ background: 'none', border: 'none', color: '#ffffff', opacity: 0.8, cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+          >
+            <X size={16} />
           </button>
         </div>
       )}
