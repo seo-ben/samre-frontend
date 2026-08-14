@@ -912,6 +912,22 @@ export const SurveysManagementPage = () => {
                               style={{ width: `${opt.percentage}%` }}
                             />
                           </div>
+
+                          {/* Réponses personnalisées / commentaires sur l'option */}
+                          {opt.custom_answers && opt.custom_answers.length > 0 && (
+                            <div className="mt-2.5 pt-2 border-t border-slate-200/60">
+                              <p className="text-[11px] font-bold text-orange-700 mb-1.5 flex items-center gap-1">
+                                💬 Précisions saisies par les utilisateurs ({opt.custom_answers.length}) :
+                              </p>
+                              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                {opt.custom_answers.map((ans, aIdx) => (
+                                  <div key={aIdx} className="p-2 bg-white rounded-lg border border-orange-200/80 text-xs text-slate-800 shadow-xs font-medium">
+                                    « {ans} »
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
