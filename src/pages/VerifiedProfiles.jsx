@@ -346,13 +346,54 @@ export const VerifiedProfiles = ({ userType }) => {
         const cand = selectedReq.user?.candidate_profile || selectedReq.user?.candidateProfile;
         const comp = selectedReq.user?.company_profile || selectedReq.user?.companyProfile;
         const isComp = selectedReq.user?.user_type === 'company';
+        const isDummy = selectedReq.document_url && selectedReq.document_url.includes('dummy.pdf');
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(6px)',
+              padding: '16px',
+              overflow: 'hidden'
+            }}
+          >
+            <div 
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '24px',
+                width: '100%',
+                maxWidth: '820px',
+                maxHeight: 'calc(100vh - 40px)',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+                margin: 'auto'
+              }}
+            >
               
-              {/* Header du modal */}
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              {/* Header FIXE du modal */}
+              <div 
+                style={{
+                  padding: '18px 24px',
+                  borderBottom: '1px solid #f1f5f9',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  backgroundColor: '#f8fafc',
+                  flexShrink: 0
+                }}
+              >
                 <div className="flex items-center gap-3.5">
                   {userInfo.photo ? (
                     <img 
@@ -371,7 +412,7 @@ export const VerifiedProfiles = ({ userType }) => {
                         {userInfo.name}
                       </h3>
                       <span 
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold"
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[11px] font-bold"
                         style={{ background: userInfo.typeBg, color: userInfo.typeColor }}
                       >
                         {userInfo.icon}
@@ -394,8 +435,18 @@ export const VerifiedProfiles = ({ userType }) => {
                 </button>
               </div>
 
-              {/* Contenu Déroulant / Toutes les Infos */}
-              <div className="p-6 space-y-6 overflow-y-auto">
+              {/* Contenu DÉROULANT / Scrollable Body */}
+              <div 
+                style={{
+                  padding: '24px',
+                  overflowY: 'auto',
+                  flex: 1,
+                  minHeight: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '20px'
+                }}
+              >
                 
                 {/* 1. Coordonnées & Identifiants du compte */}
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
@@ -561,13 +612,15 @@ export const VerifiedProfiles = ({ userType }) => {
                   </div>
 
                   {selectedReq.document_url ? (
-                    <div className="flex items-center justify-between bg-white p-3.5 rounded-xl border border-amber-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-amber-200">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
                           <FileText size={20} />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-900">Pièce d'identité / Extrait RCCM officiel</p>
+                          <p className="text-xs font-bold text-slate-900">
+                            {isDummy ? 'Pièce d\'identité (Fichier test démo)' : 'Pièce d\'identité / Extrait RCCM officiel'}
+                          </p>
                           <p className="text-[11px] text-slate-400 truncate max-w-sm">{selectedReq.document_url}</p>
                         </div>
                       </div>
@@ -576,10 +629,10 @@ export const VerifiedProfiles = ({ userType }) => {
                         href={selectedReq.document_url} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                        className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5 shrink-0"
                       >
                         <Download size={13} />
-                        Télécharger
+                        Télécharger le document
                       </a>
                     </div>
                   ) : (
@@ -654,7 +707,7 @@ export const VerifiedProfiles = ({ userType }) => {
 
               </div>
 
-              {/* Footer du modal */}
+              {/* Footer FIXE du modal avec boutons toujours visibles */}
               <div 
                 style={{
                   padding: '16px 24px',
@@ -662,7 +715,8 @@ export const VerifiedProfiles = ({ userType }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  backgroundColor: '#f8fafc'
+                  backgroundColor: '#f8fafc',
+                  flexShrink: 0
                 }}
               >
                 <button

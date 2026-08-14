@@ -466,11 +466,51 @@ export const ModerationReportsPage = () => {
 
       {/* Modal de Traitement & Décision Modérateur */}
       {selectedReport && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(6px)',
+            padding: '16px',
+            overflow: 'hidden'
+          }}
+        >
+          <div 
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '720px',
+              maxHeight: 'calc(100vh - 40px)',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #e2e8f0',
+              overflow: 'hidden',
+              margin: 'auto'
+            }}
+          >
             
-            {/* Header du modal */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+            {/* Header FIXE du modal */}
+            <div 
+              style={{
+                padding: '18px 24px',
+                borderBottom: '1px solid #f1f5f9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: '#f8fafc',
+                flexShrink: 0
+              }}
+            >
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600">
                   <ShieldAlert size={22} />
@@ -497,8 +537,18 @@ export const ModerationReportsPage = () => {
               </button>
             </div>
 
-            {/* Corps du modal de traitement */}
-            <div className="p-6 space-y-5 overflow-y-auto">
+            {/* Corps DÉROULANT du modal / Scrollable Body */}
+            <div 
+              style={{
+                padding: '24px',
+                overflowY: 'auto',
+                flex: 1,
+                minHeight: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '20px'
+              }}
+            >
               
               {/* 1. Contenu ciblé par le signalement */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
@@ -600,7 +650,8 @@ export const ModerationReportsPage = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 backgroundColor: '#f8fafc',
-                gap: '12px'
+                gap: '12px',
+                flexShrink: 0
               }}
             >
               <button
