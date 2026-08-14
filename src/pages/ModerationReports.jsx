@@ -369,9 +369,9 @@ export const ModerationReportsPage = () => {
                             <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md border ${reason.color}`}>
                               {reason.text}
                             </span>
-                            {report.details && (
+                            {(report.description || report.details) && (
                               <p className="text-xs text-slate-500 line-clamp-1 italic">
-                                "{report.details}"
+                                "{report.description || report.details}"
                               </p>
                             )}
                           </div>
@@ -521,11 +521,11 @@ export const ModerationReportsPage = () => {
                   </span>
                 </div>
 
-                {selectedReport.details ? (
+                {(selectedReport.description || selectedReport.details) ? (
                   <div className="text-sm text-slate-800 pt-1">
                     <p className="text-xs font-bold text-slate-500 mb-0.5">Explication fournie :</p>
                     <p className="whitespace-pre-wrap bg-white/80 p-3 rounded-xl border border-rose-200/50 leading-relaxed text-xs">
-                      {selectedReport.details}
+                      {selectedReport.description || selectedReport.details}
                     </p>
                   </div>
                 ) : (
