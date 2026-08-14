@@ -4,7 +4,8 @@ import { MainLayout } from '../components/layout/MainLayout';
 import { 
   Plus, MoreVertical, MapPin, Clock, Calendar, Info, 
   ChevronLeft, ChevronRight, CheckCircle, Users, Map,
-  Globe, RefreshCw, Tag, ExternalLink, User, Heart
+  Globe, RefreshCw, Tag, ExternalLink, User, Heart,
+  UserX, AlertCircle, XCircle
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import CreateEventModal from '../components/events/CreateEventModal';
@@ -23,6 +24,7 @@ export const EventsPage = () => {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [activeTab, setActiveTab] = useState('Détails');
   const [eventParticipants, setEventParticipants] = useState([]);
+  const [participantFilter, setParticipantFilter] = useState('all');
   const [loadingParticipants, setLoadingParticipants] = useState(false);
   
   const location = useLocation();
@@ -670,29 +672,188 @@ export const EventsPage = () => {
                 )}
 
                 {activeTab === 'Participants' && (
-                  <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', color: '#64748b' }}>
-                    {loadingParticipants ? (
-                      <div style={{ textAlign: 'center' }}>Chargement des participants...</div>
-                    ) : eventParticipants.length === 0 ? (
-                      <div style={{ textAlign: 'center' }}>Aucun participant pour le moment.</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {eventParticipants.map(participant => (
-                          <div key={participant.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e2e8f0', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              {participant.user?.profile_picture_url ? <img src={participant.user.profile_picture_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={20} color="#64748b" />}
-                            </div>
-                            <div>
-                              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f172a' }}>{participant.user?.first_name} {participant.user?.last_name}</div>
-                              <div style={{ fontSize: '13px', color: '#64748b' }}>{participant.user?.email || participant.user?.phone}</div>
-                            </div>
-                            <div style={{ marginLeft: 'auto', fontSize: '12px', color: '#94a3b8' }}>
-                              Inscrit le {new Date(participant.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
+                  <div>
+                    {/* Header Filters */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>
+                        Participants ({eventParticipants.length})
+                      </div>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        {[
+                          { key: 'all', label: 'Tous', count: eventParticipants.length },
+                          { key: 'registered', label: 'Confirmés', count: eventParticipants.filter(p => p.status === 'registered').length },
+                          { key: 'cancelled', label: 'Annulés', count: eventParticipants.filter(p => p.status === 'cancelled').length }
+                        ].map(f => (
+                          <button
+                            key={f.key}
+                            onClick={() => setParticipantFilter(f.key)}
+                            style={{
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              border: participantFilter === f.key ? '1px solid #2563eb' : '1px solid #e2e8f0',
+                              background: participantFilter === f.key ? '#eff6ff' : '#ffffff',
+                              color: participantFilter === f.key ? '#1d4ed8' : '#64748b',
+                              fontSize: '12px',
+                              fontWeight: participantFilter === f.key ? '700' : '500',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '5px'
+                            }}
+                          >
+                            <span>{f.label}</span>
+                            <span style={{
+                              padding: '1px 6px',
+                              borderRadius: '10px',
+                              background: participantFilter === f.key ? '#bfdbfe' : '#f1f5f9',
+                              color: participantFilter === f.key ? '#1e40af' : '#64748b',
+                              fontSize: '11px',
+                              fontWeight: '700'
+                            }}>
+                              {f.count}
+                            </span>
+                          </button>
                         ))}
                       </div>
-                    )}
+                    </div>
+
+                    <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', color: '#64748b' }}>
+                      {loadingParticipants ? (
+                        <div style={{ textAlign: 'center', padding: '30px 0' }}>Chargement des participants...</div>
+                      ) : eventParticipants.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '30px 0' }}>Aucun participant pour le moment.</div>
+                      ) : eventParticipants.filter(p => participantFilter === 'all' || p.status === participantFilter).length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '30px 0' }}>Aucun participant dans cette catégorie.</div>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {eventParticipants
+                            .filter(p => participantFilter === 'all' || p.status === participantFilter)
+                            .map(participant => {
+                              const isCancelled = participant.status === 'cancelled';
+                              const candidate = participant.user?.candidate_profile || participant.user?.candidateProfile;
+                              const company = participant.user?.company_profile || participant.user?.companyProfile;
+                              const fullName = candidate 
+                                ? `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim()
+                                : (participant.user?.first_name ? `${participant.user.first_name} ${participant.user.last_name || ''}`.trim() : (company?.company_name || 'Participant'));
+
+                              return (
+                                <div 
+                                  key={participant.id} 
+                                  style={{ 
+                                    background: '#ffffff', 
+                                    padding: '14px 16px', 
+                                    borderRadius: '10px', 
+                                    border: isCancelled ? '1px solid #fed7aa' : '1px solid #e2e8f0',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ 
+                                      width: '42px', 
+                                      height: '42px', 
+                                      borderRadius: '50%', 
+                                      background: isCancelled ? '#fee2e2' : '#e2e8f0', 
+                                      overflow: 'hidden', 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'center', 
+                                      flexShrink: 0 
+                                    }}>
+                                      {participant.user?.profile_picture_url || candidate?.profile_photo_url || company?.logo_url ? (
+                                        <img 
+                                          src={participant.user?.profile_picture_url || candidate?.profile_photo_url || company?.logo_url} 
+                                          alt="" 
+                                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                        />
+                                      ) : isCancelled ? (
+                                        <UserX size={20} color="#ef4444" />
+                                      ) : (
+                                        <User size={20} color="#64748b" />
+                                      )}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#0f172a' }}>
+                                          {fullName || 'Participant'}
+                                        </span>
+                                        {isCancelled ? (
+                                          <span style={{
+                                            padding: '2px 8px',
+                                            borderRadius: '999px',
+                                            background: '#fee2e2',
+                                            color: '#dc2626',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}>
+                                            <XCircle size={12} /> Annulé
+                                          </span>
+                                        ) : (
+                                          <span style={{
+                                            padding: '2px 8px',
+                                            borderRadius: '999px',
+                                            background: '#dcfce7',
+                                            color: '#16a34a',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}>
+                                            <CheckCircle size={12} /> Confirmé
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div style={{ fontSize: '12.5px', color: '#64748b', marginTop: '2px' }}>
+                                        {participant.user?.email || participant.user?.phone || 'Contact non renseigné'}
+                                      </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right', fontSize: '11.5px', color: '#94a3b8' }}>
+                                      <div>Inscrit le {participant.created_at ? new Date(participant.created_at).toLocaleDateString() : '—'}</div>
+                                      {isCancelled && participant.cancelled_at && (
+                                        <div style={{ color: '#ea580c', fontWeight: '500', marginTop: '2px' }}>
+                                          Annulé le {new Date(participant.cancelled_at).toLocaleDateString()}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Cancellation reason box */}
+                                  {isCancelled && (
+                                    <div style={{
+                                      marginTop: '12px',
+                                      padding: '10px 12px',
+                                      borderRadius: '8px',
+                                      background: '#fff7ed',
+                                      border: '1px solid #ffedd5',
+                                      display: 'flex',
+                                      alignItems: 'flex-start',
+                                      gap: '8px'
+                                    }}>
+                                      <AlertCircle size={16} color="#ea580c" style={{ flexShrink: 0, marginTop: '2px' }} />
+                                      <div style={{ fontSize: '12.5px', lineHeight: '1.4' }}>
+                                        <div>
+                                          <strong style={{ color: '#9a3412' }}>Motif d'annulation : </strong>
+                                          <span style={{ color: '#c2410c', fontWeight: '600' }}>
+                                            {participant.cancellation_reason || 'Non précisé'}
+                                          </span>
+                                        </div>
+                                        {participant.cancellation_custom_note && (
+                                          <div style={{ marginTop: '4px', color: '#7c2d12', fontStyle: 'italic' }}>
+                                            "{participant.cancellation_custom_note}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
