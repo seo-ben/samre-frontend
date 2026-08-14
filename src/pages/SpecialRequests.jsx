@@ -590,39 +590,72 @@ export const SpecialRequestsPage = () => {
                   <button
                     type="button"
                     onClick={() => setNewStatus('in_progress')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
-                      newStatus === 'in_progress'
-                        ? 'bg-blue-50 border-blue-500 text-blue-700 ring-2 ring-blue-500/20'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      backgroundColor: newStatus === 'in_progress' ? '#2563eb' : '#ffffff',
+                      color: newStatus === 'in_progress' ? '#ffffff' : '#1e293b',
+                      border: newStatus === 'in_progress' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                      boxShadow: newStatus === 'in_progress' ? '0 4px 12px rgba(37, 99, 235, 0.3)' : 'none'
+                    }}
                   >
-                    <RefreshCw size={13} className="text-blue-500" />
+                    <RefreshCw size={13} color={newStatus === 'in_progress' ? '#ffffff' : '#2563eb'} />
                     En cours
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setNewStatus('resolved')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
-                      newStatus === 'resolved'
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      backgroundColor: newStatus === 'resolved' ? '#16a34a' : '#ffffff',
+                      color: newStatus === 'resolved' ? '#ffffff' : '#1e293b',
+                      border: newStatus === 'resolved' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                      boxShadow: newStatus === 'resolved' ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
+                    }}
                   >
-                    <CheckCircle2 size={13} className="text-emerald-500" />
+                    <CheckCircle2 size={13} color={newStatus === 'resolved' ? '#ffffff' : '#16a34a'} />
                     Résolue
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setNewStatus('rejected')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
-                      newStatus === 'rejected'
-                        ? 'bg-rose-50 border-rose-500 text-rose-700 ring-2 ring-rose-500/20'
-                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      backgroundColor: newStatus === 'rejected' ? '#dc2626' : '#ffffff',
+                      color: newStatus === 'rejected' ? '#ffffff' : '#1e293b',
+                      border: newStatus === 'rejected' ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                      boxShadow: newStatus === 'rejected' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : 'none'
+                    }}
                   >
-                    <XCircle size={13} className="text-rose-500" />
+                    <XCircle size={13} color={newStatus === 'rejected' ? '#ffffff' : '#dc2626'} />
                     Rejetée
                   </button>
                 </div>

@@ -737,39 +737,72 @@ export const PendingBadges = () => {
                     <button
                       type="button"
                       onClick={() => setStatusForm({ ...statusForm, status: 'approved' })}
-                      className={`py-3 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition ${
-                        statusForm.status === 'approved'
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20 ring-2 ring-emerald-500/20'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: statusForm.status === 'approved' ? '#16a34a' : '#ffffff',
+                        color: statusForm.status === 'approved' ? '#ffffff' : '#1e293b',
+                        border: statusForm.status === 'approved' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                        boxShadow: statusForm.status === 'approved' ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
+                      }}
                     >
-                      <Award size={15} className={statusForm.status === 'approved' ? 'text-white' : 'text-emerald-500'} />
+                      <Award size={15} color={statusForm.status === 'approved' ? '#ffffff' : '#16a34a'} />
                       Approuver le badge
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setStatusForm({ ...statusForm, status: 'pending' })}
-                      className={`py-3 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition ${
-                        statusForm.status === 'pending'
-                          ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: statusForm.status === 'pending' ? '#d97706' : '#ffffff',
+                        color: statusForm.status === 'pending' ? '#ffffff' : '#1e293b',
+                        border: statusForm.status === 'pending' ? '2px solid #d97706' : '1px solid #cbd5e1',
+                        boxShadow: statusForm.status === 'pending' ? '0 4px 12px rgba(217, 119, 6, 0.3)' : 'none'
+                      }}
                     >
-                      <Clock size={15} className={statusForm.status === 'pending' ? 'text-white' : 'text-amber-500'} />
+                      <Clock size={15} color={statusForm.status === 'pending' ? '#ffffff' : '#d97706'} />
                       En attente
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setStatusForm({ ...statusForm, status: 'rejected' })}
-                      className={`py-3 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition ${
-                        statusForm.status === 'rejected'
-                          ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20'
-                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: statusForm.status === 'rejected' ? '#dc2626' : '#ffffff',
+                        color: statusForm.status === 'rejected' ? '#ffffff' : '#1e293b',
+                        border: statusForm.status === 'rejected' ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                        boxShadow: statusForm.status === 'rejected' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : 'none'
+                      }}
                     >
-                      <X size={15} className={statusForm.status === 'rejected' ? 'text-white' : 'text-rose-500'} />
+                      <X size={15} color={statusForm.status === 'rejected' ? '#ffffff' : '#dc2626'} />
                       Rejeter la demande
                     </button>
                   </div>
