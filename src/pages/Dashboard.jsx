@@ -460,7 +460,7 @@ export const Dashboard = () => {
               </Link>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
               <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', padding: '10px 14px', borderRadius: '10px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '700', color: '#9f1239', textTransform: 'uppercase' }}>En attente</span>
                 <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#be123c' }}>
@@ -468,15 +468,22 @@ export const Dashboard = () => {
                 </p>
               </div>
 
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '10px 14px', borderRadius: '10px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#1e40af', textTransform: 'uppercase' }}>Total Traités</span>
+                <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#2563eb' }}>
+                  {stats.moderation_reports.processed ?? ((stats.moderation_reports.banned || 0) + (stats.moderation_reports.dismissed || 0))}
+                </p>
+              </div>
+
               <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', padding: '10px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase' }}>Contenus Bannis</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#991b1b', textTransform: 'uppercase' }}>Bannis</span>
                 <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#dc2626' }}>
                   {stats.moderation_reports.banned}
                 </p>
               </div>
 
               <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#166534', textTransform: 'uppercase' }}>Classés sans suite</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#166534', textTransform: 'uppercase' }}>Classés</span>
                 <p style={{ margin: '4px 0 0', fontSize: '18px', fontWeight: '800', color: '#16a34a' }}>
                   {stats.moderation_reports.dismissed}
                 </p>

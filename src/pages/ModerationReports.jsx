@@ -218,7 +218,7 @@ export const ModerationReportsPage = () => {
         </div>
 
         {/* Cartes KPI */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
           <div 
             onClick={() => { setStatusFilter('all'); setPage(1); }}
             className={`p-4 rounded-2xl border transition cursor-pointer ${
@@ -248,6 +248,23 @@ export const ModerationReportsPage = () => {
               <Clock size={16} className={statusFilter === 'pending' ? 'text-white' : 'text-amber-500'} />
             </div>
             <p className="text-2xl font-black mt-1 font-poppins">{stats.pending}</p>
+          </div>
+
+          <div 
+            onClick={() => { setStatusFilter('processed'); setPage(1); }}
+            className={`p-4 rounded-2xl border transition cursor-pointer ${
+              statusFilter === 'processed' 
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' 
+                : 'bg-white text-slate-900 border-slate-200 hover:border-blue-300 shadow-sm'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'processed' ? 'text-blue-100' : 'text-blue-600'}`}>
+                Total Traités
+              </p>
+              <ShieldCheck size={16} className={statusFilter === 'processed' ? 'text-white' : 'text-blue-500'} />
+            </div>
+            <p className="text-2xl font-black mt-1 font-poppins">{stats.processed ?? ((stats.banned || 0) + (stats.dismissed || 0))}</p>
           </div>
 
           <div 
@@ -301,6 +318,7 @@ export const ModerationReportsPage = () => {
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
             {[
               { id: 'pending', label: 'En attente' },
+              { id: 'processed', label: 'Traités' },
               { id: 'resolved_banned', label: 'Bannis' },
               { id: 'resolved_dismissed', label: 'Classés' },
               { id: 'all', label: 'Tous' },
