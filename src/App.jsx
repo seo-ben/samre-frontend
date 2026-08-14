@@ -28,6 +28,7 @@ import { SystemSettings } from './pages/SystemSettings'
 import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
 import { SpecialRequestsPage } from './pages/SpecialRequests'
+import { SurveysManagementPage } from './pages/SurveysManagement'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
@@ -82,6 +83,10 @@ function App() {
       {/* ── Demandes Spéciales ──────────────────── */}
       <Route path="/special-requests"   element={<Protected><SpecialRequestsPage /></Protected>} />
       <Route path="/demandes-speciales" element={<Protected><SpecialRequestsPage /></Protected>} />
+
+      {/* ── Sondages & Enquêtes ─────────────────── */}
+      <Route path="/surveys"            element={<Protected><SurveysManagementPage /></Protected>} />
+      <Route path="/sondages"           element={<Protected><SurveysManagementPage /></Protected>} />
 
       {/* ── Paiements & Finances ─────────────────────────── */}
       <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />
