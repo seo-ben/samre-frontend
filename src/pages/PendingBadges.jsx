@@ -347,7 +347,6 @@ export const PendingBadges = () => {
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <th className="py-3.5 px-4">ID</th>
                     <th className="py-3.5 px-4">Demandeur</th>
                     <th className="py-3.5 px-4">Type</th>
                     <th className="py-3.5 px-4">Justificatif</th>
@@ -364,9 +363,6 @@ export const PendingBadges = () => {
 
                     return (
                       <tr key={req.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 text-xs font-bold text-slate-400">
-                          #{req.id}
-                        </td>
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
                             {userInfo.photo ? (
@@ -523,7 +519,7 @@ export const PendingBadges = () => {
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Demande de badge #{selectedReq.id} • Déposée le {new Date(selectedReq.created_at).toLocaleDateString('fr-FR', {
+                      Demande déposée le {new Date(selectedReq.created_at).toLocaleDateString('fr-FR', {
                         day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
                       })}
                     </p>

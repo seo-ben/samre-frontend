@@ -4,7 +4,7 @@ import {
   Search, Filter, RefreshCw, Eye, Ban, Check, User, Calendar, 
   Briefcase, CalendarDays, ChevronRight, X, MessageSquare, 
   FileText, ExternalLink, ShieldCheck, Building2, Phone, Mail,
-  AlertOctagon, CheckSquare, Sparkles, MapPin
+  AlertOctagon, CheckSquare, Sparkles, MapPin, ArrowRight
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -20,12 +20,12 @@ export const ModerationReportsPage = () => {
     dismissed: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('pending'); // 'pending', 'resolved_banned', 'resolved_dismissed', 'all'
+  const [statusFilter, setStatusFilter] = useState('pending');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
 
-  // Modals state
+  // Modal de traitement
   const [selectedReport, setSelectedReport] = useState(null);
   const [actionType, setActionType] = useState(null); // 'ban' or 'dismiss'
   const [adminNotes, setAdminNotes] = useState('');
@@ -78,7 +78,7 @@ export const ModerationReportsPage = () => {
     fetchReports();
   }, [fetchReports, syncCounter]);
 
-  const handleAction = async (type = actionType) => {
+  const handleAction = async (type) => {
     if (!selectedReport || !type) return;
     setSubmittingAction(true);
     try {
@@ -87,12 +87,12 @@ export const ModerationReportsPage = () => {
         : `/v1/admin/reports/${selectedReport.id}/dismiss`;
 
       const res = await apiClient.post(endpoint, { 
-        admin_notes: adminNotes || (type === 'ban' ? 'Contenu banni pour violation des règles.' : 'Signalement examiné et classé sans suite.')
+        admin_notes: adminNotes || (type === 'ban' ? 'Contenu banni pour violation des conditions.' : 'Signalement vérifié et classé sans suite.')
       });
 
       if (res.data?.success || res.data?.status === 'success') {
         showToast(
-          type === 'ban' ? 'Contenu banni et signalement traité avec succès !' : 'Signalement classé sans suite.',
+          type === 'ban' ? 'Contenu banni et masqué avec succès.' : 'Signalement classé sans suite.',
           type === 'ban' ? 'error' : 'success'
         );
         setSelectedReport(null);
@@ -112,19 +112,19 @@ export const ModerationReportsPage = () => {
   const getReasonLabel = (reasonId) => {
     switch (reasonId) {
       case 'suspect_event':
-        return { text: 'Événement / Offre suspecte', color: 'bg-amber-100 text-amber-900 border-amber-300' };
+        return { text: 'Offre / Événement suspect', color: 'bg-amber-100 text-amber-900 border-amber-300' };
       case 'fake_organization':
-        return { text: 'Fausse organisation / Entreprise fictive', color: 'bg-red-100 text-red-900 border-red-300' };
+        return { text: 'Entreprise fictive / Fausse organisation', color: 'bg-red-100 text-red-900 border-red-300' };
       case 'incorrect_info':
-        return { text: 'Information incorrecte', color: 'bg-blue-100 text-blue-900 border-blue-300' };
+        return { text: 'Information trompeuse ou inexacte', color: 'bg-blue-100 text-blue-900 border-blue-300' };
       case 'inappropriate':
-        return { text: 'Contenu inapproprié ou illicite', color: 'bg-purple-100 text-purple-900 border-purple-300' };
+        return { text: 'Contenu inapproprié ou abusif', color: 'bg-purple-100 text-purple-900 border-purple-300' };
       case 'fraud':
-        return { text: 'Offre frauduleuse / Arnaque', color: 'bg-rose-100 text-rose-900 border-rose-300' };
+        return { text: 'Tentative de fraude / Arnaque', color: 'bg-rose-100 text-rose-900 border-rose-300' };
       case 'terms_violation':
-        return { text: 'Violation des conditions', color: 'bg-orange-100 text-orange-900 border-orange-300' };
+        return { text: 'Non-respect des conditions d\'utilisation', color: 'bg-orange-100 text-orange-900 border-orange-300' };
       default:
-        return { text: reasonId || 'Autre motif', color: 'bg-slate-100 text-slate-800 border-slate-200' };
+        return { text: reasonId || 'Motif divers', color: 'bg-slate-100 text-slate-800 border-slate-200' };
     }
   };
 
@@ -132,21 +132,21 @@ export const ModerationReportsPage = () => {
     switch (status) {
       case 'pending':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
             <Clock size={12} className="text-amber-500 animate-pulse" />
             En attente
           </span>
         );
       case 'resolved_banned':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
             <XCircle size={12} className="text-rose-500" />
             Contenu banni
           </span>
         );
       case 'resolved_dismissed':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
             <CheckCircle2 size={12} className="text-emerald-500" />
             Classé sans suite
           </span>
@@ -180,7 +180,7 @@ export const ModerationReportsPage = () => {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
         <FileText size={13} className="text-slate-500" />
-        Contenu
+        Publication
       </span>
     );
   };
@@ -192,16 +192,16 @@ export const ModerationReportsPage = () => {
         {/* Header de la page */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600 border border-rose-500/20">
                 <ShieldAlert size={26} />
               </div>
               <div>
                 <h1 className="text-2xl font-black tracking-tight text-slate-900 font-poppins">
-                  Modération des Signalements
+                  Modération & Signalements
                 </h1>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  Examinez et traitez les signalements d'offres et d'événements déposés par la communauté
+                  Examinez et traitez les signalements d'offres et d'événements déposés par les utilisateurs
                 </p>
               </div>
             </div>
@@ -291,7 +291,7 @@ export const ModerationReportsPage = () => {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Rechercher signalement, motif, utilisateur..."
+              placeholder="Rechercher par titre, motif, demandeur..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
@@ -320,7 +320,7 @@ export const ModerationReportsPage = () => {
           </div>
         </div>
 
-        {/* Table des signalements */}
+        {/* Tableau des signalements (Sans colonne ID brute) */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center text-slate-400">
@@ -331,18 +331,17 @@ export const ModerationReportsPage = () => {
             <div className="p-12 text-center text-slate-500">
               <ShieldCheck size={40} className="mx-auto text-slate-300 mb-3" />
               <p className="text-base font-bold text-slate-700">Aucun signalement dans cette section</p>
-              <p className="text-xs text-slate-400 mt-1">Tous les signalements ont été traités ou correspondent à vos filtres</p>
+              <p className="text-xs text-slate-400 mt-1">Tous les signalements ont été traités ou correspondent à vos critères</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <th className="py-3.5 px-4">ID</th>
-                    <th className="py-3.5 px-4">Contenu signalé</th>
-                    <th className="py-3.5 px-4">Motif du signalement</th>
-                    <th className="py-3.5 px-4">Signalé par</th>
-                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-4">Contenu ciblé</th>
+                    <th className="py-3.5 px-4">Motif & Explication</th>
+                    <th className="py-3.5 px-4">Auteur du signalement</th>
+                    <th className="py-3.5 px-4">Date de dépôt</th>
                     <th className="py-3.5 px-4">Statut</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
@@ -350,16 +349,13 @@ export const ModerationReportsPage = () => {
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {reports.map((report) => {
                     const reason = getReasonLabel(report.reason);
-                    const targetTitle = report.reportable?.title || report.reportable?.name || `Élément #${report.reportable_id}`;
+                    const targetTitle = report.reportable?.title || report.reportable?.name || 'Publication concernée';
                     const reporterName = report.reporter?.candidateProfile 
                       ? `${report.reporter.candidateProfile.first_name || ''} ${report.reporter.candidateProfile.last_name || ''}`.trim()
-                      : (report.reporter?.companyProfile?.company_name || report.reporter?.email || `Utilisateur #${report.reporter_id}`);
+                      : (report.reporter?.companyProfile?.company_name || report.reporter?.email || 'Utilisateur Samre');
 
                     return (
                       <tr key={report.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 text-xs font-bold text-slate-400">
-                          #{report.id}
-                        </td>
                         <td className="py-3.5 px-4">
                           <div className="space-y-1 max-w-xs">
                             {getTargetTypeBadge(report.reportable_type)}
@@ -382,7 +378,7 @@ export const ModerationReportsPage = () => {
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 shrink-0">
                               {reporterName.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
@@ -450,13 +446,13 @@ export const ModerationReportsPage = () => {
         </div>
       </div>
 
-      {/* Modal d'examen et modération */}
+      {/* Modal de Traitement & Décision Modérateur */}
       {selectedReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
             
-            {/* Header modal */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            {/* Header du modal */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-rose-500/10 text-rose-600">
                   <ShieldAlert size={22} />
@@ -464,7 +460,7 @@ export const ModerationReportsPage = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-black text-slate-900 font-poppins">
-                      Examen du Signalement #{selectedReport.id}
+                      Examen du Signalement
                     </h3>
                     {getStatusBadge(selectedReport.status)}
                   </div>
@@ -483,21 +479,21 @@ export const ModerationReportsPage = () => {
               </button>
             </div>
 
-            {/* Corps du modal */}
+            {/* Corps du modal de traitement */}
             <div className="p-6 space-y-5 overflow-y-auto">
               
-              {/* Contenu signalé */}
+              {/* 1. Contenu ciblé par le signalement */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase text-slate-400 tracking-wider">
-                    Contenu Cible Signalé
+                    Contenu Cible
                   </span>
                   {getTargetTypeBadge(selectedReport.reportable_type)}
                 </div>
 
                 <div>
                   <h4 className="text-base font-black text-slate-900 font-poppins">
-                    {selectedReport.reportable?.title || selectedReport.reportable?.name || `Élément #${selectedReport.reportable_id}`}
+                    {selectedReport.reportable?.title || selectedReport.reportable?.name || 'Contenu publié'}
                   </h4>
                   {selectedReport.reportable?.description && (
                     <p className="text-xs text-slate-600 mt-1 line-clamp-3 leading-relaxed">
@@ -507,18 +503,18 @@ export const ModerationReportsPage = () => {
                   {selectedReport.reportable?.company && (
                     <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
                       <Building2 size={13} className="text-slate-400" />
-                      Entreprise : <span className="font-semibold text-slate-700">{selectedReport.reportable.company.company_name}</span>
+                      Entreprise émettrice : <span className="font-semibold text-slate-800">{selectedReport.reportable.company.company_name}</span>
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Motif & Explication du signalement */}
+              {/* 2. Motif et explications fournies */}
               <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-100 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase text-rose-600 tracking-wider flex items-center gap-1">
                     <AlertTriangle size={13} />
-                    Motif invoqué
+                    Motif signalé
                   </span>
                   <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${getReasonLabel(selectedReport.reason).color}`}>
                     {getReasonLabel(selectedReport.reason).text}
@@ -527,17 +523,17 @@ export const ModerationReportsPage = () => {
 
                 {selectedReport.details ? (
                   <div className="text-sm text-slate-800 pt-1">
-                    <p className="text-xs font-bold text-slate-500 mb-0.5">Détails fournis par l'auteur du signalement :</p>
-                    <p className="whitespace-pre-wrap bg-white/80 p-3 rounded-xl border border-rose-200/50 leading-relaxed">
+                    <p className="text-xs font-bold text-slate-500 mb-0.5">Explication fournie :</p>
+                    <p className="whitespace-pre-wrap bg-white/80 p-3 rounded-xl border border-rose-200/50 leading-relaxed text-xs">
                       {selectedReport.details}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 italic">Aucun détail supplémentaire précisé.</p>
+                  <p className="text-xs text-slate-500 italic">Aucune note détaillée précisée.</p>
                 )}
               </div>
 
-              {/* Auteur du signalement */}
+              {/* 3. Auteur du signalement */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center text-slate-700 font-bold text-sm border border-slate-200 shadow-sm">
@@ -548,13 +544,13 @@ export const ModerationReportsPage = () => {
                     <p className="text-sm font-bold text-slate-900">
                       {selectedReport.reporter?.candidateProfile 
                         ? `${selectedReport.reporter.candidateProfile.first_name || ''} ${selectedReport.reporter.candidateProfile.last_name || ''}`.trim()
-                        : (selectedReport.reporter?.companyProfile?.company_name || selectedReport.reporter?.email || `Utilisateur #${selectedReport.reporter_id}`)}
+                        : (selectedReport.reporter?.companyProfile?.company_name || selectedReport.reporter?.email || 'Utilisateur')}
                     </p>
                   </div>
                 </div>
                 <div className="text-right text-xs space-y-1">
                   {selectedReport.reporter?.phone && (
-                    <p className="text-slate-600 font-semibold">{selectedReport.reporter.phone}</p>
+                    <p className="text-slate-700 font-semibold">{selectedReport.reporter.phone}</p>
                   )}
                   {selectedReport.reporter?.email && (
                     <p className="text-slate-400">{selectedReport.reporter.email}</p>
@@ -562,23 +558,23 @@ export const ModerationReportsPage = () => {
                 </div>
               </div>
 
-              {/* Notes administratives */}
+              {/* 4. Décision & Notes de traitement */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Notes internes de modération (Admin) :
+                  Notes internes de traitement :
                 </label>
                 <textarea
                   rows={2}
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Ex: Contenu vérifié, annonce non conforme ou motif de classement..."
-                  className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
+                  placeholder="Ex: Contenu vérifié conforme, ou publication supprimée pour non-respect des règles..."
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
                 />
               </div>
             </div>
 
-            {/* Actions du modal */}
-            <div className="p-4 px-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 gap-3">
+            {/* Actions claires du modal */}
+            <div className="p-4 px-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/70 gap-3">
               <button
                 onClick={() => setSelectedReport(null)}
                 disabled={submittingAction}
@@ -587,7 +583,7 @@ export const ModerationReportsPage = () => {
                 Fermer
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => handleAction('dismiss')}
                   disabled={submittingAction}

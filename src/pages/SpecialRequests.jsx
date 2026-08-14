@@ -3,7 +3,7 @@ import {
   Sparkles, Clock, CheckCircle2, XCircle, AlertCircle, 
   Search, RefreshCw, Eye, User, Phone, Mail, Calendar, 
   Tag, MessageSquare, ChevronRight, Check, X, ShieldAlert,
-  HelpCircle, ArrowUpRight, Filter
+  HelpCircle, ArrowUpRight, Filter, Building2, FileText
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -31,6 +31,12 @@ export const SpecialRequestsPage = () => {
   const [adminNotes, setAdminNotes] = useState('');
   const [newStatus, setNewStatus] = useState('resolved');
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -87,7 +93,13 @@ export const SpecialRequestsPage = () => {
         admin_notes: adminNotes,
       });
 
-      if (res.data?.success) {
+      if (res.data?.success || res.data?.status === 'success') {
+        showToast(
+          statusToSet === 'resolved' 
+            ? 'Demande marquée comme résolue.' 
+            : (statusToSet === 'rejected' ? 'Demande rejetée.' : 'Statut mis à jour (En cours).'),
+          statusToSet === 'resolved' ? 'success' : (statusToSet === 'rejected' ? 'error' : 'info')
+        );
         setSelectedRequest(null);
         setAdminNotes('');
         fetchRequests();
@@ -95,7 +107,7 @@ export const SpecialRequestsPage = () => {
       }
     } catch (err) {
       console.error('Error updating special request status:', err);
-      alert('Erreur lors de la mise à jour de la demande.');
+      showToast('Erreur lors de la mise à jour de la demande.', 'error');
     } finally {
       setSubmittingAction(false);
     }
@@ -106,14 +118,14 @@ export const SpecialRequestsPage = () => {
       case 'pending':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={12} className="text-amber-500" />
+            <Clock size={12} className="text-amber-500 animate-pulse" />
             En attente
           </span>
         );
       case 'in_progress':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-            <RefreshCw size={12} className="text-blue-500 animate-spin" />
+            <RefreshCw size={12} className="text-blue-500" />
             En cours
           </span>
         );
@@ -143,43 +155,46 @@ export const SpecialRequestsPage = () => {
   const getCategoryColor = (key) => {
     switch (key) {
       case 'special_req_cat_personal':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-900 border-blue-200';
       case 'special_req_cat_professional':
-        return 'bg-sky-100 text-sky-800 border-sky-200';
+        return 'bg-sky-100 text-sky-900 border-sky-200';
       case 'special_req_cat_applications':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-purple-100 text-purple-900 border-purple-200';
       case 'special_req_cat_security':
-        return 'bg-rose-100 text-rose-800 border-rose-200';
+        return 'bg-rose-100 text-rose-900 border-rose-200';
       case 'special_req_cat_companies_events':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'bg-emerald-100 text-emerald-900 border-emerald-200';
       default:
-        return 'bg-amber-100 text-amber-800 border-amber-200';
+        return 'bg-amber-100 text-amber-900 border-amber-200';
     }
   };
 
   return (
     <MainLayout>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
+        
         {/* En-tête de la page */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600">
-                <Sparkles size={24} />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                <Sparkles size={26} />
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 font-poppins">
-                Demandes Spéciales
-              </h1>
+              <div>
+                <h1 className="text-2xl font-black tracking-tight text-slate-900 font-poppins">
+                  Demandes Spéciales
+                </h1>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  Gérez les requêtes d'assistance sur mesure et les demandes de modifications des utilisateurs
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-slate-500 mt-1">
-              Gérez les requêtes d'assistance sur mesure et les demandes de modifications des utilisateurs
-            </p>
           </div>
 
           <button
             onClick={() => { fetchRequests(); refreshNow(); }}
             disabled={loading}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition shadow-sm"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition shadow-sm"
           >
             <RefreshCw size={15} className={loading ? 'animate-spin text-amber-600' : 'text-slate-500'} />
             Actualiser
@@ -196,7 +211,7 @@ export const SpecialRequestsPage = () => {
                 : 'bg-white text-slate-900 border-slate-200 hover:border-slate-300 shadow-sm'
             }`}
           >
-            <p className={`text-xs font-semibold ${statusFilter === 'all' ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'all' ? 'text-slate-400' : 'text-slate-500'}`}>
               Total demandes
             </p>
             <p className="text-2xl font-black mt-1 font-poppins">{stats.total}</p>
@@ -211,7 +226,7 @@ export const SpecialRequestsPage = () => {
             }`}
           >
             <div className="flex items-center justify-between">
-              <p className={`text-xs font-semibold ${statusFilter === 'pending' ? 'text-amber-100' : 'text-amber-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'pending' ? 'text-amber-100' : 'text-amber-600'}`}>
                 En attente
               </p>
               <Clock size={16} className={statusFilter === 'pending' ? 'text-white' : 'text-amber-500'} />
@@ -228,7 +243,7 @@ export const SpecialRequestsPage = () => {
             }`}
           >
             <div className="flex items-center justify-between">
-              <p className={`text-xs font-semibold ${statusFilter === 'in_progress' ? 'text-blue-100' : 'text-blue-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'in_progress' ? 'text-blue-100' : 'text-blue-600'}`}>
                 En cours
               </p>
               <RefreshCw size={16} className={statusFilter === 'in_progress' ? 'text-white' : 'text-blue-500'} />
@@ -245,7 +260,7 @@ export const SpecialRequestsPage = () => {
             }`}
           >
             <div className="flex items-center justify-between">
-              <p className={`text-xs font-semibold ${statusFilter === 'resolved' ? 'text-emerald-100' : 'text-emerald-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'resolved' ? 'text-emerald-100' : 'text-emerald-600'}`}>
                 Résolues
               </p>
               <CheckCircle2 size={16} className={statusFilter === 'resolved' ? 'text-white' : 'text-emerald-500'} />
@@ -262,7 +277,7 @@ export const SpecialRequestsPage = () => {
             }`}
           >
             <div className="flex items-center justify-between">
-              <p className={`text-xs font-semibold ${statusFilter === 'rejected' ? 'text-rose-100' : 'text-rose-600'}`}>
+              <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'rejected' ? 'text-rose-100' : 'text-rose-600'}`}>
                 Rejetées
               </p>
               <XCircle size={16} className={statusFilter === 'rejected' ? 'text-white' : 'text-rose-500'} />
@@ -277,7 +292,7 @@ export const SpecialRequestsPage = () => {
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
-              placeholder="Rechercher utilisateur, sujet, message..."
+              placeholder="Rechercher utilisateur, objet, message..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
@@ -285,7 +300,7 @@ export const SpecialRequestsPage = () => {
           </div>
 
           <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
-            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600">
+            <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
               <Filter size={13} className="text-slate-400" />
               <span>Catégorie :</span>
               <select
@@ -305,7 +320,7 @@ export const SpecialRequestsPage = () => {
           </div>
         </div>
 
-        {/* Tableau des demandes */}
+        {/* Tableau des demandes (Sans colonne ID brute) */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-12 text-center text-slate-400">
@@ -323,11 +338,10 @@ export const SpecialRequestsPage = () => {
               <table className="w-full text-left text-sm text-slate-600">
                 <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <tr>
-                    <th className="py-3.5 px-4">ID</th>
                     <th className="py-3.5 px-4">Demandeur</th>
                     <th className="py-3.5 px-4">Catégorie & Objet</th>
                     <th className="py-3.5 px-4">Message extrait</th>
-                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-4">Date de soumission</th>
                     <th className="py-3.5 px-4">Statut</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
@@ -336,16 +350,13 @@ export const SpecialRequestsPage = () => {
                   {requests.map((req) => {
                     const userName = req.user?.candidateProfile 
                       ? `${req.user.candidateProfile.first_name || ''} ${req.user.candidateProfile.last_name || ''}`.trim()
-                      : (req.user?.companyProfile?.company_name || req.user?.email || `Utilisateur #${req.user_id}`);
+                      : (req.user?.companyProfile?.company_name || req.user?.email || 'Utilisateur');
 
                     return (
                       <tr key={req.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 text-xs font-bold text-slate-400">
-                          #{req.id}
-                        </td>
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 font-bold text-xs border border-slate-200 shrink-0">
                               {userName.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0">
@@ -423,19 +434,20 @@ export const SpecialRequestsPage = () => {
         </div>
       </div>
 
-      {/* Modal de traitement d'une demande */}
+      {/* Modal de Traitement Dédié d'une Demande Spéciale */}
       {selectedRequest && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Header modal */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+            
+            {/* Header du modal */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-600">
-                  <Sparkles size={20} />
+                  <Sparkles size={22} />
                 </div>
                 <div>
                   <h3 className="text-lg font-black text-slate-900 font-poppins">
-                    Traitement de la demande #{selectedRequest.id}
+                    Traitement de la Demande Spéciale
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     Déposée le {new Date(selectedRequest.created_at).toLocaleDateString('fr-FR', {
@@ -452,9 +464,10 @@ export const SpecialRequestsPage = () => {
               </button>
             </div>
 
-            {/* Corps du modal */}
+            {/* Corps du modal de traitement */}
             <div className="p-6 space-y-5 overflow-y-auto">
-              {/* Demandeur */}
+              
+              {/* 1. Demandeur */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
                 <p className="text-xs font-bold uppercase text-slate-400 tracking-wider">Demandeur</p>
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -462,17 +475,17 @@ export const SpecialRequestsPage = () => {
                     <p className="text-sm font-bold text-slate-900">
                       {selectedRequest.user?.candidateProfile 
                         ? `${selectedRequest.user.candidateProfile.first_name || ''} ${selectedRequest.user.candidateProfile.last_name || ''}`.trim()
-                        : (selectedRequest.user?.companyProfile?.company_name || `Utilisateur #${selectedRequest.user_id}`)}
+                        : (selectedRequest.user?.companyProfile?.company_name || 'Utilisateur')}
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Type: <span className="font-semibold uppercase">{selectedRequest.user?.user_type || 'candidat'}</span>
+                      Type de compte : <span className="font-bold uppercase text-slate-700">{selectedRequest.user?.user_type || 'Candidat'}</span>
                     </p>
                   </div>
                   <div className="text-right text-xs space-y-1">
                     {selectedRequest.user?.phone && (
-                      <p className="flex items-center gap-1.5 text-slate-600">
+                      <p className="flex items-center gap-1.5 text-slate-700">
                         <Phone size={12} className="text-slate-400" />
-                        <span className="font-semibold">{selectedRequest.user.phone}</span>
+                        <span className="font-bold">{selectedRequest.user.phone}</span>
                       </p>
                     )}
                     {selectedRequest.user?.email && (
@@ -485,9 +498,9 @@ export const SpecialRequestsPage = () => {
                 </div>
               </div>
 
-              {/* Objet et message */}
+              {/* 2. Catégorie, Objet et Message */}
               <div className="space-y-3">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${getCategoryColor(selectedRequest.category_key)}`}>
                     {selectedRequest.category_label}
                   </span>
@@ -497,32 +510,32 @@ export const SpecialRequestsPage = () => {
                 </div>
 
                 <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 text-sm text-slate-800 leading-relaxed">
-                  <p className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                  <p className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <MessageSquare size={13} />
                     Message du demandeur :
                   </p>
-                  <p className="whitespace-pre-wrap">{selectedRequest.message}</p>
+                  <p className="whitespace-pre-wrap text-xs font-medium text-slate-800">{selectedRequest.message}</p>
                 </div>
               </div>
 
-              {/* Notes administratives */}
+              {/* 3. Notes administratives */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Notes internes de traitement (Admin) :
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder="Ex: Contacté par téléphone, modification effectuée dans le profil, ou motif de rejet..."
-                  className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
+                  placeholder="Ex: Contacté par téléphone, correction effectuée dans le compte..."
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition"
                 />
               </div>
 
-              {/* Sélecteur de statut */}
+              {/* 4. Statut */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Modifier le statut :
+                  Statut à appliquer :
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -568,7 +581,7 @@ export const SpecialRequestsPage = () => {
             </div>
 
             {/* Footer modal */}
-            <div className="p-4 px-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50">
+            <div className="p-4 px-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/70">
               <button
                 onClick={() => setSelectedRequest(null)}
                 disabled={submittingAction}
@@ -596,6 +609,19 @@ export const SpecialRequestsPage = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl text-white font-bold text-sm shadow-xl flex items-center gap-2 backdrop-blur-md animate-slideUp ${
+          toast.type === 'error' ? 'bg-rose-600/95 border border-rose-500' : 'bg-emerald-600/95 border border-emerald-500'
+        }`}>
+          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 opacity-80 hover:opacity-100">
+            <X size={15} />
+          </button>
         </div>
       )}
     </MainLayout>
