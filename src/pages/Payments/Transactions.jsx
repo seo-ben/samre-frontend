@@ -154,37 +154,51 @@ export const TransactionsPage = () => {
           {/* Quick Actions */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button
+              disabled={totalCount === 0 && transactions.length === 0}
               onClick={async () => {
+                if (totalCount === 0 && transactions.length === 0) {
+                  alert('Aucune transaction disponible à exporter pour ces filtres.');
+                  return;
+                }
                 try {
                   const response = await apiClient.get('/v1/admin/transactions/export/csv', {
-                    params: { search: searchTerm, type: typeFilter, status: statusFilter },
+                    params: { search: searchTerm, type: typeFilter, status: statusFilter, provider: providerFilter },
                     responseType: 'blob'
                   });
-                  const url = window.URL.createObjectURL(new Blob([response.data]));
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.setAttribute('download', `transactions_samre_${new Date().toISOString().split('T')[0]}.csv`);
-                  document.body.appendChild(link);
-                  link.click();
-                  link.remove();
+                  
+                  // Check if blob is valid
+                  if (response.data && response.data.size > 0) {
+                    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', `transactions_samre_${new Date().toISOString().split('T')[0]}.csv`);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                  } else {
+                    alert('Aucune donnée trouvée à exporter pour les critères sélectionnés.');
+                  }
                 } catch (err) {
+                  console.error(err);
                   alert('Erreur lors du téléchargement du rapport CSV.');
                 }
               }}
               style={{
                 padding: '7px 12px',
                 borderRadius: '6px',
-                background: '#166534',
+                background: (totalCount === 0 && transactions.length === 0) ? '#94A3B8' : '#166534',
                 color: 'white',
                 border: 'none',
                 fontWeight: '600',
                 fontSize: '12px',
-                cursor: 'pointer',
+                cursor: (totalCount === 0 && transactions.length === 0) ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '6px',
                 boxShadow: '0 1px 2px rgba(22,101,52,0.2)'
               }}
+              title={(totalCount === 0 && transactions.length === 0) ? 'Aucune transaction à exporter' : 'Télécharger le registre CSV'}
             >
               <Download size={13} /> Export CSV
             </button>
@@ -378,7 +392,6 @@ export const TransactionsPage = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', width: '90px' }}>Réf TXN</th>
                   <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', width: '110px' }}>Date</th>
                   <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Utilisateur</th>
                   <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Motif & Opération</th>
@@ -391,14 +404,14 @@ export const TransactionsPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>
+                    <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>
                       <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 6px', color: '#3B82F6' }} />
                       <p style={{ margin: 0, fontSize: '13px' }}>Chargement des flux...</p>
                     </td>
                   </tr>
                 ) : transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="8" style={{ padding: '36px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>Aucune transaction trouvée</td>
+                    <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>Aucune transaction trouvée</td>
                   </tr>
                 ) : (
                   transactions.map((tx) => {
@@ -413,11 +426,6 @@ export const TransactionsPage = () => {
                         onMouseOver={(e) => e.currentTarget.style.background = '#F8FAFC'}
                         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
-                        {/* REF ID */}
-                        <td style={{ padding: '6px 12px', fontWeight: '700', color: '#0F172A', fontFamily: 'monospace', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
-                          #{(tx.id || 0).toString().padStart(5, '0')}
-                        </td>
-
                         {/* DATE */}
                         <td style={{ padding: '6px 12px', color: '#64748B', fontSize: '11.5px', whiteSpace: 'nowrap' }}>
                           {formatDateCompact(tx.created_at)}

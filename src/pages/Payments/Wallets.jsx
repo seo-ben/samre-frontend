@@ -203,7 +203,6 @@ export const WalletsPage = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
               <thead>
                 <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', width: '70px' }}>ID</th>
                   <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Utilisateur</th>
                   <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Contact</th>
                   <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Profil</th>
@@ -214,14 +213,14 @@ export const WalletsPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="6" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>
+                    <td colSpan="5" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>
                       <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 6px', color: '#3B82F6' }} />
                       <p style={{ margin: 0, fontSize: '13px' }}>Chargement des portefeuilles...</p>
                     </td>
                   </tr>
                 ) : wallets.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ padding: '36px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>Aucun portefeuille trouvé</td>
+                    <td colSpan="5" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>Aucun portefeuille trouvé</td>
                   </tr>
                 ) : (
                   wallets.map((wallet) => {
@@ -229,11 +228,6 @@ export const WalletsPage = () => {
                     const userInitials = getInitials(userName);
                     return (
                       <tr key={wallet.id} style={{ borderBottom: '1px solid #F1F5F9', height: '38px', transition: 'background 0.1s' }} onMouseOver={(e) => e.currentTarget.style.background = '#F8FAFC'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-                        {/* ID */}
-                        <td style={{ padding: '6px 12px', color: '#64748B', fontFamily: 'monospace', fontSize: '11.5px' }}>
-                          #{wallet.id}
-                        </td>
-
                         {/* User */}
                         <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
