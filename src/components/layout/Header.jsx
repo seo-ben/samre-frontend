@@ -66,11 +66,14 @@ const getBreadcrumbs = (path) => {
   if (path.startsWith('/badges/companies')) {
     return { parent: 'Badges & Vérifications', child: 'Entreprises vérifiées' };
   }
-  if (path.startsWith('/payments/transactions')) {
-    return { parent: 'Paiements & Wallets', child: 'Transactions' };
+  if (path.startsWith('/payments/transactions') || path.startsWith('/transactions')) {
+    return { parent: 'Finances & Wallets', child: 'Transactions' };
   }
-  if (path.startsWith('/payments/wallets')) {
-    return { parent: 'Paiements & Wallets', child: 'Wallets' };
+  if (path.startsWith('/payments/wallets') || path.startsWith('/wallets')) {
+    return { parent: 'Finances & Wallets', child: 'Portefeuilles' };
+  }
+  if (path.startsWith('/finances')) {
+    return { parent: 'Finances & Wallets', child: 'Vue d\'ensemble' };
   }
   if (path.startsWith('/payments/revenue')) {
     return { parent: 'Paiements & Wallets', child: 'Revenus' };

@@ -99,8 +99,12 @@ const NAV = [
   {
     id: 'finances',
     label: 'Finances & Wallets',
-    path: '/finances',
     icon: Wallet,
+    children: [
+      { label: 'Vue d\'ensemble', path: '/finances', icon: TrendingUp },
+      { label: 'Portefeuilles', path: '/wallets', icon: Wallet },
+      { label: 'Transactions', path: '/transactions', icon: ReceiptText },
+    ],
   },
   {
     id: 'subscriptions',

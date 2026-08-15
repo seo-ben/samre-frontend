@@ -25,8 +25,9 @@ import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
 import { CompanyBanners } from './pages/CompanyBanners'
 import { SystemSettings } from './pages/SystemSettings'
-import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
+import { WalletsPage } from './pages/Payments/Wallets'
+import { TransactionsPage } from './pages/Payments/Transactions'
 import { SpecialRequestsPage } from './pages/SpecialRequests'
 import { SurveysManagementPage } from './pages/SurveysManagement'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -93,6 +94,10 @@ function App() {
 
       {/* ── Paiements & Finances ─────────────────────────── */}
       <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />
+      <Route path="/wallets" element={<Protected><WalletsPage /></Protected>} />
+      <Route path="/transactions" element={<Protected><TransactionsPage /></Protected>} />
+      <Route path="/payments/wallets" element={<Protected><WalletsPage /></Protected>} />
+      <Route path="/payments/transactions" element={<Protected><TransactionsPage /></Protected>} />
 
       {/* ── Abonnements ───────────────────────── */}
       <Route path="/subscriptions/control-center" element={<Protected><SubscriptionControlCenterPage /></Protected>} />
