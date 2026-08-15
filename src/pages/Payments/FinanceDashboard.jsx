@@ -3,10 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { MainLayout } from '../../components/layout/MainLayout';
 import apiClient from '../../lib/apiClient';
 import { 
-  Wallet, TrendingUp, Search, Filter, 
-  Download, ArrowUpRight, ArrowDownRight, CreditCard, Activity,
-  AlertTriangle, CheckCircle2, RefreshCw, X, Eye, Plus, Minus,
-  ExternalLink, User, Phone, Mail, Calendar, Layers, ShieldCheck
+  Wallet, TrendingUp, Search, 
+  ArrowUpRight, ArrowDownRight, CreditCard, Activity,
+  AlertTriangle, CheckCircle2, RefreshCw, X, Plus, Minus,
+  ExternalLink, ArrowRight, ArrowLeft
 } from 'lucide-react';
 
 export const getUserDisplayName = (user) => {
@@ -59,6 +59,37 @@ export const getUserTypeBadge = (userType) => {
   }
 };
 
+export const getPaymentProviderBadge = (provider) => {
+  if (!provider) return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '600', borderRadius: '6px', background: '#F1F5F9', color: '#475569' }}>Portefeuille SAMRE</span>;
+
+  const p = provider.toLowerCase();
+  if (p.includes('flooz') || p.includes('moov')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#EFF6FF', color: '#1D4ED8' }}>Moov Money (Flooz)</span>;
+  }
+  if (p.includes('tmoney') || p.includes('mixx')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#FEF2F2', color: '#DC2626' }}>TMoney</span>;
+  }
+  if (p.includes('wave')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#E0F2FE', color: '#0284C7' }}>Wave</span>;
+  }
+  if (p.includes('mtn')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#FEF9C3', color: '#854D0E' }}>MTN MoMo</span>;
+  }
+  if (p.includes('orange')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#FFEDD5', color: '#C2410C' }}>Orange Money</span>;
+  }
+  if (p.includes('stripe') || p.includes('card')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#EEF2FF', color: '#4F46E5' }}>Carte Bancaire</span>;
+  }
+  if (p.includes('leekpay')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#ECFDF5', color: '#059669' }}>LeekPay</span>;
+  }
+  if (p.includes('admin') || p.includes('manual')) {
+    return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#F3E8FF', color: '#7E22CE' }}>Manuel Admin</span>;
+  }
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: '700', borderRadius: '6px', background: '#F1F5F9', color: '#334155' }}>{provider.toUpperCase()}</span>;
+};
+
 export const getPurposeBadge = (purpose) => {
   switch (purpose) {
     case 'recharge':
@@ -73,12 +104,25 @@ export const getPurposeBadge = (purpose) => {
     case 'subscription':
       return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#F3E8FF', color: '#6B21A8' }}><i className="fa-solid fa-crown" style={{ fontSize: '10px' }}></i> Abonnement</span>;
     case 'boost':
-      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#FFEDD5', color: '#C2410C' }}><i className="fa-solid fa-bolt" style={{ fontSize: '10px' }}></i> Boost</span>;
+    case 'profile_boost':
+    case 'offer_boost':
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#FFEDD5', color: '#C2410C' }}><i className="fa-solid fa-bolt" style={{ fontSize: '10px' }}></i> Boost Visibilité</span>;
     case 'event_publication':
       return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#DBEAFE', color: '#1E40AF' }}><i className="fa-solid fa-calendar-plus" style={{ fontSize: '10px' }}></i> Pub. Événement</span>;
+    case 'offer_publication':
+    case 'job_publication':
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#E0E7FF', color: '#3730A3' }}><i className="fa-solid fa-briefcase" style={{ fontSize: '10px' }}></i> Pub. Offre</span>;
     case 'reward':
     case 'prime':
-      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#FEF9C3', color: '#854D0E' }}><i className="fa-solid fa-medal" style={{ fontSize: '10px' }}></i> Prime</span>;
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#FEF9C3', color: '#854D0E' }}><i className="fa-solid fa-medal" style={{ fontSize: '10px' }}></i> Prime Embauche</span>;
+    case 'sms_fee':
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#ECFEFF', color: '#0E7490' }}><i className="fa-solid fa-comment-sms" style={{ fontSize: '10px' }}></i> Notification SMS</span>;
+    case 'badge_verification':
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#FDF4FF', color: '#86198F' }}><i className="fa-solid fa-certificate" style={{ fontSize: '10px' }}></i> Vérification Badge</span>;
+    case 'manual_credit':
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#DCFCE7', color: '#166534' }}><i className="fa-solid fa-plus-circle" style={{ fontSize: '10px' }}></i> Crédit Manuel</span>;
+    case 'manual_debit':
+      return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#FEE2E2', color: '#991B1B' }}><i className="fa-solid fa-minus-circle" style={{ fontSize: '10px' }}></i> Débit Manuel</span>;
     case 'refund':
       return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', fontSize: '11.5px', fontWeight: '600', borderRadius: '6px', background: '#ECFDF5', color: '#065F46' }}><i className="fa-solid fa-rotate-left" style={{ fontSize: '10px' }}></i> Remboursement</span>;
     default:
@@ -443,7 +487,7 @@ export const FinanceDashboard = () => {
                     const userName = getUserDisplayName(txUser);
                     return (
                       <tr 
-                        key={t.id}
+                        key={t.id} 
                         onClick={() => setSelectedTx(t)}
                         style={{ borderBottom: '1px solid #F1F5F9', cursor: 'pointer', transition: 'background 0.15s' }}
                         onMouseOver={(e) => e.currentTarget.style.background = '#F8FAFC'}
@@ -573,11 +617,25 @@ export const FinanceDashboard = () => {
 
                   {/* Purpose */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '10px' }}>
-                    <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Type de transaction</span>
+                    <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Type de mouvement</span>
                     <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0F172A', textTransform: 'capitalize' }}>
-                      {selectedTx.type === 'credit' ? 'Crédit (+)' : 'Débit (-)'} ({selectedTx.purpose || 'Opération'})
+                      {selectedTx.type === 'credit' ? 'Crédit (+)' : 'Débit (-)'}
                     </span>
                   </div>
+
+                  {/* Balances Before & After if available */}
+                  {(selectedTx.balance_before !== undefined || selectedTx.balance_after !== undefined) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase' }}>Solde avant</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0F172A' }}>{formatCurrency(selectedTx.balance_before || 0)}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase' }}>Solde après</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '700', color: selectedTx.type === 'credit' ? '#16A34A' : '#0F172A' }}>{formatCurrency(selectedTx.balance_after || 0)}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Motif / Description */}
                   {selectedTx.description && (
@@ -590,14 +648,12 @@ export const FinanceDashboard = () => {
                   )}
 
                   {/* Payment provider */}
-                  {selectedTx.payment_provider && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '10px' }}>
-                      <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Moyen de paiement</span>
-                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', textTransform: 'uppercase' }}>
-                        {selectedTx.payment_provider}
-                      </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Moyen de paiement / Source</span>
+                    <div>
+                      {getPaymentProviderBadge(selectedTx.payment_provider)}
                     </div>
-                  )}
+                  </div>
 
                   {/* External ref */}
                   {selectedTx.external_ref && (

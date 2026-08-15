@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../lib/apiClient';
 import { Landmark, ArrowRight, ArrowLeft, Eye, Clock, X, Lock } from 'lucide-react';
+import { getPurposeBadge, getPaymentProviderBadge } from '../../pages/Payments/FinanceDashboard';
 
 export const UserWalletTab = ({ user, refreshUser }) => {
   const [walletBalance, setWalletBalance] = useState(user.wallet?.balance || 0);
@@ -203,16 +204,14 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', color: 'var(--gray-medium)' }}>
-                      {tx.description 
-                        ? tx.description 
-                        : (tx.purpose === 'call_fee' || tx.purpose === 'event_participant_call' ? 'Déblocage contact événement'
-                          : tx.purpose === 'profile_unlock' ? 'Déblocage de profil'
-                          : tx.purpose === 'application_unlock' ? 'Déblocage de candidature' 
-                          : tx.purpose === 'manual_credit' ? 'Crédit manuel'
-                          : tx.purpose === 'manual_debit' ? 'Débit manuel'
-                          : tx.purpose === 'subscription' ? 'Abonnement'
-                          : tx.purpose === 'recharge' ? 'Rechargement'
-                          : tx.purpose || 'Transaction')}
+                      <div style={{ marginBottom: tx.description ? '4px' : '0' }}>
+                        {getPurposeBadge(tx.purpose)}
+                      </div>
+                      {tx.description && (
+                        <div style={{ fontSize: '12px', color: 'var(--black-deep)', maxWidth: '280px', lineHeight: '1.4' }}>
+                          {tx.description}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '12px 16px', fontWeight: '700', color: tx.type === 'credit' ? '#16a34a' : '#dc2626' }}>
                       {tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
@@ -383,20 +382,21 @@ export const UserWalletTab = ({ user, refreshUser }) => {
               <div style={{ borderTop: '1px dashed var(--gray-border)', margin: '4px 0' }}></div>
 
               <div>
-                <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Motif complet</span>
-                <div style={{ fontSize: '14px', color: 'var(--black-deep)', padding: '10px', background: '#f8fafc', borderRadius: '8px', marginTop: '6px' }}>
-                  {selectedTx.description || selectedTx.purpose || 'Aucun motif renseigné.'}
-                </div>
+                <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Catégorie / Motif</span>
+                <div style={{ marginTop: '6px' }}>{getPurposeBadge(selectedTx.purpose)}</div>
+                {selectedTx.description && (
+                  <div style={{ fontSize: '13.5px', fontWeight: '500', color: 'var(--black-deep)', padding: '10px 12px', background: '#f8fafc', borderRadius: '8px', marginTop: '8px', border: '1px solid var(--gray-border)' }}>
+                    {selectedTx.description}
+                  </div>
+                )}
               </div>
 
-              {selectedTx.payment_provider && (
-                <div>
-                  <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Fournisseur de paiement</span>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                    <Lock size={14}/> {selectedTx.payment_provider}
-                  </div>
+              <div>
+                <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '600', textTransform: 'uppercase' }}>Moyen de paiement / Source</span>
+                <div style={{ marginTop: '6px' }}>
+                  {getPaymentProviderBadge(selectedTx.payment_provider)}
                 </div>
-              )}
+              </div>
             </div>
             <div style={{ padding: '16px 20px', background: 'var(--gray-light)', borderTop: '1px solid var(--gray-border)', textAlign: 'right' }}>
               <button onClick={() => setSelectedTx(null)} style={{ padding: '8px 16px', background: '#fff', border: '1px solid var(--gray-border)', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>

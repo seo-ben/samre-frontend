@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '../../components/layout/MainLayout';
 import apiClient from '../../lib/apiClient';
-import { getUserDisplayName, getUserTypeBadge, getPurposeBadge } from './FinanceDashboard';
+import { getUserDisplayName, getUserTypeBadge, getPurposeBadge, getPaymentProviderBadge } from './FinanceDashboard';
 import { 
   ReceiptText, Search, RefreshCw, ArrowUpRight, ArrowDownRight, 
   ChevronLeft, ChevronRight, X, AlertTriangle, CheckCircle2, Download 
@@ -393,9 +393,23 @@ export const TransactionsPage = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '10px' }}>
                     <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Type de mouvement</span>
                     <span style={{ fontSize: '13.5px', fontWeight: '600', color: '#0F172A', textTransform: 'capitalize' }}>
-                      {selectedTx.type === 'credit' ? 'Crédit (+)' : 'Débit (-)'} ({selectedTx.purpose || 'Opération'})
+                      {selectedTx.type === 'credit' ? 'Crédit (+)' : 'Débit (-)'}
                     </span>
                   </div>
+
+                  {/* Balances Before & After if available */}
+                  {(selectedTx.balance_before !== undefined || selectedTx.balance_after !== undefined) && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#F8FAFC', padding: '10px 14px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase' }}>Solde avant</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '700', color: '#0F172A' }}>{formatCurrency(selectedTx.balance_before || 0)}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase' }}>Solde après</div>
+                        <div style={{ fontSize: '13.5px', fontWeight: '700', color: selectedTx.type === 'credit' ? '#16A34A' : '#0F172A' }}>{formatCurrency(selectedTx.balance_after || 0)}</div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Motif / Description */}
                   {selectedTx.description && (
@@ -408,14 +422,12 @@ export const TransactionsPage = () => {
                   )}
 
                   {/* Payment provider */}
-                  {selectedTx.payment_provider && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '10px' }}>
-                      <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Moyen de paiement</span>
-                      <span style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', textTransform: 'uppercase' }}>
-                        {selectedTx.payment_provider}
-                      </span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '10px' }}>
+                    <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>Moyen de paiement / Source</span>
+                    <div>
+                      {getPaymentProviderBadge(selectedTx.payment_provider)}
                     </div>
-                  )}
+                  </div>
 
                   {/* External ref */}
                   {selectedTx.external_ref && (
