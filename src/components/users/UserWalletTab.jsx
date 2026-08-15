@@ -205,10 +205,13 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                     <td style={{ padding: '12px 16px', color: 'var(--gray-medium)' }}>
                       {tx.description 
                         ? tx.description 
-                        : (tx.purpose === 'application_unlock' ? 'Déblocage de candidature' 
+                        : (tx.purpose === 'call_fee' || tx.purpose === 'event_participant_call' ? 'Déblocage contact événement'
+                          : tx.purpose === 'profile_unlock' ? 'Déblocage de profil'
+                          : tx.purpose === 'application_unlock' ? 'Déblocage de candidature' 
                           : tx.purpose === 'manual_credit' ? 'Crédit manuel'
                           : tx.purpose === 'manual_debit' ? 'Débit manuel'
                           : tx.purpose === 'subscription' ? 'Abonnement'
+                          : tx.purpose === 'recharge' ? 'Rechargement'
                           : tx.purpose || 'Transaction')}
                     </td>
                     <td style={{ padding: '12px 16px', fontWeight: '700', color: tx.type === 'credit' ? '#16a34a' : '#dc2626' }}>

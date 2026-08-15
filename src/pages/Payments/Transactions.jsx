@@ -54,6 +54,33 @@ export const TransactionsPage = () => {
     }
   };
 
+  const getPurposeBadge = (purpose) => {
+    switch (purpose) {
+      case 'recharge':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#DCFCE7', color: '#166534' }}><i className="fa-solid fa-arrow-down"></i> Rechargement</span>;
+      case 'call_fee':
+      case 'event_participant_call':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#FEF3C7', color: '#B45309' }}><i className="fa-solid fa-phone"></i> Contact Événement</span>;
+      case 'profile_unlock':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#EEF2FF', color: '#4338CA' }}><i className="fa-solid fa-user-check"></i> Déblocage Profil</span>;
+      case 'application_unlock':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#E0F2FE', color: '#0369A1' }}><i className="fa-solid fa-file-lines"></i> Candidature</span>;
+      case 'subscription':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#F3E8FF', color: '#6B21A8' }}><i className="fa-solid fa-crown"></i> Abonnement</span>;
+      case 'boost':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#FFEDD5', color: '#C2410C' }}><i className="fa-solid fa-bolt"></i> Boost</span>;
+      case 'event_publication':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#DBEAFE', color: '#1E40AF' }}><i className="fa-solid fa-calendar-plus"></i> Pub. Événement</span>;
+      case 'reward':
+      case 'prime':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#FEF9C3', color: '#854D0E' }}><i className="fa-solid fa-medal"></i> Prime</span>;
+      case 'refund':
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: '#ECFDF5', color: '#065F46' }}><i className="fa-solid fa-rotate-left"></i> Remboursement</span>;
+      default:
+        return <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', fontSize: '12px', fontWeight: '600', borderRadius: '6px', background: 'var(--gray-light)', color: 'var(--gray-medium)' }}>{purpose || 'Transaction'}</span>;
+    }
+  };
+
   return (
     <MainLayout>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -214,8 +241,12 @@ export const TransactionsPage = () => {
                         <div style={{ fontSize: '12px', color: 'var(--gray-medium)' }}>{tx.wallet?.user?.email || tx.wallet?.user?.phone}</div>
                       </td>
                       <td style={{ padding: '16px 24px' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--black-deep)' }}>{tx.purpose || '-'}</div>
-                        {tx.description && <div style={{ fontSize: '12px', color: 'var(--gray-medium)', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tx.description}</div>}
+                        <div style={{ marginBottom: tx.description ? '4px' : '0' }}>{getPurposeBadge(tx.purpose)}</div>
+                        {tx.description && (
+                          <div style={{ fontSize: '12px', color: '#475569', maxWidth: '340px', lineHeight: '1.4' }}>
+                            {tx.description}
+                          </div>
+                        )}
                       </td>
                       <td style={{ padding: '16px 24px', textAlign: 'right', fontWeight: '600', color: tx.type === 'credit' ? 'var(--success)' : 'var(--danger)' }}>
                         {tx.type === 'credit' ? '+' : '-'} {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XOF' }).format(tx.amount)}
