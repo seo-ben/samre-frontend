@@ -7,7 +7,7 @@ import {
   ReceiptText, Search, RefreshCw, ArrowUpRight, ArrowDownRight, 
   ChevronLeft, ChevronRight, X, AlertTriangle, CheckCircle2, Download,
   Filter, Eye, ArrowUpDown, TrendingUp, TrendingDown, DollarSign,
-  Calendar, Layers, Check, CreditCard, Wallet
+  Calendar, Layers, Check, CreditCard, Wallet, Copy, CheckCheck
 } from 'lucide-react';
 
 export const TransactionsPage = () => {
@@ -17,6 +17,7 @@ export const TransactionsPage = () => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [copiedRef, setCopiedRef] = useState(false);
   
   // Filters & Pagination
   const [searchTerm, setSearchTerm] = useState(initialSearch);
@@ -263,11 +264,11 @@ export const TransactionsPage = () => {
         <div style={{ background: '#FFFFFF', borderRadius: '10px', padding: '10px 14px', display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', border: '1px solid #E2E8F0' }}>
           
           {/* Search */}
-          <div style={{ position: 'relative', flex: '1 1 240px' }}>
+          <div style={{ position: 'relative', flex: '1 1 260px' }}>
             <Search size={13} color="#94A3B8" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Rechercher utilisateur (nom, tél, email)..."
+              placeholder="Rechercher (Nom, Tél, Réf Stripe cs_..., Motif)..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -453,9 +454,23 @@ export const TransactionsPage = () => {
                           </div>
                         </td>
 
-                        {/* SOURCE / PROVIDER */}
+                        {/* SOURCE / PROVIDER & REFERENCE */}
                         <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
-                          {getPaymentProviderBadge(tx.payment_provider)}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div>{getPaymentProviderBadge(tx.payment_provider)}</div>
+                            {tx.external_ref ? (
+                              <span 
+                                style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#1E293B', background: '#F1F5F9', padding: '1px 5px', borderRadius: '3px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', border: '1px solid #E2E8F0', display: 'inline-block' }}
+                                title={`Référence externe / Stripe: ${tx.external_ref}`}
+                              >
+                                {tx.external_ref}
+                              </span>
+                            ) : tx.reference_type && tx.reference_id ? (
+                              <span style={{ fontSize: '10px', color: '#64748B' }}>
+                                Ref: {tx.reference_type} #{tx.reference_id}
+                              </span>
+                            ) : null}
+                          </div>
                         </td>
 
                         {/* AMOUNT */}
@@ -518,7 +533,7 @@ export const TransactionsPage = () => {
         {/* MODAL: FULL TRANSACTION DETAILS */}
         {selectedTx && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', backdropFilter: 'blur(3px)' }}>
-            <div style={{ background: 'white', borderRadius: '14px', width: '100%', maxWidth: '500px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)' }}>
+            <div style={{ background: 'white', borderRadius: '14px', width: '100%', maxWidth: '520px', overflow: 'hidden', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)' }}>
               
               {/* Modal Header */}
               <div style={{ padding: '16px 20px', background: selectedTx.type === 'credit' ? '#F0FDF4' : '#FEF2F2', borderBottom: `1px solid ${selectedTx.type === 'credit' ? '#DCFCE7' : '#FEE2E2'}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -608,7 +623,7 @@ export const TransactionsPage = () => {
                     </div>
                   )}
 
-                  {/* Payment provider */}
+                  {/* Payment provider & External Ref / Stripe Session */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
                     <span style={{ fontSize: '12.5px', color: '#64748B', fontWeight: '500' }}>Moyen de paiement / Source</span>
                     <div>
@@ -616,12 +631,38 @@ export const TransactionsPage = () => {
                     </div>
                   </div>
 
-                  {/* External ref */}
-                  {selectedTx.external_ref && (
+                  {/* External ref / Stripe Session ID Box */}
+                  <div style={{ background: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
+                        Référence Passerelle (Stripe / Opérateur)
+                      </span>
+                      {selectedTx.external_ref && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedTx.external_ref);
+                            setCopiedRef(true);
+                            setTimeout(() => setCopiedRef(false), 2000);
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', background: copiedRef ? '#DCFCE7' : '#E2E8F0', color: copiedRef ? '#166534' : '#334155', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' }}
+                        >
+                          {copiedRef ? <CheckCheck size={12} /> : <Copy size={12} />}
+                          {copiedRef ? 'Copié !' : 'Copier la référence'}
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '12.5px', fontFamily: 'monospace', color: selectedTx.external_ref ? '#0F172A' : '#94A3B8', fontWeight: selectedTx.external_ref ? '700' : 'normal', wordBreak: 'break-all', background: 'white', padding: '6px 8px', borderRadius: '4px', border: '1px solid #CBD5E1' }}>
+                      {selectedTx.external_ref || 'Aucune référence externe transmise (Opération interne)'}
+                    </div>
+                  </div>
+
+                  {/* Linked Entity Reference if any */}
+                  {selectedTx.reference_type && selectedTx.reference_id && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
-                      <span style={{ fontSize: '12.5px', color: '#64748B', fontWeight: '500' }}>Référence externe</span>
-                      <span style={{ fontSize: '11.5px', fontFamily: 'monospace', color: '#475569', background: '#F1F5F9', padding: '2px 6px', borderRadius: '4px' }}>
-                        {selectedTx.external_ref}
+                      <span style={{ fontSize: '12.5px', color: '#64748B', fontWeight: '500' }}>Élément / Entité liée</span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#0F172A', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px' }}>
+                        {selectedTx.reference_type} #{selectedTx.reference_id}
                       </span>
                     </div>
                   )}

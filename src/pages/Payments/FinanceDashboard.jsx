@@ -6,7 +6,7 @@ import {
   Wallet, TrendingUp, Search, 
   ArrowUpRight, ArrowDownRight, CreditCard, Activity,
   AlertTriangle, CheckCircle2, RefreshCw, X, Plus, Minus,
-  ExternalLink, Eye, Layers
+  ExternalLink, Eye, Layers, Copy, CheckCheck
 } from 'lucide-react';
 
 export const getUserDisplayName = (user) => {
@@ -154,6 +154,7 @@ export const FinanceDashboard = () => {
   const [actionAmount, setActionAmount] = useState('');
   const [actionPurpose, setActionPurpose] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [copiedRef, setCopiedRef] = useState(false);
 
   // Fetch Data
   const fetchData = async () => {
@@ -594,6 +595,42 @@ export const FinanceDashboard = () => {
                     <span style={{ color: '#64748B', fontWeight: '500' }}>Source / Moyen</span>
                     <div>{getPaymentProviderBadge(selectedTx.payment_provider)}</div>
                   </div>
+
+                  {/* External ref / Stripe Session Box */}
+                  <div style={{ background: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
+                        Référence Passerelle (Stripe / Opérateur)
+                      </span>
+                      {selectedTx.external_ref && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(selectedTx.external_ref);
+                            setCopiedRef(true);
+                            setTimeout(() => setCopiedRef(false), 2000);
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', background: copiedRef ? '#DCFCE7' : '#E2E8F0', color: copiedRef ? '#166534' : '#334155', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' }}
+                        >
+                          {copiedRef ? <CheckCheck size={12} /> : <Copy size={12} />}
+                          {copiedRef ? 'Copié !' : 'Copier'}
+                        </button>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '12.5px', fontFamily: 'monospace', color: selectedTx.external_ref ? '#0F172A' : '#94A3B8', fontWeight: selectedTx.external_ref ? '700' : 'normal', wordBreak: 'break-all', background: 'white', padding: '6px 8px', borderRadius: '4px', border: '1px solid #CBD5E1' }}>
+                      {selectedTx.external_ref || 'Aucune référence externe transmise (Opération interne)'}
+                    </div>
+                  </div>
+
+                  {/* Linked Entity Reference if any */}
+                  {selectedTx.reference_type && selectedTx.reference_id && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px' }}>
+                      <span style={{ color: '#64748B', fontWeight: '500' }}>Entité liée</span>
+                      <span style={{ fontSize: '12px', fontWeight: '600', color: '#0F172A', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px' }}>
+                        {selectedTx.reference_type} #{selectedTx.reference_id}
+                      </span>
+                    </div>
+                  )}
 
                 </div>
 

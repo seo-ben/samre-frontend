@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../lib/apiClient';
-import { Landmark, ArrowRight, ArrowLeft, Eye, Clock, X, Lock } from 'lucide-react';
+import { Landmark, ArrowRight, ArrowLeft, Eye, Clock, X, Lock, Copy, CheckCheck } from 'lucide-react';
 import { getPurposeBadge, getPaymentProviderBadge } from '../../pages/Payments/FinanceDashboard';
 
 export const UserWalletTab = ({ user, refreshUser }) => {
@@ -8,6 +8,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [copiedRef, setCopiedRef] = useState(false);
 
   // Manual transaction modals
   const [showManualModal, setShowManualModal] = useState(false);
@@ -397,6 +398,42 @@ export const UserWalletTab = ({ user, refreshUser }) => {
                   {getPaymentProviderBadge(selectedTx.payment_provider)}
                 </div>
               </div>
+
+              {/* Référence Externe / Stripe Session */}
+              <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--gray-border)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--gray-medium)', fontWeight: '700', textTransform: 'uppercase' }}>
+                    Référence Passerelle (Stripe / Opérateur)
+                  </span>
+                  {selectedTx.external_ref && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedTx.external_ref);
+                        setCopiedRef(true);
+                        setTimeout(() => setCopiedRef(false), 2000);
+                      }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '2px 8px', background: copiedRef ? '#dcfce7' : '#e2e8f0', color: copiedRef ? '#166534' : '#334155', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: '700' }}
+                    >
+                      {copiedRef ? <CheckCheck size={12} /> : <Copy size={12} />}
+                      {copiedRef ? 'Copié !' : 'Copier'}
+                    </button>
+                  )}
+                </div>
+                <div style={{ fontSize: '12.5px', fontFamily: 'monospace', color: selectedTx.external_ref ? 'var(--black-deep)' : 'var(--gray-medium)', fontWeight: selectedTx.external_ref ? '700' : 'normal', wordBreak: 'break-all', background: 'white', padding: '6px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}>
+                  {selectedTx.external_ref || 'Aucune référence externe transmise (Opération interne)'}
+                </div>
+              </div>
+
+              {/* Linked Entity Reference if any */}
+              {selectedTx.reference_type && selectedTx.reference_id && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px dashed var(--gray-border)', paddingTop: '8px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--gray-medium)', fontWeight: '500' }}>Entité liée</span>
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--black-deep)', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>
+                    {selectedTx.reference_type} #{selectedTx.reference_id}
+                  </span>
+                </div>
+              )}
             </div>
             <div style={{ padding: '16px 20px', background: 'var(--gray-light)', borderTop: '1px solid var(--gray-border)', textAlign: 'right' }}>
               <button onClick={() => setSelectedTx(null)} style={{ padding: '8px 16px', background: '#fff', border: '1px solid var(--gray-border)', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
