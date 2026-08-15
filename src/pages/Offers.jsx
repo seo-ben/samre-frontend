@@ -26,6 +26,7 @@ export const OffersPage = () => {
     if (path.includes('/offers/pending')) return 'pending';
     if (path.includes('/offers/approved')) return 'published';
     if (path.includes('/offers/expired')) return 'expired';
+    if (path.includes('/offers/deleted')) return 'deleted';
     return 'all';
   };
 
@@ -42,7 +43,29 @@ export const OffersPage = () => {
     if (val === 'pending') navigate('/offers/pending');
     else if (val === 'published') navigate('/offers/approved');
     else if (val === 'expired') navigate('/offers/expired');
+    else if (val === 'deleted') navigate('/offers/deleted');
     else navigate('/offers');
+  };
+
+  const renderStatusBadge = (status) => {
+    const configs = {
+      published: { label: 'Publiée', bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
+      pending: { label: 'En attente', bg: '#fef9c3', color: '#854d0e', border: '#fef08a' },
+      rejected: { label: 'Rejetée', bg: '#fee2e2', color: '#991b1b', border: '#fecaca' },
+      expired: { label: 'Expirée', bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
+      paused: { label: 'En pause', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
+      closed: { label: 'Fermée', bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
+      deleted: { label: 'Supprimée', bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+    };
+    const c = configs[status] || { label: status, bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' };
+    return (
+      <span style={{
+        padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600',
+        background: c.bg, color: c.color, border: `1px solid ${c.border}`
+      }}>
+        {c.label}
+      </span>
+    );
   };
   
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -145,6 +168,7 @@ export const OffersPage = () => {
               <option value="published">Publiées</option>
               <option value="rejected">Rejetées</option>
               <option value="expired">Expirées</option>
+              <option value="deleted">Supprimées</option>
             </select>
             <select
               value={sortOrder}
@@ -155,8 +179,8 @@ export const OffersPage = () => {
                 fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)', cursor: 'pointer', outline: 'none'
               }}
             >
-              <option value="recent">Trier par: Récentes</option>
-              <option value="oldest">Trier par: Anciennes</option>
+              <option value="recent">Trier par : Récentes (création)</option>
+              <option value="oldest">Trier par : Plus anciennes</option>
             </select>
             <button 
               onClick={() => setShowCreateModal(true)}
@@ -272,9 +296,7 @@ export const OffersPage = () => {
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
                             <MapPin size={12} /> {offer.commune_name || offer.commune_id || 'Lieu non spécifié'}
                           </span>
-                          <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            {offer.status}
-                          </span>
+                          {renderStatusBadge(offer.status)}
                         </div>
                       </div>
                     </div>
@@ -299,7 +321,15 @@ export const OffersPage = () => {
                           boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0',
                           borderRadius: '8px', zIndex: 50, minWidth: '160px', overflow: 'hidden'
                         }}>
-                          {offer.status !== 'published' && (
+                          {offer.status === 'deleted' && (
+                            <div 
+                              onClick={(e) => handleChangeStatus(offer.id, 'published', e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                            >
+                              ♻️ Restaurer / Publier
+                            </div>
+                          )}
+                          {offer.status !== 'published' && offer.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(offer.id, 'published', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -307,7 +337,7 @@ export const OffersPage = () => {
                               ▶️ Publier / Republier
                             </div>
                           )}
-                          {offer.status !== 'paused' && (
+                          {offer.status !== 'paused' && offer.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(offer.id, 'paused', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -315,7 +345,7 @@ export const OffersPage = () => {
                               ⏸️ Mettre en pause
                             </div>
                           )}
-                          {offer.status !== 'closed' && (
+                          {offer.status !== 'closed' && offer.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(offer.id, 'closed', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -323,7 +353,7 @@ export const OffersPage = () => {
                               ✅ Marquer pourvue / Fermer
                             </div>
                           )}
-                          {offer.status !== 'pending' && (
+                          {offer.status !== 'pending' && offer.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(offer.id, 'pending', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer' }}
@@ -396,6 +426,7 @@ export const OffersPage = () => {
                         <span style={{ fontSize: '13px', color: '#64748b' }}>
                           Publié {selectedOffer.published_at ? new Date(selectedOffer.published_at).toLocaleDateString() : 'Non publié'}
                         </span>
+                        {renderStatusBadge(selectedOffer.status)}
                       </div>
                     </div>
                   </div>

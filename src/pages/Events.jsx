@@ -34,6 +34,7 @@ export const EventsPage = () => {
     if (path.includes('/events/pending')) return 'pending';
     if (path.includes('/events/approved')) return 'published';
     if (path.includes('/events/expired')) return 'expired';
+    if (path.includes('/events/deleted')) return 'deleted';
     return 'all';
   };
 
@@ -50,7 +51,29 @@ export const EventsPage = () => {
     if (val === 'pending') navigate('/events/pending');
     else if (val === 'published') navigate('/events/approved');
     else if (val === 'expired') navigate('/events/expired');
+    else if (val === 'deleted') navigate('/events/deleted');
     else navigate('/events');
+  };
+
+  const renderStatusBadge = (status) => {
+    const configs = {
+      published: { label: 'Publié', bg: '#dcfce7', color: '#166534', border: '#bbf7d0' },
+      pending: { label: 'En attente', bg: '#fef9c3', color: '#854d0e', border: '#fef08a' },
+      rejected: { label: 'Rejeté', bg: '#fee2e2', color: '#991b1b', border: '#fecaca' },
+      expired: { label: 'Expiré', bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
+      paused: { label: 'En pause', bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
+      scheduled: { label: 'Programmé', bg: '#eef2ff', color: '#4338ca', border: '#c7d2fe' },
+      deleted: { label: 'Supprimé', bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+    };
+    const c = configs[status] || { label: status, bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' };
+    return (
+      <span style={{
+        padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '600',
+        background: c.bg, color: c.color, border: `1px solid ${c.border}`
+      }}>
+        {c.label}
+      </span>
+    );
   };
   
   const [activeMenuId, setActiveMenuId] = useState(null);
@@ -210,6 +233,7 @@ export const EventsPage = () => {
               <option value="published">Publiés</option>
               <option value="rejected">Rejetés</option>
               <option value="expired">Expirés</option>
+              <option value="deleted">Supprimés</option>
             </select>
             <select
               value={sortOrder}
@@ -220,8 +244,9 @@ export const EventsPage = () => {
                 fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)', cursor: 'pointer', outline: 'none'
               }}
             >
-              <option value="recent">Trier par: Récents</option>
-              <option value="oldest">Trier par: Anciens</option>
+              <option value="recent">Trier par : Récents (création)</option>
+              <option value="upcoming">Trier par : Proches à venir (date)</option>
+              <option value="oldest">Trier par : Plus anciens</option>
             </select>
             <button 
               onClick={() => {
@@ -332,9 +357,7 @@ export const EventsPage = () => {
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
                             {ev.is_online ? <><Map size={12}/> En ligne</> : <><MapPin size={12}/> {ev.location_name || 'Lieu spécifié'}</>}
                           </span>
-                          <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                            {ev.status}
-                          </span>
+                          {renderStatusBadge(ev.status)}
                         </div>
                       </div>
                     </div>
@@ -369,7 +392,15 @@ export const EventsPage = () => {
                           >
                             ✏️ Modifier
                           </div>
-                          {ev.status !== 'published' && (
+                          {ev.status === 'deleted' && (
+                            <div 
+                              onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
+                              style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                            >
+                              ♻️ Restaurer / Publier
+                            </div>
+                          )}
+                          {ev.status !== 'published' && ev.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -377,7 +408,7 @@ export const EventsPage = () => {
                               ▶️ Publier / Valider
                             </div>
                           )}
-                          {ev.status !== 'paused' && (
+                          {ev.status !== 'paused' && ev.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(ev.id, 'paused', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -385,7 +416,7 @@ export const EventsPage = () => {
                               ⏸️ Mettre en pause
                             </div>
                           )}
-                          {ev.status !== 'rejected' && (
+                          {ev.status !== 'rejected' && ev.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
@@ -393,7 +424,7 @@ export const EventsPage = () => {
                               ❌ Rejeter
                             </div>
                           )}
-                          {ev.status !== 'published' && (
+                          {ev.status !== 'deleted' && (
                             <div 
                               onClick={(e) => handleDelete(ev.id, e)}
                               style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer' }}
@@ -472,6 +503,7 @@ export const EventsPage = () => {
                         <span style={{ fontSize: '13px', color: '#64748b' }}>
                           Publié le {selectedEvent.created_at ? new Date(selectedEvent.created_at).toLocaleDateString() : '—'}
                         </span>
+                        {renderStatusBadge(selectedEvent.status)}
                       </div>
                     </div>
                   </div>
