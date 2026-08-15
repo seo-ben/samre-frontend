@@ -6,7 +6,7 @@ import {
   Wallet, TrendingUp, Search, 
   ArrowUpRight, ArrowDownRight, CreditCard, Activity,
   AlertTriangle, CheckCircle2, RefreshCw, X, Plus, Minus,
-  ExternalLink, ArrowRight, ArrowLeft
+  ExternalLink
 } from 'lucide-react';
 
 export const getUserDisplayName = (user) => {

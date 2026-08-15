@@ -30,6 +30,7 @@ import { WalletsPage } from './pages/Payments/Wallets'
 import { TransactionsPage } from './pages/Payments/Transactions'
 import { SpecialRequestsPage } from './pages/SpecialRequests'
 import { SurveysManagementPage } from './pages/SurveysManagement'
+import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
@@ -50,7 +51,6 @@ function App() {
 
       {/* ── Utilisateurs & Entreprises ──────────────────────── */}
       <Route path="/users"             element={<Protected><UsersPage /></Protected>} />
-      <Route path="/companies text"    element={<Protected><CompanyManagement /></Protected>} />
       <Route path="/companies"         element={<Protected><CompanyManagement /></Protected>} />
 
       {/* ── Offres ────────────────────────────── */}
