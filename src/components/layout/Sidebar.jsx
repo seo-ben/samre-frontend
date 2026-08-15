@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, Sparkles, Vote
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, Sparkles, Vote, Trash2
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -53,6 +53,7 @@ const NAV = [
       { label: 'En attente',             path: '/offers/pending',  icon: Clock,         badgeKey: 'pending_offers_count' },
       { label: 'Validées',               path: '/offers/approved', icon: CheckCircle2 },
       { label: 'Expirées',               path: '/offers/expired',  icon: XCircle },
+      { label: 'Supprimées',             path: '/offers/deleted',  icon: Trash2 },
     ],
   },
   {
@@ -63,6 +64,8 @@ const NAV = [
       { label: 'Tous les événements',    path: '/events',              icon: CalendarDays },
       { label: 'En attente',             path: '/events/pending',      icon: Clock,         badgeKey: 'pending_events_count' },
       { label: 'Validés',                path: '/events/approved',     icon: CheckCircle2 },
+      { label: 'Expirés',                path: '/events/expired',      icon: XCircle },
+      { label: 'Supprimés',              path: '/events/deleted',      icon: Trash2 },
       { label: 'Catégories',             path: '/events/categories',   icon: Tag },
     ],
   },

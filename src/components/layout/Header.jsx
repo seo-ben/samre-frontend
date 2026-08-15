@@ -12,17 +12,26 @@ const getBreadcrumbs = (path) => {
   if (path.startsWith('/users')) {
     return { parent: 'Utilisateurs', child: '' };
   }
+  if (path.startsWith('/offers/deleted')) {
+    return { parent: 'Offres', child: 'Supprimées' };
+  }
+  if (path.startsWith('/offers/expired')) {
+    return { parent: 'Offres', child: 'Expirées' };
+  }
   if (path.startsWith('/offers/pending')) {
     return { parent: 'Offres', child: 'En attente' };
   }
   if (path.startsWith('/offers/approved')) {
     return { parent: 'Offres', child: 'Validées' };
   }
-  if (path.startsWith('/offers/expired')) {
-    return { parent: 'Offres', child: 'Expirées' };
-  }
   if (path.startsWith('/offers')) {
     return { parent: 'Offres', child: 'Toutes les offres' };
+  }
+  if (path.startsWith('/events/deleted')) {
+    return { parent: 'Événements', child: 'Supprimés' };
+  }
+  if (path.startsWith('/events/expired')) {
+    return { parent: 'Événements', child: 'Expirés' };
   }
   if (path.startsWith('/events/pending')) {
     return { parent: 'Événements', child: 'En attente' };

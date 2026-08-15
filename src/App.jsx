@@ -57,11 +57,14 @@ function App() {
       <Route path="/offers/pending"    element={<Protected><OffersPage /></Protected>} />
       <Route path="/offers/approved"   element={<Protected><OffersPage /></Protected>} />
       <Route path="/offers/expired"    element={<Protected><OffersPage /></Protected>} />
+      <Route path="/offers/deleted"    element={<Protected><OffersPage /></Protected>} />
 
       {/* ── Événements ────────────────────────── */}
       <Route path="/events"            element={<Protected><EventsPage /></Protected>} />
       <Route path="/events/pending"    element={<Protected><EventsPage /></Protected>} />
       <Route path="/events/approved"   element={<Protected><EventsPage /></Protected>} />
+      <Route path="/events/expired"    element={<Protected><EventsPage /></Protected>} />
+      <Route path="/events/deleted"    element={<Protected><EventsPage /></Protected>} />
       <Route path="/events/categories" element={<Protected><EventCategoriesPage /></Protected>} />
 
       {/* ── Candidatures & Déclarations d'embauche ──────────────── */}
