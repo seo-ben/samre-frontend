@@ -11,7 +11,7 @@ const AVAILABLE_FEATURES = [
   // Candidats
   { key: 'unlimited_applications', label: 'Candidatures illimitées', type: 'boolean', target: ['candidate', 'both'] },
   { key: 'extra_applications_per_week', label: 'Candidatures sup. par semaine', type: 'number', target: ['candidate', 'both'] },
-  { key: 'download_cv', label: 'Téléchargement de CV HD (Canva / IA)', type: 'boolean', target: ['candidate', 'both'] },
+  { key: 'download_cv', label: 'Téléchargement de CV HD (Modèles Pro & Optimisation)', type: 'boolean', target: ['candidate', 'both'] },
   
   // Entreprises
   { key: 'unlimited_job_postings', label: 'Publication d\'offres illimitée', type: 'boolean', target: ['company', 'both'] },
