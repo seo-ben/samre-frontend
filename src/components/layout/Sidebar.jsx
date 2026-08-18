@@ -142,7 +142,7 @@ const NAV = [
       { label: 'Zones géographiques', path: '/cms/locations',  icon: MapPin },
       { label: 'Zones suggérées',     path: '/cms/suggested-locations', icon: MapPin },
       { label: 'Catégories',          path: '/cms/categories', icon: Tag },
-      { label: 'Règles de quota',     path: '/cms/quotas',     icon: ListFilter },
+      { label: 'Paramètres & Quotas', path: '/cms/quotas',     icon: Sliders },
       { label: 'Champs floutés',      path: '/cms/blur',       icon: Eye },
     ],
   },
@@ -165,7 +165,7 @@ const NAV = [
     label: 'Paramètres',
     icon: Settings,
     children: [
-      // { label: 'Paramètres système', path: '/settings/system', icon: Settings },
+      { label: 'Paramètres système', path: '/cms/quotas',     icon: Sliders },
       { label: 'Comptes admin',    path: '/settings/staff',    icon: UserCog },
       { label: 'Mon profil',       path: '/settings/profile',  icon: UserCheck },
       { label: 'Mot de passe',     path: '/settings/password', icon: Settings },

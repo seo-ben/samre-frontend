@@ -139,7 +139,7 @@ function App() {
 
       {/* ── Paramètres ────────────────────────── */}
       <Route path="/settings/language" element={<Protected><ComingSoon title="Langue du panel" /></Protected>} />
-      <Route path="/settings/system"   element={<Protected><SystemSettings /></Protected>} />
+      <Route path="/settings/system"   element={<Protected><QuotasPage /></Protected>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
