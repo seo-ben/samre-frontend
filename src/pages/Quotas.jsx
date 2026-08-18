@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, Activity, Plus, Trash2, Search, Filter, Smartphone, Megaphone, Save, Globe, Sparkles } from 'lucide-react';
+import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, Activity, Plus, Trash2, Search, Filter, Smartphone, Megaphone, Save, Globe, Sparkles, Languages } from 'lucide-react';
 
 export const QuotasPage = () => {
   const [quotas, setQuotas] = useState([]);
@@ -96,6 +96,52 @@ export const QuotasPage = () => {
       setError("Erreur lors de l'enregistrement des bandeaux.");
     } finally {
       setIsSavingMarquee(false);
+    }
+  };
+
+  const [isTranslatingMarquee, setIsTranslatingMarquee] = useState(false);
+
+  const handleAutoTranslateMarquee = async () => {
+    let sourceText = '';
+    const sourceLang = activeMarqueeTab;
+
+    if (sourceLang === 'fr') sourceText = marqueeFr;
+    else if (sourceLang === 'en') sourceText = marqueeEn;
+    else if (sourceLang === 'pt') sourceText = marqueePt;
+
+    if (!sourceText || !sourceText.trim()) {
+      showToast("Veuillez saisir un texte dans la langue active avant de traduire.");
+      return;
+    }
+
+    setIsTranslatingMarquee(true);
+    try {
+      const targets = [
+        { lang: 'fr', setter: setMarqueeFr },
+        { lang: 'en', setter: setMarqueeEn },
+        { lang: 'pt', setter: setMarqueePt },
+      ];
+
+      for (const target of targets) {
+        if (target.lang === sourceLang) continue;
+
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${target.lang}&dt=t&q=${encodeURIComponent(sourceText.trim())}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data && data[0]) {
+          const translated = data[0].map(item => item[0]).join('');
+          if (translated) {
+            target.setter(translated);
+          }
+        }
+      }
+      showToast("Traduction automatique effectuée ! Cliquez sur 'Enregistrer' pour sauvegarder.");
+    } catch (err) {
+      console.error("Marquee translation error:", err);
+      showToast("Erreur lors de la traduction automatique.");
+    } finally {
+      setIsTranslatingMarquee(false);
     }
   };
 
@@ -363,36 +409,68 @@ export const QuotasPage = () => {
 
         {/* Corps de la carte */}
         <div style={{ padding: '20px' }}>
-          {/* Onglets de Langues */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-            {[
-              { id: 'fr', label: 'Français', flag: '🇫🇷' },
-              { id: 'en', label: 'English', flag: '🇬🇧' },
-              { id: 'pt', label: 'Português', flag: '🇵🇹' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveMarqueeTab(tab.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '6px 14px',
-                  borderRadius: '8px',
-                  border: activeMarqueeTab === tab.id ? '2px solid #EA580C' : '1px solid #E5E7EB',
-                  backgroundColor: activeMarqueeTab === tab.id ? '#FFF7ED' : '#F9FAFB',
-                  color: activeMarqueeTab === tab.id ? '#9A3412' : '#4B5563',
-                  fontWeight: activeMarqueeTab === tab.id ? '700' : '500',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  transition: '0.2s'
-                }}
-              >
-                <span>{tab.flag}</span>
-                <span>{tab.label}</span>
-              </button>
-            ))}
+          {/* Onglets de Langues & Bouton Traduction Automatique */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { id: 'fr', label: 'Français', flag: '🇫🇷' },
+                { id: 'en', label: 'English', flag: '🇬🇧' },
+                { id: 'pt', label: 'Português', flag: '🇵🇹' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveMarqueeTab(tab.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    border: activeMarqueeTab === tab.id ? '2px solid #EA580C' : '1px solid #E5E7EB',
+                    backgroundColor: activeMarqueeTab === tab.id ? '#FFF7ED' : '#F9FAFB',
+                    color: activeMarqueeTab === tab.id ? '#9A3412' : '#4B5563',
+                    fontWeight: activeMarqueeTab === tab.id ? '700' : '500',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    transition: '0.2s'
+                  }}
+                >
+                  <span>{tab.flag}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Bouton Traduction Automatique Magique */}
+            <button
+              type="button"
+              onClick={handleAutoTranslateMarquee}
+              disabled={isTranslatingMarquee}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                border: '1px solid #BFDBFE',
+                backgroundColor: '#EFF6FF',
+                color: '#1D4ED8',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: isTranslatingMarquee ? 'not-allowed' : 'pointer',
+                transition: '0.2s',
+                opacity: isTranslatingMarquee ? 0.7 : 1
+              }}
+              title="Traduit automatiquement le texte saisi vers les autres langues"
+            >
+              {isTranslatingMarquee ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Sparkles size={14} color="#2563EB" />
+              )}
+              <span>✨ Traduire automatiquement dans les autres langues</span>
+            </button>
           </div>
 
           {/* Saisie du texte */}
