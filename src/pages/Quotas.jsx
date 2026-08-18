@@ -287,6 +287,8 @@ export const QuotasPage = () => {
             Nouveau Paramètre
           </button>
         </div>
+      </div>
+
       {/* --- BANDEAU D'ANNONCE MOBILE (HEADER DÉFILANT) --- */}
       <div style={{
         marginBottom: '24px',
