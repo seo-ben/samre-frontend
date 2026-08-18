@@ -181,14 +181,14 @@ export const PendingBadges = () => {
       };
     } else if (cand) {
       return {
-        name: `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Candidat',
-        type: 'Candidat',
+        name: `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Secrétaire',
+        type: 'Secrétaire',
         phone: user.phone || '—',
         email: user.email || '—',
         typeColor: '#15803d',
         typeBg: '#dcfce7',
         icon: <User size={14} color="#15803d" />,
-        initials: `${cand.first_name?.[0] || ''}${cand.last_name?.[0] || ''}`.toUpperCase() || 'C',
+        initials: `${cand.first_name?.[0] || ''}${cand.last_name?.[0] || ''}`.toUpperCase() || 'S',
         photo: cand.profile_photo_url || cand.photos?.[0]?.photo_url,
         avatarBg: '#e2e8f0',
         profile: cand,
@@ -197,7 +197,7 @@ export const PendingBadges = () => {
     }
     return { 
       name: user.phone || user.email || `Utilisateur #${user.id}`, 
-      type: user.user_type === 'company' ? 'Entreprise' : 'Candidat', 
+      type: user.user_type === 'company' ? 'Entreprise' : 'Secrétaire', 
       phone: user.phone || '—', 
       email: user.email || '—',
       typeColor: '#64748b', 
@@ -233,7 +233,7 @@ export const PendingBadges = () => {
                   Demandes de Vérification & Badges
                 </h1>
                 <p className="text-sm text-slate-500 mt-0.5">
-                  Examinez les pièces justificatives et certifiez les profils candidats et entreprises
+                  Examinez les pièces justificatives et certifiez les profils secrétaires et entreprises
                 </p>
               </div>
             </div>
@@ -263,7 +263,7 @@ export const PendingBadges = () => {
 
           <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Candidats en attente</p>
+              <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Secrétaires en attente</p>
               <p className="text-3xl font-black text-slate-900 mt-1 font-poppins">{stats.users}</p>
             </div>
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
@@ -299,7 +299,7 @@ export const PendingBadges = () => {
             <div className="flex bg-slate-100 p-1 rounded-xl">
               {[
                 { id: 'all', label: 'Tous' },
-                { id: 'candidate', label: 'Candidats' },
+                { id: 'candidate', label: 'Secrétaires' },
                 { id: 'company', label: 'Entreprises' },
               ].map((tab) => (
                 <button
@@ -662,7 +662,7 @@ export const PendingBadges = () => {
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
                         <UserCheck size={13} />
-                        Profil Candidat Détaillé
+                        Profil Secrétaire Détaillé
                       </p>
                       {cand.completeness_score !== undefined && (
                         <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">

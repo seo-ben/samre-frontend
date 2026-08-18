@@ -422,7 +422,7 @@ export const AdPages = () => {
                     border: `1px solid ${ad.target_role === 'visitor' ? '#BFDBFE' : ad.target_role === 'candidate' ? '#BBF7D0' : '#FED7AA'}`,
                     fontWeight: '700'
                   }}>
-                    {ad.target_role === 'visitor' ? '🎫 Visiteurs' : ad.target_role === 'candidate' ? '🎓 Candidats' : '🏢 Entreprises'}
+                    {ad.target_role === 'visitor' ? '🎫 Visiteurs' : ad.target_role === 'candidate' ? '👩‍💼 Secrétaires' : '🏢 Entreprises'}
                   </span>
                 ) : (
                   <span className="badge" style={{ background: '#F8FAFC', color: '#64748B', border: '1px solid #E2E8F0' }}>🌍 Global</span>
@@ -591,7 +591,7 @@ export const AdPages = () => {
                     >
                       <option value="all">🌍 Tous les utilisateurs (Global)</option>
                       <option value="visitor">🎫 Visiteurs Uniquement (Espace Visiteur)</option>
-                      <option value="candidate">🎓 Candidats / Étudiants Uniquement</option>
+                      <option value="candidate">👩‍💼 Secrétaires Uniquement</option>
                       <option value="company">🏢 Entreprises / Recruteurs Uniquement</option>
                     </select>
                   </div>

@@ -21,7 +21,7 @@ export const VerifiedProfiles = ({ userType }) => {
   const [toast, setToast] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const title = userType === 'candidate' ? 'Candidats Certifiés' : 'Entreprises Certifiées';
+  const title = userType === 'candidate' ? 'Secrétaires Certifiées' : 'Entreprises Certifiées';
   const isCandidate = userType === 'candidate';
 
   const showToast = (message, type = 'success') => {
@@ -98,18 +98,16 @@ export const VerifiedProfiles = ({ userType }) => {
   };
 
   const renderUserInfo = (user) => {
-    if (!user) return { name: 'Inconnu', type: 'Inconnu', phone: '', typeColor: '#64748b', typeBg: '#f1f5f9', icon: <User size={14} />, initials: 'U', avatarBg: '#e2e8f0' };
-    
-    const isCompany = user.user_type === 'company';
+    if (!user) return null;
     const cand = user.candidate_profile || user.candidateProfile;
     const comp = user.company_profile || user.companyProfile;
 
-    if (isCompany && comp) {
+    if (comp) {
       return {
-        name: comp.company_name || 'Entreprise',
+        name: comp.company_name || user.phone || 'Entreprise',
         type: 'Entreprise',
-        phone: comp.contact_phone || user.phone || '—',
-        email: comp.email || user.email || '—',
+        phone: comp.company_phone || user.phone || '—',
+        email: comp.company_email || user.email || '—',
         typeColor: '#1d4ed8',
         typeBg: '#dbeafe',
         icon: <Building size={14} color="#1d4ed8" />,
@@ -120,14 +118,14 @@ export const VerifiedProfiles = ({ userType }) => {
       };
     } else if (cand) {
       return {
-        name: `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || user.phone || 'Candidat',
-        type: 'Candidat',
+        name: `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || user.phone || 'Secrétaire',
+        type: 'Secrétaire',
         phone: user.phone || '—',
         email: user.email || '—',
         typeColor: '#15803d',
         typeBg: '#dcfce7',
         icon: <User size={14} color="#15803d" />,
-        initials: `${cand.first_name?.[0] || ''}${cand.last_name?.[0] || ''}`.toUpperCase() || 'C',
+        initials: `${cand.first_name?.[0] || ''}${cand.last_name?.[0] || ''}`.toUpperCase() || 'S',
         photo: cand.profile_photo_url || cand.photos?.[0]?.photo_url,
         avatarBg: '#e2e8f0',
         profile: cand,
@@ -136,7 +134,7 @@ export const VerifiedProfiles = ({ userType }) => {
     }
     return { 
       name: user.phone || user.email || 'Utilisateur', 
-      type: user.user_type === 'company' ? 'Entreprise' : 'Candidat', 
+      type: user.user_type === 'company' ? 'Entreprise' : 'Secrétaire', 
       phone: user.phone || '—', 
       email: user.email || '—',
       typeColor: '#64748b', 
@@ -522,7 +520,7 @@ export const VerifiedProfiles = ({ userType }) => {
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-bold uppercase text-emerald-800 tracking-wider flex items-center gap-1.5">
                         <UserCheck size={13} />
-                        Profil Candidat Détaillé
+                        Profil Secrétaire Détaillé
                       </p>
                       {cand.completeness_score !== undefined && (
                         <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">

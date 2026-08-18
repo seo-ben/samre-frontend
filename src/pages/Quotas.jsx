@@ -373,11 +373,11 @@ export const QuotasPage = () => {
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#9A3412', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 Bandeau d'Annonce Mobile Défilant
                 <span style={{ fontSize: '11px', fontWeight: '600', backgroundColor: '#FFEDD5', color: '#C2410C', padding: '2px 8px', borderRadius: '12px', border: '1px solid #FDBA74' }}>
-                  Header Candidat
+                  Header Secrétaire
                 </span>
               </h3>
               <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#C2410C' }}>
-                Ce texte défile automatiquement sous le nom du candidat sur la page d'accueil mobile.
+                Ce texte défile automatiquement sous le nom de la secrétaire sur la page d'accueil mobile.
               </p>
             </div>
           </div>

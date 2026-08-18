@@ -560,7 +560,7 @@ export const UsersPage = () => {
 
     if (name) return name;
 
-    if (usr.user_type === 'candidate') return 'Candidat';
+    if (usr.user_type === 'candidate') return 'Secrétaire';
     if (usr.user_type === 'company') return 'Entrepreneur';
     if (usr.user_type === 'visitor') return 'Visiteur';
     if (usr.user_type === 'admin_staff') return 'Admin Staff';
@@ -570,7 +570,7 @@ export const UsersPage = () => {
   const getUserInitials = (usr) => {
     if (!usr) return 'US';
     if (usr.user_type === 'candidate' && usr.candidateProfile) {
-      return `${usr.candidateProfile.first_name?.[0] ?? ''}${usr.candidateProfile.last_name?.[0] ?? ''}`.toUpperCase() || 'CA';
+      return `${usr.candidateProfile.first_name?.[0] ?? ''}${usr.candidateProfile.last_name?.[0] ?? ''}`.toUpperCase() || 'SE';
     }
     if (usr.user_type === 'company' && usr.companyProfile) {
       return usr.companyProfile.company_name?.[0]?.toUpperCase() || 'EN';
@@ -611,7 +611,7 @@ export const UsersPage = () => {
   // Formatage des rôles et statuts
   const getTypeBadge = (type) => {
     const badges = {
-      candidate: { label: 'Candidat', bg: '#eef2ff', color: '#4f46e5' },
+      candidate: { label: 'Secrétaire', bg: '#eef2ff', color: '#4f46e5' },
       company: { label: 'Entreprise', bg: '#ecfdf5', color: '#059669' },
       visitor: { label: 'Visiteur', bg: '#f0fdfa', color: '#0d9488' },
       admin_staff: { label: 'Admin Staff', bg: '#fff7ed', color: '#ea580c' }
@@ -726,7 +726,7 @@ export const UsersPage = () => {
           Gestion des Utilisateurs
         </h2>
         <p style={{ margin: '4px 0 0', fontSize: '14px', color: 'var(--gray-medium)' }}>
-          Supervisez tous les profils inscrits sur SAMRE (Candidats, Entreprises et Visiteurs).
+          Supervisez tous les profils inscrits sur SAMRE (Secrétaires, Entreprises et Visiteurs).
         </p>
       </div>
 
@@ -740,7 +740,7 @@ export const UsersPage = () => {
       }}>
         {[
           { label: 'Utilisateurs', value: total, icon: Users, color: '#0052ff' },
-          { label: 'Candidats', value: stats.candidates, icon: UserCheck, color: '#4f46e5' },
+          { label: 'Secrétaires', value: stats.candidates, icon: UserCheck, color: '#4f46e5' },
           { label: 'Entreprises', value: stats.companies, icon: Building2, color: '#059669' },
           { label: 'Visiteurs', value: stats.visitors, icon: Globe, color: '#0d9488' },
           { label: 'En attente', value: stats.pending, icon: Clock, color: '#d97706' },
@@ -796,7 +796,7 @@ export const UsersPage = () => {
               }}
             >
               <option value="">Tous les types</option>
-              <option value="candidate">Candidats</option>
+              <option value="candidate">Secrétaires</option>
               <option value="company">Entreprises</option>
               <option value="visitor">Visiteurs</option>
               <option value="admin_staff">Staff Admin</option>
@@ -822,7 +822,7 @@ export const UsersPage = () => {
         <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--gray-border)', overflowX: 'auto', paddingBottom: '1px' }}>
           {[
             { id: 'all', label: 'Tous', icon: Users },
-            { id: 'candidate', label: 'Candidats', icon: UserCheck },
+            { id: 'candidate', label: 'Secrétaires', icon: UserCheck },
             { id: 'company', label: 'Entreprises', icon: Building2 },
             { id: 'visitor', label: 'Visiteurs', icon: Globe },
             { id: 'pending', label: 'En attente', icon: Clock },
@@ -1292,7 +1292,7 @@ export const UsersPage = () => {
                   <>
                     <div>
                       <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Détails du Candidat
+                        Détails de la Secrétaire
                       </h5>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         {renderField('Prénom', selectedUser.candidateProfile?.first_name)}
@@ -1329,7 +1329,7 @@ export const UsersPage = () => {
                       </div>
                     </div>
 
-                    {/* Section: Compétences du Candidat */}
+                    {/* Section: Compétences de la Secrétaire */}
                     <div>
                       <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: '700', color: 'var(--gray-medium)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                         Compétences & Répertoire
@@ -1352,7 +1352,7 @@ export const UsersPage = () => {
                         </div>
                       ) : (
                         <p style={{ margin: 0, fontSize: '13px', color: 'var(--gray-medium)', fontStyle: 'italic' }}>
-                          Aucune compétence renseignée par le candidat.
+                          Aucune compétence renseignée par la secrétaire.
                         </p>
                       )}
                     </div>

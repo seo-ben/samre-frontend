@@ -132,7 +132,7 @@ export const HiringDeclarationsPage = () => {
               Déclarations d'Embauche
             </h1>
             <p style={{ fontSize: '13px', color: 'var(--gray-medium)', margin: 0 }}>
-              Consultez et validez les déclarations d'embauche soumises par les candidats
+              Consultez et validez les déclarations d'embauche soumises par les secrétaires
             </p>
           </div>
 
@@ -201,7 +201,7 @@ export const HiringDeclarationsPage = () => {
             <Search size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
-              placeholder="Rechercher par candidat, entreprise, poste..."
+              placeholder="Rechercher par secrétaire, entreprise, poste..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               style={{
@@ -253,7 +253,7 @@ export const HiringDeclarationsPage = () => {
               <table className="dec-table">
                 <thead>
                   <tr>
-                    <th>Candidat</th>
+                    <th>Secrétaire</th>
                     <th>Entreprise & Poste</th>
                     <th>Contrat & Salaire</th>
                     <th>Origine & Prise de poste</th>
@@ -266,12 +266,12 @@ export const HiringDeclarationsPage = () => {
                     const cand = dec.candidate_profile;
                     const u = dec.user || cand?.user;
                     const candidateName = cand
-                      ? `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Candidat'
-                      : u?.phone || 'Candidat';
+                      ? `${cand.first_name || ''} ${cand.last_name || ''}`.trim() || 'Secrétaire'
+                      : u?.phone || 'Secrétaire';
 
                     return (
                       <tr key={dec.id}>
-                        {/* Candidat */}
+                        {/* Secrétaire */}
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
@@ -280,7 +280,7 @@ export const HiringDeclarationsPage = () => {
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontWeight: '700', fontSize: '12px', color: '#475569', flexShrink: 0
                             }}>
-                              {candidateName[0]?.toUpperCase() || 'C'}
+                              {candidateName[0]?.toUpperCase() || 'S'}
                             </div>
                             <div>
                               <div style={{ fontWeight: '600', color: '#0f172a', lineHeight: '1.2' }}>{candidateName}</div>
@@ -434,7 +434,7 @@ export const HiringDeclarationsPage = () => {
               {/* Info Candidat */}
               <div style={{ marginBottom: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <div style={{ fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>
-                  Candidat Déclaré
+                  Secrétaire Déclarée
                 </div>
                 <div style={{ fontSize: '13px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div><strong>Nom & Prénom :</strong> {selectedDeclaration.candidate_profile?.first_name} {selectedDeclaration.candidate_profile?.last_name}</div>
@@ -461,10 +461,10 @@ export const HiringDeclarationsPage = () => {
                 </div>
               </div>
 
-              {/* Explications candidat */}
+              {/* Explications secrétaire */}
               {selectedDeclaration.notes && (
                 <div style={{ padding: '12px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fde68a', fontSize: '12px', color: '#92400e' }}>
-                  <strong>Explications / Remarques du candidat :</strong>
+                  <strong>Explications / Remarques de la secrétaire :</strong>
                   <p style={{ margin: '4px 0 0 0', whiteSpace: 'pre-wrap' }}>{selectedDeclaration.notes}</p>
                 </div>
               )}

@@ -221,7 +221,7 @@ export const BlurFieldsPage = () => {
               }}
             >
               <option value="">Tous les profils</option>
-              <option value="candidate">Candidats</option>
+              <option value="candidate">Secrétaires</option>
               <option value="company">Entreprises</option>
               <option value="visitor">Visiteurs</option>
             </select>
@@ -288,7 +288,7 @@ export const BlurFieldsPage = () => {
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '9999px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA', padding: '2px 10px', fontSize: '12px', fontWeight: '500', color: '#18181B' }}>
-                      {item.profile_type === 'candidate' ? 'Candidat' : item.profile_type === 'company' ? 'Entreprise' : 'Visiteur'}
+                      {item.profile_type === 'candidate' ? 'Secrétaire' : item.profile_type === 'company' ? 'Entreprise' : 'Visiteur'}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
@@ -368,7 +368,7 @@ export const BlurFieldsPage = () => {
                     disabled={!!editingItem}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: editingItem ? '#F4F4F5' : '#FFF', color: editingItem ? '#A1A1AA' : '#09090B' }}
                   >
-                    <option value="candidate">Candidat</option>
+                    <option value="candidate">Secrétaire</option>
                     <option value="company">Entreprise</option>
                     <option value="visitor">Visiteur / Organisateur</option>
                   </select>

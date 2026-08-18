@@ -61,7 +61,7 @@ const getBreadcrumbs = (path) => {
     return { parent: 'Badges & Vérifications', child: 'En attente' };
   }
   if (path.startsWith('/badges/candidates')) {
-    return { parent: 'Badges & Vérifications', child: 'Candidats vérifiés' };
+    return { parent: 'Badges & Vérifications', child: 'Secrétaires vérifiées' };
   }
   if (path.startsWith('/badges/companies')) {
     return { parent: 'Badges & Vérifications', child: 'Entreprises vérifiées' };

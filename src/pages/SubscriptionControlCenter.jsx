@@ -207,7 +207,7 @@ export function SubscriptionControlCenterPage() {
               <Unlock size={24} color="#F59E0B" />
             </div>
             <div>
-              <div style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Tarif Déblocage Candidat</div>
+              <div style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Tarif Déblocage Secrétaire</div>
               <div style={{ fontSize: '22px', fontWeight: '700', color: '#09090B', marginTop: '2px' }}>
                 {loading ? '...' : `${(candidateCost).toLocaleString()} FCFA`}
               </div>
@@ -278,7 +278,7 @@ export function SubscriptionControlCenterPage() {
             <form onSubmit={handleSaveUnlockCosts} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#09090B', marginBottom: '8px' }}>
-                  Déblocage d'un profil Candidat par une Entreprise (FCFA)
+                  Déblocage d'un profil Secrétaire par une Entreprise (FCFA)
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
@@ -299,7 +299,7 @@ export function SubscriptionControlCenterPage() {
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#A1A1AA', marginTop: '6px' }}>
-                  Frais prélevés sur le solde Entreprise pour afficher les coordonnées masquées d'un candidat.
+                  Frais prélevés sur le solde Entreprise pour afficher les coordonnées masquées d'une secrétaire.
                 </p>
               </div>
 
@@ -364,10 +364,10 @@ export function SubscriptionControlCenterPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
               
-              {/* Profil Candidats */}
+              {/* Profil Secrétaires */}
               <div>
                 <h3 style={{ fontSize: '13px', fontWeight: '700', color: '#1A6FD4', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
-                  Champs Candidats Masqués ({data?.blur_rules?.candidate?.length || 0})
+                  Champs Secrétaires Masqués ({data?.blur_rules?.candidate?.length || 0})
                 </h3>
                 <div style={{ border: '1px solid #E4E4E7', borderRadius: '12px', overflow: 'hidden' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>

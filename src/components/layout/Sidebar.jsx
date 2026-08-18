@@ -86,7 +86,7 @@ const NAV = [
     icon: BadgeCheck,
     children: [
       { label: 'En attente de badge',   path: '/badges/pending',    icon: Clock,       badge: true, badgeKey: 'pending_verifications_count' },
-      { label: 'Candidats vérifiés',    path: '/badges/candidates', icon: UserCheck },
+      { label: 'Secrétaires vérifiées', path: '/badges/candidates', icon: UserCheck },
       { label: 'Entreprises vérifiées', path: '/badges/companies',  icon: Building2 },
     ],
   },

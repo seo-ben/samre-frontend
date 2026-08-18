@@ -175,7 +175,7 @@ export const Dashboard = () => {
 
   const kpis = [
     { key: 'users_count',          label: 'Utilisateurs total',     iconClass: 'fa-solid fa-users',        color: '#0052ff', getValue: s => s?.users_count },
-    { key: 'candidates_count',     label: 'Candidats',              iconClass: 'fa-solid fa-user-check',   color: '#7c3aed', getValue: s => s?.candidates_count },
+    { key: 'candidates_count',     label: 'Secrétaires',            iconClass: 'fa-solid fa-user-check',   color: '#7c3aed', getValue: s => s?.candidates_count },
     { key: 'companies_count',      label: 'Entreprises',            iconClass: 'fa-solid fa-landmark',     color: '#059669', getValue: s => s?.companies_count },
     { key: 'offers_count',         label: 'Offres publiées',        iconClass: 'fa-solid fa-briefcase',    color: '#d97706', getValue: s => s?.offers_count },
     { key: 'applications_count',   label: 'Candidatures',           iconClass: 'fa-solid fa-file-alt',     color: '#db2777', getValue: s => s?.applications_count },
