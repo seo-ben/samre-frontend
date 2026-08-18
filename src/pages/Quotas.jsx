@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, Activity, Plus, Trash2, Search, Filter } from 'lucide-react';
+import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, Activity, Plus, Trash2, Search, Filter, Smartphone, Megaphone, Save, Globe, Sparkles } from 'lucide-react';
 
 export const QuotasPage = () => {
   const [quotas, setQuotas] = useState([]);
@@ -12,6 +12,13 @@ export const QuotasPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Marquee Announcement State
+  const [marqueeFr, setMarqueeFr] = useState('');
+  const [marqueeEn, setMarqueeEn] = useState('');
+  const [marqueePt, setMarqueePt] = useState('');
+  const [activeMarqueeTab, setActiveMarqueeTab] = useState('fr');
+  const [isSavingMarquee, setIsSavingMarquee] = useState(false);
 
   // Filtres & Recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -36,12 +43,59 @@ export const QuotasPage = () => {
     try {
       setIsLoading(true);
       const res = await apiClient.get('/v1/admin/system-settings');
-      setQuotas(res.data.data);
+      const data = res.data.data || [];
+      setQuotas(data);
+
+      const qFr = data.find(q => q.key === 'candidate_header_marquee_text_fr') || data.find(q => q.key === 'candidate_header_marquee_text');
+      const qEn = data.find(q => q.key === 'candidate_header_marquee_text_en');
+      const qPt = data.find(q => q.key === 'candidate_header_marquee_text_pt');
+      if (qFr) setMarqueeFr(qFr.value || '');
+      if (qEn) setMarqueeEn(qEn.value || '');
+      if (qPt) setMarqueePt(qPt.value || '');
+
       setError(null);
     } catch (err) {
       setError("Erreur lors du chargement des paramètres systèmes.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveMarquee = async () => {
+    setIsSavingMarquee(true);
+    try {
+      const itemsToSave = [
+        { key: 'candidate_header_marquee_text_fr', value: marqueeFr, desc: 'Texte défilant dans le header (Français)' },
+        { key: 'candidate_header_marquee_text_en', value: marqueeEn, desc: 'Texte défilant dans le header (Anglais)' },
+        { key: 'candidate_header_marquee_text_pt', value: marqueePt, desc: 'Texte défilant dans le header (Portugais)' },
+        { key: 'candidate_header_marquee_text', value: marqueeFr, desc: 'Texte défilant dans le header (Général)' },
+      ];
+
+      for (const item of itemsToSave) {
+        const existing = quotas.find(q => q.key === item.key);
+        if (existing) {
+          await apiClient.put(`/v1/admin/system-settings/${existing.id}`, {
+            value: item.value,
+            type: 'string',
+            category: 'mobile_app',
+            description: item.desc
+          });
+        } else {
+          await apiClient.post('/v1/admin/system-settings', {
+            key: item.key,
+            value: item.value,
+            type: 'string',
+            category: 'mobile_app',
+            description: item.desc
+          });
+        }
+      }
+      showToast("Bandeaux d'annonces mobiles enregistrés avec succès !");
+      fetchQuotas();
+    } catch (err) {
+      setError("Erreur lors de l'enregistrement des bandeaux.");
+    } finally {
+      setIsSavingMarquee(false);
     }
   };
 
@@ -232,6 +286,193 @@ export const QuotasPage = () => {
             <Plus size={20} />
             Nouveau Paramètre
           </button>
+        </div>
+      {/* --- BANDEAU D'ANNONCE MOBILE (HEADER DÉFILANT) --- */}
+      <div style={{
+        marginBottom: '24px',
+        backgroundColor: '#FFF',
+        borderRadius: '16px',
+        border: '1px solid #FED7AA',
+        boxShadow: '0 4px 20px -2px rgba(245, 130, 32, 0.08)',
+        overflow: 'hidden'
+      }}>
+        {/* Header de la carte */}
+        <div style={{
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)',
+          borderBottom: '1px solid #FED7AA',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              backgroundColor: '#EA580C',
+              color: '#FFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(234, 88, 12, 0.3)'
+            }}>
+              <Megaphone size={20} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#9A3412', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Bandeau d'Annonce Mobile Défilant
+                <span style={{ fontSize: '11px', fontWeight: '600', backgroundColor: '#FFEDD5', color: '#C2410C', padding: '2px 8px', borderRadius: '12px', border: '1px solid #FDBA74' }}>
+                  Header Candidat
+                </span>
+              </h3>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#C2410C' }}>
+                Ce texte défile automatiquement sous le nom du candidat sur la page d'accueil mobile.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleSaveMarquee}
+            disabled={isSavingMarquee}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 18px',
+              backgroundColor: '#EA580C',
+              color: '#FFF',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '600',
+              fontSize: '13px',
+              cursor: isSavingMarquee ? 'not-allowed' : 'pointer',
+              boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
+              transition: '0.2s',
+              opacity: isSavingMarquee ? 0.7 : 1
+            }}
+          >
+            {isSavingMarquee ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            Enregistrer les annonces
+          </button>
+        </div>
+
+        {/* Corps de la carte */}
+        <div style={{ padding: '20px' }}>
+          {/* Onglets de Langues */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+            {[
+              { id: 'fr', label: 'Français', flag: '🇫🇷' },
+              { id: 'en', label: 'English', flag: '🇬🇧' },
+              { id: 'pt', label: 'Português', flag: '🇵🇹' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveMarqueeTab(tab.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: activeMarqueeTab === tab.id ? '2px solid #EA580C' : '1px solid #E5E7EB',
+                  backgroundColor: activeMarqueeTab === tab.id ? '#FFF7ED' : '#F9FAFB',
+                  color: activeMarqueeTab === tab.id ? '#9A3412' : '#4B5563',
+                  fontWeight: activeMarqueeTab === tab.id ? '700' : '500',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: '0.2s'
+                }}
+              >
+                <span>{tab.flag}</span>
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Saisie du texte */}
+          <div style={{ marginBottom: '14px' }}>
+            {activeMarqueeTab === 'fr' && (
+              <input
+                type="text"
+                value={marqueeFr}
+                onChange={(e) => setMarqueeFr(e.target.value)}
+                placeholder="Ex: Trouvez l'emploi de vos rêves avec SAMRE • Des opportunités exclusives chaque jour !"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              />
+            )}
+            {activeMarqueeTab === 'en' && (
+              <input
+                type="text"
+                value={marqueeEn}
+                onChange={(e) => setMarqueeEn(e.target.value)}
+                placeholder="Ex: Find your dream job with SAMRE • Exclusive opportunities every day!"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              />
+            )}
+            {activeMarqueeTab === 'pt' && (
+              <input
+                type="text"
+                value={marqueePt}
+                onChange={(e) => setMarqueePt(e.target.value)}
+                placeholder="Ex: Encontre o emprego dos seus sonhos com SAMRE • Oportunidades exclusivas todos os dias!"
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  fontSize: '14px',
+                  outline: 'none',
+                  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              />
+            )}
+          </div>
+
+          {/* Aperçu Défilant en Direct */}
+          <div style={{
+            padding: '10px 16px',
+            backgroundColor: '#0F172A',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            overflow: 'hidden'
+          }}>
+            <span style={{ fontSize: '11px', fontWeight: '700', color: '#FDBA74', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Aperçu Mobile :
+            </span>
+            <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', width: '100%', position: 'relative' }}>
+              <span style={{
+                display: 'inline-block',
+                color: '#FFF',
+                fontSize: '13px',
+                fontWeight: '600',
+                letterSpacing: '-0.1px'
+              }}>
+                {(activeMarqueeTab === 'fr' ? marqueeFr : activeMarqueeTab === 'en' ? marqueeEn : marqueePt) || "Aucun texte renseigné pour cette langue."}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
