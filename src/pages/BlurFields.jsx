@@ -1,7 +1,66 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, EyeOff, Plus, Trash2, Search, Filter } from 'lucide-react';
+import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, EyeOff, Plus, Trash2, Search, Filter, HelpCircle, Image, Phone, Mail, FileText, User } from 'lucide-react';
+
+const PREDEFINED_FIELDS = {
+  candidate: [
+    {
+      group: "Photos & Visuels",
+      options: [
+        { key: 'profile_photo_url', label: 'Photo de profil (Avatar)', description: "Photo de profil / avatar principal du candidat" },
+        { key: 'photos', label: 'Photos plein pied & Galerie', description: "Toutes les photos plein-pied et la galerie du candidat" },
+      ]
+    },
+    {
+      group: "Coordonnées de Contact",
+      options: [
+        { key: 'phone', label: 'Numéro de téléphone direct', description: "Numéro de téléphone personnel du candidat" },
+        { key: 'email', label: 'Adresse email personnelle', description: "Adresse email de contact direct" },
+        { key: 'address', label: 'Adresse de résidence', description: "Adresse physique, quartier ou ville" },
+        { key: 'social_links', label: 'Liens réseaux sociaux / Web', description: "Profils LinkedIn, réseaux sociaux et liens web" },
+      ]
+    },
+    {
+      group: "Documents & Curriculum",
+      options: [
+        { key: 'cv_url', label: 'Document CV (Curriculum Vitae)', description: "Lien de téléchargement et visualisation du CV" },
+      ]
+    },
+    {
+      group: "Identité & Profil",
+      options: [
+        { key: 'last_name', label: 'Nom de famille', description: "Nom de famille du candidat (ex: M******A)" },
+        { key: 'birth_date', label: 'Date de naissance', description: "Date de naissance / âge exact" },
+        { key: 'bio', label: 'Biographie & Description', description: "Présentation rédigée par le candidat" },
+      ]
+    }
+  ],
+  company: [
+    {
+      group: "Visuels & Logo",
+      options: [
+        { key: 'logo_url', label: "Logo de l'entreprise", description: "Logo officiel de l'entreprise" },
+      ]
+    },
+    {
+      group: "Coordonnées de Contact",
+      options: [
+        { key: 'contact_phone', label: 'Numéro de téléphone direct', description: "Numéro de contact professionnel" },
+        { key: 'email', label: 'Adresse email de contact', description: "Email officiel de recrutement" },
+        { key: 'website', label: 'Site web officiel', description: "URL du site internet de l'entreprise" },
+        { key: 'address', label: 'Adresse du siège / Bureaux', description: "Localisation physique des locaux" },
+        { key: 'social_links', label: 'Réseaux sociaux entreprise', description: "Pages LinkedIn, Facebook, etc." },
+      ]
+    },
+    {
+      group: "Informations Légales",
+      options: [
+        { key: 'legal_number', label: 'Numéro RCCM / NIF', description: "Identifiant légal et fiscal de l'entreprise" },
+      ]
+    }
+  ]
+};
 
 export const BlurFieldsPage = () => {
   const [rules, setRules] = useState([]);
@@ -13,6 +72,7 @@ export const BlurFieldsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isCustomKey, setIsCustomKey] = useState(false);
 
   // Filtres & Recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -22,10 +82,10 @@ export const BlurFieldsPage = () => {
 
   const [formData, setFormData] = useState({
     profile_type: 'candidate',
-    field_key: '',
+    field_key: 'profile_photo_url',
     exempted_plan_ids: [],
     is_blurred_for_free: true,
-    label: ''
+    label: 'Photo de profil (Avatar)'
   });
 
   const showToast = (msg) => {
@@ -58,23 +118,64 @@ export const BlurFieldsPage = () => {
   const handleOpenModal = (item = null) => {
     setEditingItem(item);
     if (item) {
+      const pType = item.profile_type || 'candidate';
+      const availableOptions = PREDEFINED_FIELDS[pType]?.flatMap(g => g.options) || [];
+      const isKnown = availableOptions.some(opt => opt.key === item.field_key);
+      
+      setIsCustomKey(!isKnown);
       setFormData({
-        profile_type: item.profile_type || 'candidate',
+        profile_type: pType,
         field_key: item.field_key || '',
         exempted_plan_ids: item.exempted_plan_ids || [],
-        is_blurred_for_free: item.is_blurred_for_free !== false, // par défaut true
+        is_blurred_for_free: item.is_blurred_for_free !== false,
         label: item.label || ''
       });
     } else {
+      const defaultType = 'candidate';
+      const firstOpt = PREDEFINED_FIELDS[defaultType][0].options[0];
+      setIsCustomKey(false);
       setFormData({
-        profile_type: 'candidate',
-        field_key: '',
+        profile_type: defaultType,
+        field_key: firstOpt.key,
         exempted_plan_ids: [],
         is_blurred_for_free: true,
-        label: ''
+        label: firstOpt.label
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleProfileTypeChange = (newType) => {
+    const groups = PREDEFINED_FIELDS[newType] || [];
+    const firstOpt = groups[0]?.options[0];
+    setIsCustomKey(false);
+    setFormData({
+      ...formData,
+      profile_type: newType,
+      field_key: firstOpt ? firstOpt.key : '',
+      label: firstOpt ? firstOpt.label : ''
+    });
+  };
+
+  const handleFieldKeySelect = (selectedKey) => {
+    if (selectedKey === '__custom__') {
+      setIsCustomKey(true);
+      setFormData({
+        ...formData,
+        field_key: '',
+      });
+      return;
+    }
+
+    setIsCustomKey(false);
+    const groups = PREDEFINED_FIELDS[formData.profile_type] || [];
+    const foundOpt = groups.flatMap(g => g.options).find(opt => opt.key === selectedKey);
+
+    setFormData({
+      ...formData,
+      field_key: selectedKey,
+      label: foundOpt ? foundOpt.label : formData.label
+    });
   };
 
   const handleDelete = async (id) => {
@@ -90,17 +191,21 @@ export const BlurFieldsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!formData.field_key || formData.field_key.trim() === '') {
+      setError("Veuillez sélectionner ou saisir une clé de champ valide.");
+      return;
+    }
+
     setIsSaving(true);
     setError(null);
 
     try {
       const payload = {
         ...formData,
+        field_key: formData.field_key.trim(),
       };
 
       if (editingItem) {
-        // En mode édition, profile_type et field_key ne doivent souvent pas être modifiés,
-        // mais l'API permet de mettre à jour au moins required_plan_id, is_blurred_for_free, et label.
         await apiClient.put(`/v1/admin/blur-rules/${editingItem.id}`, payload);
         showToast("Règle mise à jour avec succès");
       } else {
@@ -142,15 +247,26 @@ export const BlurFieldsPage = () => {
     }).join(', ');
   };
 
+  // Helper pour afficher une icône adaptée à la clé
+  const getFieldIcon = (key) => {
+    if (key.includes('photo') || key.includes('logo') || key === 'photos') return <Image size={15} color="#4F46E5" />;
+    if (key.includes('phone')) return <Phone size={15} color="#059669" />;
+    if (key.includes('email')) return <Mail size={15} color="#D97706" />;
+    if (key.includes('cv')) return <FileText size={15} color="#DC2626" />;
+    return <User size={15} color="#71717A" />;
+  };
+
+  const currentGroups = PREDEFINED_FIELDS[formData.profile_type] || [];
+
   return (
     <MainLayout>
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: '#0F1923' }}>
-            Champs Floutés
+            Champs Floutés & Confidentialité
           </h2>
           <p style={{ margin: '4px 0 0', color: '#8A94A6', fontSize: '14px' }}>
-            Configurez les champs masqués (floutés) par type de profil et les plans requis.
+            Configurez les clés et champs masqués (photos, coordonnées, CV) par type de profil et plans d'abonnement.
           </p>
         </div>
 
@@ -221,9 +337,8 @@ export const BlurFieldsPage = () => {
               }}
             >
               <option value="">Tous les profils</option>
-              <option value="candidate">Secrétaires</option>
+              <option value="candidate">Secrétaires / Candidats</option>
               <option value="company">Entreprises</option>
-              <option value="visitor">Visiteurs</option>
             </select>
           </div>
 
@@ -263,51 +378,57 @@ export const BlurFieldsPage = () => {
           <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left', fontSize: '14px' }}>
             <thead>
               <tr>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '25%', height: '40px', padding: '0 16px', fontWeight: '500', color: '#71717A', verticalAlign: 'middle' }}>Champ (Clé)</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '500', color: '#71717A', verticalAlign: 'middle' }}>Cible</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '500', color: '#71717A', verticalAlign: 'middle' }}>Flouté pour Gratuit</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '20%', height: '40px', padding: '0 16px', fontWeight: '500', color: '#71717A', verticalAlign: 'middle' }}>Plans Requis</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '500', color: '#71717A', verticalAlign: 'middle' }}>Label</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '10%', height: '40px', padding: '0 16px', fontWeight: '500', color: '#71717A', verticalAlign: 'middle', textAlign: 'right' }}>Actions</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '25%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Champ Système (Clé)</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Cible</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Flouté pour Gratuit</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '20%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Plans Débloquants</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Label d'affichage</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '10%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRules.length === 0 ? (
                 <tr>
                   <td colSpan="6" style={{ padding: '32px 16px', textAlign: 'center', color: '#71717A', fontSize: '14px' }}>
-                    Aucun champ flouté trouvé.
+                    Aucun champ flouté configuré.
                   </td>
                 </tr>
               ) : filteredRules.map((item) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid #E4E4E7', transition: 'background-color 0.2s' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#F4F4F5'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', fontWeight: '500', color: '#09090B' }}>
+                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', fontWeight: '600', color: '#09090B' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <EyeOff size={16} color="#71717A" />
-                      {item.field_key}
+                      {getFieldIcon(item.field_key)}
+                      <code style={{ backgroundColor: '#F1F5F9', color: '#0F172A', padding: '2px 6px', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }}>
+                        {item.field_key}
+                      </code>
                     </div>
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '9999px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA', padding: '2px 10px', fontSize: '12px', fontWeight: '500', color: '#18181B' }}>
-                      {item.profile_type === 'candidate' ? 'Secrétaire' : item.profile_type === 'company' ? 'Entreprise' : 'Visiteur'}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '9999px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA', padding: '2px 10px', fontSize: '12px', fontWeight: '600', color: '#18181B' }}>
+                      {item.profile_type === 'candidate' ? 'Secrétaire' : 'Entreprise'}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                     {item.is_blurred_for_free ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#065F46', fontSize: '12px', fontWeight: '500', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #A7F3D0' }}>Oui</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#065F46', fontSize: '12px', fontWeight: '600', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #A7F3D0' }}>
+                        🔒 Oui (Flouté)
+                      </span>
                     ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#71717A', fontSize: '12px', fontWeight: '500', backgroundColor: '#F4F4F5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E4E4E7' }}>Non</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#71717A', fontSize: '12px', fontWeight: '500', backgroundColor: '#F4F4F5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E4E4E7' }}>
+                        Non
+                      </span>
                     )}
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#09090B', fontWeight: '500' }}>
                     {item.exempted_plan_ids && item.exempted_plan_ids.length > 0 ? (
-                      <span style={{ display: 'inline-block', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '0px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                      <span style={{ display: 'inline-block', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '1px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
                         {getPlanNames(item.exempted_plan_ids)}
                       </span>
                     ) : (
-                      <span style={{ color: '#A1A1AA', fontSize: '12px', fontStyle: 'italic' }}>Aucun</span>
+                      <span style={{ color: '#A1A1AA', fontSize: '12px', fontStyle: 'italic' }}>Aucun (Uniquement déblocage payant)</span>
                     )}
                   </td>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#71717A' }}>
+                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#475569', fontWeight: '500' }}>
                     {item.label || '-'}
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right' }}>
@@ -339,82 +460,136 @@ export const BlurFieldsPage = () => {
         </div>
       )}
 
-      {/* --- EDIT MODAL --- */}
+      {/* --- MODAL CRÉATION / ÉDITION --- */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#FFF', borderRadius: '12px', width: '90%', maxWidth: '500px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+          <div style={{ backgroundColor: '#FFF', borderRadius: '12px', width: '90%', maxWidth: '520px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
             
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E4E4E7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', color: '#09090B', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <EyeOff size={20} color="#71717A" />
+            <div style={{ padding: '18px 24px', borderBottom: '1px solid #E4E4E7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#09090B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <EyeOff size={20} color="#4F46E5" />
                 {editingItem ? 'Modifier le champ flouté' : 'Nouveau champ flouté'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717A' }}><X size={20} /></button>
             </div>
 
-            <div style={{ padding: '24px', maxHeight: '70vh', overflowY: 'auto' }}>
+            <div style={{ padding: '24px', maxHeight: '72vh', overflowY: 'auto' }}>
               {error && (
                 <div style={{ padding: '12px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', borderRadius: '6px', marginBottom: '16px', fontSize: '14px' }}>
                   {error}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#09090B' }}>Cible (Profil) *</label>
+              {/* 1. Cible (Profil) */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
+                  Cible (Type de Profil) *
+                </label>
+                <select
+                  value={formData.profile_type}
+                  onChange={(e) => handleProfileTypeChange(e.target.value)}
+                  disabled={!!editingItem}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: editingItem ? '#F4F4F5' : '#FFF', color: editingItem ? '#A1A1AA' : '#09090B', fontWeight: '500' }}
+                >
+                  <option value="candidate">Secrétaire / Candidat</option>
+                  <option value="company">Entreprise</option>
+                </select>
+              </div>
+
+              {/* 2. Clé du champ (Menu Déroulant Sécurisé) */}
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
+                  <span>Clé du champ système *</span>
+                  <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 'normal' }}>Sélectionnez dans la liste</span>
+                </label>
+
+                {!editingItem ? (
                   <select
-                    value={formData.profile_type}
-                    onChange={(e) => !editingItem && setFormData({...formData, profile_type: e.target.value})}
-                    disabled={!!editingItem}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: editingItem ? '#F4F4F5' : '#FFF', color: editingItem ? '#A1A1AA' : '#09090B' }}
+                    value={isCustomKey ? '__custom__' : formData.field_key}
+                    onChange={(e) => handleFieldKeySelect(e.target.value)}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: '#FFF', color: '#09090B', fontWeight: '500' }}
                   >
-                    <option value="candidate">Secrétaire</option>
-                    <option value="company">Entreprise</option>
-                    <option value="visitor">Visiteur / Organisateur</option>
+                    {currentGroups.map((group, gIdx) => (
+                      <optgroup key={gIdx} label={group.group}>
+                        {group.options.map(opt => (
+                          <option key={opt.key} value={opt.key}>
+                            {opt.label} ({opt.key})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                    <optgroup label="Autre">
+                      <option value="__custom__">✏️ Autre clé personnalisée...</option>
+                    </optgroup>
                   </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#09090B' }}>Clé du champ *</label>
+                ) : (
                   <input
                     type="text"
                     value={formData.field_key}
-                    onChange={(e) => !editingItem && setFormData({...formData, field_key: e.target.value})}
-                    disabled={!!editingItem}
-                    placeholder="ex: email, phone..."
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #E4E4E7', backgroundColor: editingItem ? '#F4F4F5' : '#FFF', color: editingItem ? '#A1A1AA' : '#09090B', fontSize: '14px', fontFamily: 'monospace' }}
+                    disabled
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', backgroundColor: '#F4F4F5', color: '#71717A', fontSize: '14px', fontFamily: 'monospace' }}
                   />
-                </div>
+                )}
+
+                {/* Champ texte libre si "Autre clé personnalisée" est choisi */}
+                {isCustomKey && !editingItem && (
+                  <div style={{ marginTop: '8px' }}>
+                    <input
+                      type="text"
+                      value={formData.field_key}
+                      onChange={(e) => setFormData({...formData, field_key: e.target.value.toLowerCase().trim()})}
+                      placeholder="ex: linkedin_url, portfolio..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13.5px', fontFamily: 'monospace', backgroundColor: '#FFF' }}
+                      autoFocus
+                    />
+                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block', marginTop: '4px' }}>
+                      Saisissez le nom exact de la colonne en base de données.
+                    </span>
+                  </div>
+                )}
               </div>
 
+              {/* 3. Label Description Visuelle */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#09090B' }}>Label (Description visuelle)</label>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
+                  Label (Description affichée) *
+                </label>
                 <input
                   type="text"
                   value={formData.label}
                   onChange={(e) => setFormData({...formData, label: e.target.value})}
-                  placeholder="ex: Numéro de téléphone"
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #E4E4E7', fontSize: '14px', outline: 'none' }}
+                  placeholder="ex: Photo de profil, Téléphone direct..."
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', outline: 'none' }}
                 />
               </div>
 
-              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* 4. Case à cocher : Flouté pour gratuit */}
+              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                 <input
                   type="checkbox"
                   id="is_blurred_for_free"
                   checked={formData.is_blurred_for_free}
                   onChange={(e) => setFormData({...formData, is_blurred_for_free: e.target.checked})}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#18181B' }}
+                  style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: '#18181B' }}
                 />
-                <label htmlFor="is_blurred_for_free" style={{ fontSize: '14px', color: '#09090B', cursor: 'pointer', fontWeight: '500' }}>
-                  Toujours flouté pour les comptes gratuits
-                </label>
+                <div>
+                  <label htmlFor="is_blurred_for_free" style={{ fontSize: '13.5px', color: '#09090B', cursor: 'pointer', fontWeight: '600' }}>
+                    Toujours flouté pour les comptes gratuits
+                  </label>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>
+                    Si coché, les utilisateurs gratuits ne verront pas ce champ à moins de payer le déblocage unitaire.
+                  </p>
+                </div>
               </div>
 
+              {/* 5. Plans d'Abonnement Débloquants */}
               <div style={{ marginBottom: '8px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#09090B' }}>Plans d'Abonnement Débloquant ce champ</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', borderRadius: '6px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
+                  Plans d'Abonnement Débloquant ce champ
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', borderRadius: '8px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA' }}>
                   {plans.map(plan => (
-                    <label key={plan.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#09090B', cursor: 'pointer' }}>
+                    <label key={plan.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: '#09090B', cursor: 'pointer' }}>
                       <input
                         type="checkbox"
                         checked={formData.exempted_plan_ids.includes(plan.id)}
@@ -427,13 +602,14 @@ export const BlurFieldsPage = () => {
                         }}
                         style={{ width: '16px', height: '16px', accentColor: '#18181B' }}
                       />
-                      {plan.key}
+                      <span style={{ fontWeight: '500' }}>{plan.name || plan.key}</span>
+                      <span style={{ fontSize: '12px', color: '#71717A' }}>({plan.key})</span>
                     </label>
                   ))}
                   {plans.length === 0 && <span style={{ fontSize: '13px', color: '#71717A' }}>Aucun plan disponible.</span>}
                 </div>
                 <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#71717A' }}>
-                  Sélectionnez les plans qui permettront à l'utilisateur de voir ce champ.
+                  Les abonnés aux plans sélectionnés verront ce champ sans frais supplémentaires.
                 </p>
               </div>
 
@@ -449,10 +625,10 @@ export const BlurFieldsPage = () => {
               <button 
                 onClick={handleSubmit}
                 disabled={isSaving}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', backgroundColor: '#18181B', border: 'none', borderRadius: '6px', fontWeight: '500', color: '#FFF', cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1, fontSize: '14px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', backgroundColor: '#18181B', border: 'none', borderRadius: '6px', fontWeight: '600', color: '#FFF', cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1, fontSize: '14px' }}
               >
                 {isSaving && <Loader2 size={16} className="animate-spin" />}
-                Enregistrer
+                Enregistrer la règle
               </button>
             </div>
 
