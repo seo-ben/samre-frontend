@@ -1,38 +1,61 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { ShieldAlert, Loader2, Edit2, AlertCircle, CheckCircle2, X, EyeOff, Plus, Trash2, Search, Filter, HelpCircle, Image, Phone, Mail, FileText, User } from 'lucide-react';
+import { Loader2, Edit2, AlertCircle, CheckCircle2, X, EyeOff, Plus, Trash2, Search, Filter, Image, Phone, Mail, FileText, User, Briefcase, MapPin, Award, Navigation, ShieldCheck } from 'lucide-react';
 
-const PREDEFINED_FIELDS = {
+// Liste exhaustive de TOUS les champs système configurables pour le floutage
+const ALL_SYSTEM_FIELDS = {
   candidate: [
     {
       group: "Photos & Visuels",
       options: [
-        { key: 'profile_photo_url', label: 'Photo de profil (Avatar)', description: "Photo de profil / avatar principal du candidat" },
-        { key: 'photos', label: 'Photos plein pied & Galerie', description: "Toutes les photos plein-pied et la galerie du candidat" },
+        { key: 'profile_photo_url', label: 'Photo de profil (Avatar principal)', icon: Image },
+        { key: 'photos', label: 'Photos plein pied & Galerie complète', icon: Image },
       ]
     },
     {
       group: "Coordonnées de Contact",
       options: [
-        { key: 'phone', label: 'Numéro de téléphone direct', description: "Numéro de téléphone personnel du candidat" },
-        { key: 'email', label: 'Adresse email personnelle', description: "Adresse email de contact direct" },
-        { key: 'address', label: 'Adresse de résidence', description: "Adresse physique, quartier ou ville" },
-        { key: 'social_links', label: 'Liens réseaux sociaux / Web', description: "Profils LinkedIn, réseaux sociaux et liens web" },
+        { key: 'phone', label: 'Numéro de téléphone direct', icon: Phone },
+        { key: 'email', label: 'Adresse email personnelle', icon: Mail },
+        { key: 'address', label: 'Adresse de résidence / Quartier', icon: MapPin },
+        { key: 'commune', label: 'Commune de résidence', icon: MapPin },
+        { key: 'prefecture', label: 'Préfecture de résidence', icon: MapPin },
+        { key: 'latitude', label: 'Géolocalisation GPS exacte', icon: Navigation },
+        { key: 'social_links', label: 'Liens réseaux sociaux / LinkedIn / Web', icon: Navigation },
       ]
     },
     {
       group: "Documents & Curriculum",
       options: [
-        { key: 'cv_url', label: 'Document CV (Curriculum Vitae)', description: "Lien de téléchargement et visualisation du CV" },
+        { key: 'cv_url', label: 'Document CV (Curriculum Vitae PDF)', icon: FileText },
       ]
     },
     {
       group: "Identité & Profil",
       options: [
-        { key: 'last_name', label: 'Nom de famille', description: "Nom de famille du candidat (ex: M******A)" },
-        { key: 'birth_date', label: 'Date de naissance', description: "Date de naissance / âge exact" },
-        { key: 'bio', label: 'Biographie & Description', description: "Présentation rédigée par le candidat" },
+        { key: 'first_name', label: 'Prénom du candidat', icon: User },
+        { key: 'last_name', label: 'Nom de famille', icon: User },
+        { key: 'profession', label: 'Métier / Profession principale', icon: Briefcase },
+        { key: 'birth_date', label: 'Date de naissance / Âge', icon: User },
+        { key: 'gender', label: 'Genre / Sexe', icon: User },
+        { key: 'bio', label: 'Biographie & Présentation personnelle', icon: User },
+        { key: 'completeness_score', label: 'Score de complétude du profil', icon: Award },
+      ]
+    },
+    {
+      group: "Parcours, Études & Compétences",
+      options: [
+        { key: 'educations', label: 'Formations, Diplômes & Études', icon: Award },
+        { key: 'experiences', label: 'Expériences professionnelles antérieures', icon: Briefcase },
+        { key: 'skills', label: 'Compétences & Aptitudes techniques', icon: Award },
+      ]
+    },
+    {
+      group: "Mobilité & Déplacement",
+      options: [
+        { key: 'has_transport', label: 'Possession de moyen de déplacement', icon: Navigation },
+        { key: 'transport_type', label: 'Type de transport (Moto, Véhicule, etc.)', icon: Navigation },
       ]
     }
   ],
@@ -40,26 +63,43 @@ const PREDEFINED_FIELDS = {
     {
       group: "Visuels & Logo",
       options: [
-        { key: 'logo_url', label: "Logo de l'entreprise", description: "Logo officiel de l'entreprise" },
+        { key: 'logo_url', label: "Logo officiel de l'entreprise", icon: Image },
       ]
     },
     {
       group: "Coordonnées de Contact",
       options: [
-        { key: 'contact_phone', label: 'Numéro de téléphone direct', description: "Numéro de contact professionnel" },
-        { key: 'email', label: 'Adresse email de contact', description: "Email officiel de recrutement" },
-        { key: 'website', label: 'Site web officiel', description: "URL du site internet de l'entreprise" },
-        { key: 'address', label: 'Adresse du siège / Bureaux', description: "Localisation physique des locaux" },
-        { key: 'social_links', label: 'Réseaux sociaux entreprise', description: "Pages LinkedIn, Facebook, etc." },
+        { key: 'contact_phone', label: 'Numéro de téléphone direct', icon: Phone },
+        { key: 'email', label: 'Adresse email de contact', icon: Mail },
+        { key: 'website_url', label: 'Site web officiel', icon: Navigation },
+        { key: 'address', label: 'Adresse physique du siège / Bureau', icon: MapPin },
+        { key: 'commune', label: 'Commune du siège', icon: MapPin },
+        { key: 'prefecture', label: 'Préfecture du siège', icon: MapPin },
+        { key: 'social_links', label: 'Réseaux sociaux de l\'entreprise', icon: Navigation },
       ]
     },
     {
-      group: "Informations Légales",
+      group: "Présentation & Activité",
       options: [
-        { key: 'legal_number', label: 'Numéro RCCM / NIF', description: "Identifiant légal et fiscal de l'entreprise" },
+        { key: 'description', label: "Description & Présentation de l'entreprise", icon: Briefcase },
+        { key: 'sector', label: "Secteur d'activité principal", icon: Briefcase },
+        { key: 'employee_count_range', label: "Taille de l'entreprise (Effectif)", icon: User },
+      ]
+    },
+    {
+      group: "Informations Légales & Viabilité",
+      options: [
+        { key: 'rccm_number', label: 'Numéro d\'immatriculation RCCM', icon: ShieldCheck },
+        { key: 'nif_number', label: 'Numéro d\'identification fiscale (NIF)', icon: ShieldCheck },
+        { key: 'is_viable', label: 'Statut & Badge de viabilité légale', icon: ShieldCheck },
       ]
     }
   ]
+};
+
+// Flatten helper
+const getFlatOptions = (profileType) => {
+  return ALL_SYSTEM_FIELDS[profileType]?.flatMap(g => g.options) || [];
 };
 
 export const BlurFieldsPage = () => {
@@ -72,7 +112,6 @@ export const BlurFieldsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
-  const [isCustomKey, setIsCustomKey] = useState(false);
 
   // Filtres & Recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,7 +124,7 @@ export const BlurFieldsPage = () => {
     field_key: 'profile_photo_url',
     exempted_plan_ids: [],
     is_blurred_for_free: true,
-    label: 'Photo de profil (Avatar)'
+    label: 'Photo de profil (Avatar principal)'
   });
 
   const showToast = (msg) => {
@@ -119,21 +158,19 @@ export const BlurFieldsPage = () => {
     setEditingItem(item);
     if (item) {
       const pType = item.profile_type || 'candidate';
-      const availableOptions = PREDEFINED_FIELDS[pType]?.flatMap(g => g.options) || [];
-      const isKnown = availableOptions.some(opt => opt.key === item.field_key);
-      
-      setIsCustomKey(!isKnown);
+      const flat = getFlatOptions(pType);
+      const matched = flat.find(opt => opt.key === item.field_key);
+
       setFormData({
         profile_type: pType,
         field_key: item.field_key || '',
         exempted_plan_ids: item.exempted_plan_ids || [],
         is_blurred_for_free: item.is_blurred_for_free !== false,
-        label: item.label || ''
+        label: item.label || (matched ? matched.label : item.field_key)
       });
     } else {
       const defaultType = 'candidate';
-      const firstOpt = PREDEFINED_FIELDS[defaultType][0].options[0];
-      setIsCustomKey(false);
+      const firstOpt = ALL_SYSTEM_FIELDS[defaultType][0].options[0];
       setFormData({
         profile_type: defaultType,
         field_key: firstOpt.key,
@@ -146,9 +183,8 @@ export const BlurFieldsPage = () => {
   };
 
   const handleProfileTypeChange = (newType) => {
-    const groups = PREDEFINED_FIELDS[newType] || [];
+    const groups = ALL_SYSTEM_FIELDS[newType] || [];
     const firstOpt = groups[0]?.options[0];
-    setIsCustomKey(false);
     setFormData({
       ...formData,
       profile_type: newType,
@@ -158,23 +194,13 @@ export const BlurFieldsPage = () => {
   };
 
   const handleFieldKeySelect = (selectedKey) => {
-    if (selectedKey === '__custom__') {
-      setIsCustomKey(true);
-      setFormData({
-        ...formData,
-        field_key: '',
-      });
-      return;
-    }
-
-    setIsCustomKey(false);
-    const groups = PREDEFINED_FIELDS[formData.profile_type] || [];
-    const foundOpt = groups.flatMap(g => g.options).find(opt => opt.key === selectedKey);
+    const flat = getFlatOptions(formData.profile_type);
+    const foundOpt = flat.find(opt => opt.key === selectedKey);
 
     setFormData({
       ...formData,
       field_key: selectedKey,
-      label: foundOpt ? foundOpt.label : formData.label
+      label: foundOpt ? foundOpt.label : selectedKey
     });
   };
 
@@ -191,8 +217,8 @@ export const BlurFieldsPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.field_key || formData.field_key.trim() === '') {
-      setError("Veuillez sélectionner ou saisir une clé de champ valide.");
+    if (!formData.field_key) {
+      setError("Veuillez sélectionner un champ valide.");
       return;
     }
 
@@ -202,7 +228,6 @@ export const BlurFieldsPage = () => {
     try {
       const payload = {
         ...formData,
-        field_key: formData.field_key.trim(),
       };
 
       if (editingItem) {
@@ -247,16 +272,17 @@ export const BlurFieldsPage = () => {
     }).join(', ');
   };
 
-  // Helper pour afficher une icône adaptée à la clé
-  const getFieldIcon = (key) => {
-    if (key.includes('photo') || key.includes('logo') || key === 'photos') return <Image size={15} color="#4F46E5" />;
-    if (key.includes('phone')) return <Phone size={15} color="#059669" />;
-    if (key.includes('email')) return <Mail size={15} color="#D97706" />;
-    if (key.includes('cv')) return <FileText size={15} color="#DC2626" />;
-    return <User size={15} color="#71717A" />;
+  const getFieldDisplayInfo = (pType, key) => {
+    const flat = getFlatOptions(pType);
+    const found = flat.find(opt => opt.key === key);
+    if (found) {
+      const IconComp = found.icon || EyeOff;
+      return { label: found.label, icon: <IconComp size={15} color="#4F46E5" /> };
+    }
+    return { label: key, icon: <EyeOff size={15} color="#71717A" /> };
   };
 
-  const currentGroups = PREDEFINED_FIELDS[formData.profile_type] || [];
+  const currentGroups = ALL_SYSTEM_FIELDS[formData.profile_type] || [];
 
   return (
     <MainLayout>
@@ -266,13 +292,13 @@ export const BlurFieldsPage = () => {
             Champs Floutés & Confidentialité
           </h2>
           <p style={{ margin: '4px 0 0', color: '#8A94A6', fontSize: '14px' }}>
-            Configurez les clés et champs masqués (photos, coordonnées, CV) par type de profil et plans d'abonnement.
+            Sélectionnez les champs masqués (photos, coordonnées, CV) et les forfaits d'abonnement qui les débloquent.
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           
-          {/* Barre de recherche animée */}
+          {/* Barre de recherche */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -293,7 +319,7 @@ export const BlurFieldsPage = () => {
             <input
               ref={searchInputRef}
               type="text"
-              placeholder="Rechercher (clé ou label)..."
+              placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onBlur={() => {
@@ -378,12 +404,12 @@ export const BlurFieldsPage = () => {
           <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, textAlign: 'left', fontSize: '14px' }}>
             <thead>
               <tr>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '25%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Champ Système (Clé)</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Cible</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '28%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Champ Système (Clé)</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '14%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Cible</th>
                 <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Flouté pour Gratuit</th>
                 <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '20%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Plans Débloquants</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Label d'affichage</th>
-                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '10%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle', textAlign: 'right' }}>Actions</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '15%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle' }}>Description affichée</th>
+                <th style={{ position: 'sticky', top: 0, zIndex: 10, backgroundColor: '#FAFAFA', borderBottom: '1px solid #E4E4E7', width: '8%', height: '40px', padding: '0 16px', fontWeight: '600', color: '#71717A', verticalAlign: 'middle', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -393,68 +419,71 @@ export const BlurFieldsPage = () => {
                     Aucun champ flouté configuré.
                   </td>
                 </tr>
-              ) : filteredRules.map((item) => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #E4E4E7', transition: 'background-color 0.2s' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#F4F4F5'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', fontWeight: '600', color: '#09090B' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {getFieldIcon(item.field_key)}
-                      <code style={{ backgroundColor: '#F1F5F9', color: '#0F172A', padding: '2px 6px', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }}>
-                        {item.field_key}
-                      </code>
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '9999px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA', padding: '2px 10px', fontSize: '12px', fontWeight: '600', color: '#18181B' }}>
-                      {item.profile_type === 'candidate' ? 'Secrétaire' : 'Entreprise'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                    {item.is_blurred_for_free ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#065F46', fontSize: '12px', fontWeight: '600', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #A7F3D0' }}>
-                        🔒 Oui (Flouté)
+              ) : filteredRules.map((item) => {
+                const info = getFieldDisplayInfo(item.profile_type, item.field_key);
+                return (
+                  <tr key={item.id} style={{ borderBottom: '1px solid #E4E4E7', transition: 'background-color 0.2s' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#F4F4F5'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', fontWeight: '600', color: '#09090B' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {info.icon}
+                        <code style={{ backgroundColor: '#F1F5F9', color: '#0F172A', padding: '2px 6px', borderRadius: '4px', fontSize: '12.5px', fontFamily: 'monospace' }}>
+                          {item.field_key}
+                        </code>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', borderRadius: '9999px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA', padding: '2px 10px', fontSize: '12px', fontWeight: '600', color: '#18181B' }}>
+                        {item.profile_type === 'candidate' ? 'Secrétaire' : 'Entreprise'}
                       </span>
-                    ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#71717A', fontSize: '12px', fontWeight: '500', backgroundColor: '#F4F4F5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E4E4E7' }}>
-                        Non
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#09090B', fontWeight: '500' }}>
-                    {item.exempted_plan_ids && item.exempted_plan_ids.length > 0 ? (
-                      <span style={{ display: 'inline-block', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '1px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
-                        {getPlanNames(item.exempted_plan_ids)}
-                      </span>
-                    ) : (
-                      <span style={{ color: '#A1A1AA', fontSize: '12px', fontStyle: 'italic' }}>Aucun (Uniquement déblocage payant)</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#475569', fontWeight: '500' }}>
-                    {item.label || '-'}
-                  </td>
-                  <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
-                      <button 
-                        onClick={() => handleOpenModal(item)} 
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#09090B', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                        title="Modifier"
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = '#E4E4E7'}
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <Edit2 size={16} /> 
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(item.id)} 
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                        title="Supprimer"
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
+                      {item.is_blurred_for_free ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#065F46', fontSize: '12px', fontWeight: '600', backgroundColor: '#ECFDF5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #A7F3D0' }}>
+                          🔒 Oui (Flouté)
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#71717A', fontSize: '12px', fontWeight: '500', backgroundColor: '#F4F4F5', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E4E4E7' }}>
+                          Non
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#09090B', fontWeight: '500' }}>
+                      {item.exempted_plan_ids && item.exempted_plan_ids.length > 0 ? (
+                        <span style={{ display: 'inline-block', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '1px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
+                          {getPlanNames(item.exempted_plan_ids)}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#A1A1AA', fontSize: '12px', fontStyle: 'italic' }}>Aucun (Uniquement déblocage payant)</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', color: '#475569', fontWeight: '500' }}>
+                      {item.label || info.label}
+                    </td>
+                    <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
+                        <button 
+                          onClick={() => handleOpenModal(item)} 
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#09090B', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                          title="Modifier"
+                          onMouseOver={e => e.currentTarget.style.backgroundColor = '#E4E4E7'}
+                          onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <Edit2 size={16} /> 
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item.id)} 
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                          title="Supprimer"
+                          onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
+                          onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -463,12 +492,12 @@ export const BlurFieldsPage = () => {
       {/* --- MODAL CRÉATION / ÉDITION --- */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#FFF', borderRadius: '12px', width: '90%', maxWidth: '520px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+          <div style={{ backgroundColor: '#FFF', borderRadius: '14px', width: '90%', maxWidth: '520px', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
             
             <div style={{ padding: '18px 24px', borderBottom: '1px solid #E4E4E7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#09090B', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <EyeOff size={20} color="#4F46E5" />
-                {editingItem ? 'Modifier le champ flouté' : 'Nouveau champ flouté'}
+                {editingItem ? 'Modifier la règle de floutage' : 'Nouveau champ à flouter'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#71717A' }}><X size={20} /></button>
             </div>
@@ -482,32 +511,31 @@ export const BlurFieldsPage = () => {
 
               {/* 1. Cible (Profil) */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
-                  Cible (Type de Profil) *
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '700', color: '#09090B' }}>
+                  1. Cible (Profil concerné) *
                 </label>
                 <select
                   value={formData.profile_type}
                   onChange={(e) => handleProfileTypeChange(e.target.value)}
                   disabled={!!editingItem}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: editingItem ? '#F4F4F5' : '#FFF', color: editingItem ? '#A1A1AA' : '#09090B', fontWeight: '500' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: editingItem ? '#F4F4F5' : '#FFF', color: editingItem ? '#A1A1AA' : '#09090B', fontWeight: '600' }}
                 >
                   <option value="candidate">Secrétaire / Candidat</option>
                   <option value="company">Entreprise</option>
                 </select>
               </div>
 
-              {/* 2. Clé du champ (Menu Déroulant Sécurisé) */}
+              {/* 2. Clé du champ (Menu Déroulant EXHAUSTIF) */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
-                  <span>Clé du champ système *</span>
-                  <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 'normal' }}>Sélectionnez dans la liste</span>
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '700', color: '#09090B' }}>
+                  2. Champ du système à masquer (Flouter) *
                 </label>
 
                 {!editingItem ? (
                   <select
-                    value={isCustomKey ? '__custom__' : formData.field_key}
+                    value={formData.field_key}
                     onChange={(e) => handleFieldKeySelect(e.target.value)}
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', backgroundColor: '#FFF', color: '#09090B', fontWeight: '500' }}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #4F46E5', fontSize: '14px', backgroundColor: '#FFF', color: '#09090B', fontWeight: '600' }}
                   >
                     {currentGroups.map((group, gIdx) => (
                       <optgroup key={gIdx} label={group.group}>
@@ -518,48 +546,27 @@ export const BlurFieldsPage = () => {
                         ))}
                       </optgroup>
                     ))}
-                    <optgroup label="Autre">
-                      <option value="__custom__">✏️ Autre clé personnalisée...</option>
-                    </optgroup>
                   </select>
                 ) : (
                   <input
                     type="text"
-                    value={formData.field_key}
+                    value={`${formData.label} (${formData.field_key})`}
                     disabled
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', backgroundColor: '#F4F4F5', color: '#71717A', fontSize: '14px', fontFamily: 'monospace' }}
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', backgroundColor: '#F4F4F5', color: '#71717A', fontSize: '14px', fontWeight: '600' }}
                   />
-                )}
-
-                {/* Champ texte libre si "Autre clé personnalisée" est choisi */}
-                {isCustomKey && !editingItem && (
-                  <div style={{ marginTop: '8px' }}>
-                    <input
-                      type="text"
-                      value={formData.field_key}
-                      onChange={(e) => setFormData({...formData, field_key: e.target.value.toLowerCase().trim()})}
-                      placeholder="ex: linkedin_url, portfolio..."
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #CBD5E1', fontSize: '13.5px', fontFamily: 'monospace', backgroundColor: '#FFF' }}
-                      autoFocus
-                    />
-                    <span style={{ fontSize: '11.5px', color: '#64748B', display: 'block', marginTop: '4px' }}>
-                      Saisissez le nom exact de la colonne en base de données.
-                    </span>
-                  </div>
                 )}
               </div>
 
-              {/* 3. Label Description Visuelle */}
+              {/* 3. Description Automatique Affichée */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
-                  Label (Description affichée) *
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '700', color: '#09090B' }}>
+                  3. Description du champ (Automatique)
                 </label>
                 <input
                   type="text"
                   value={formData.label}
-                  onChange={(e) => setFormData({...formData, label: e.target.value})}
-                  placeholder="ex: Photo de profil, Téléphone direct..."
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', fontSize: '14px', outline: 'none' }}
+                  readOnly
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E4E4E7', backgroundColor: '#F8FAFC', color: '#334155', fontSize: '14px', fontWeight: '600' }}
                 />
               </div>
 
@@ -573,19 +580,19 @@ export const BlurFieldsPage = () => {
                   style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer', accentColor: '#18181B' }}
                 />
                 <div>
-                  <label htmlFor="is_blurred_for_free" style={{ fontSize: '13.5px', color: '#09090B', cursor: 'pointer', fontWeight: '600' }}>
+                  <label htmlFor="is_blurred_for_free" style={{ fontSize: '13.5px', color: '#09090B', cursor: 'pointer', fontWeight: '700' }}>
                     Toujours flouté pour les comptes gratuits
                   </label>
                   <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748B' }}>
-                    Si coché, les utilisateurs gratuits ne verront pas ce champ à moins de payer le déblocage unitaire.
+                    Les utilisateurs en mode gratuit ne verront pas cette donnée à moins de débloquer le profil.
                   </p>
                 </div>
               </div>
 
               {/* 5. Plans d'Abonnement Débloquants */}
               <div style={{ marginBottom: '8px' }}>
-                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#09090B' }}>
-                  Plans d'Abonnement Débloquant ce champ
+                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '700', color: '#09090B' }}>
+                  4. Forfaits d'Abonnement débloquant ce champ
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', borderRadius: '8px', border: '1px solid #E4E4E7', backgroundColor: '#FAFAFA' }}>
                   {plans.map(plan => (
@@ -602,30 +609,30 @@ export const BlurFieldsPage = () => {
                         }}
                         style={{ width: '16px', height: '16px', accentColor: '#18181B' }}
                       />
-                      <span style={{ fontWeight: '500' }}>{plan.name || plan.key}</span>
+                      <span style={{ fontWeight: '600' }}>{plan.name || plan.key}</span>
                       <span style={{ fontSize: '12px', color: '#71717A' }}>({plan.key})</span>
                     </label>
                   ))}
                   {plans.length === 0 && <span style={{ fontSize: '13px', color: '#71717A' }}>Aucun plan disponible.</span>}
                 </div>
                 <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#71717A' }}>
-                  Les abonnés aux plans sélectionnés verront ce champ sans frais supplémentaires.
+                  Les entreprises ayant souscrit à ces forfaits verront ce champ sans payer de déblocage unitaire.
                 </p>
               </div>
 
             </div>
 
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #E4E4E7', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: '#FAFAFA', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #E4E4E7', display: 'flex', justifyContent: 'flex-end', gap: '12px', backgroundColor: '#FAFAFA', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px' }}>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                style={{ padding: '8px 16px', backgroundColor: '#FFF', border: '1px solid #E4E4E7', borderRadius: '6px', fontWeight: '500', color: '#09090B', cursor: 'pointer', fontSize: '14px' }}
+                style={{ padding: '9px 16px', backgroundColor: '#FFF', border: '1px solid #E4E4E7', borderRadius: '8px', fontWeight: '600', color: '#09090B', cursor: 'pointer', fontSize: '14px' }}
               >
                 Annuler
               </button>
               <button 
                 onClick={handleSubmit}
                 disabled={isSaving}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 18px', backgroundColor: '#18181B', border: 'none', borderRadius: '6px', fontWeight: '600', color: '#FFF', cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1, fontSize: '14px' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 20px', backgroundColor: '#18181B', border: 'none', borderRadius: '8px', fontWeight: '700', color: '#FFF', cursor: isSaving ? 'not-allowed' : 'pointer', opacity: isSaving ? 0.7 : 1, fontSize: '14px' }}
               >
                 {isSaving && <Loader2 size={16} className="animate-spin" />}
                 Enregistrer la règle
@@ -642,7 +649,7 @@ export const BlurFieldsPage = () => {
           position: 'fixed', bottom: '24px', right: '24px',
           backgroundColor: '#10B981', color: '#FFF',
           padding: '12px 24px', borderRadius: '8px',
-          fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px',
+          fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px',
           boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           animation: 'slideUp 0.3s ease-out', zIndex: 9999
         }}>
