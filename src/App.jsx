@@ -30,6 +30,7 @@ import { WalletsPage } from './pages/Payments/Wallets'
 import { TransactionsPage } from './pages/Payments/Transactions'
 import { SpecialRequestsPage } from './pages/SpecialRequests'
 import { SurveysManagementPage } from './pages/SurveysManagement'
+import { ServiceExchangesManagement } from './pages/ServiceExchangesManagement'
 import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -91,6 +92,10 @@ function App() {
       {/* ── Sondages & Enquêtes ─────────────────── */}
       <Route path="/surveys"            element={<Protected><SurveysManagementPage /></Protected>} />
       <Route path="/sondages"           element={<Protected><SurveysManagementPage /></Protected>} />
+
+      {/* ── Troc B2B & Échanges ─────────────────── */}
+      <Route path="/service-exchanges"  element={<Protected><ServiceExchangesManagement /></Protected>} />
+      <Route path="/troc-b2b"           element={<Protected><ServiceExchangesManagement /></Protected>} />
 
       {/* ── Paiements & Finances ─────────────────────────── */}
       <Route path="/finances" element={<Protected><FinanceDashboard /></Protected>} />

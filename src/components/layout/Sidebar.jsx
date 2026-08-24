@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, Sparkles, Vote, Trash2
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, Sparkles, Vote, Trash2, Handshake
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -95,6 +95,12 @@ const NAV = [
     label: 'Sondages & Enquêtes',
     path: '/surveys',
     icon: Vote,
+  },
+  {
+    id: 'service-exchanges',
+    label: 'Troc B2B & Échanges',
+    path: '/service-exchanges',
+    icon: Handshake,
   },
   {
     id: 'finances',
