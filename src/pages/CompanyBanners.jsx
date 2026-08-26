@@ -745,7 +745,7 @@ export const CompanyBanners = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                       {/* Pays */}
                       <div>
-                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Pays</label>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>1. Pays</label>
                         <select
                           value={editForm.country_code || ''}
                           onChange={e => {
@@ -772,12 +772,14 @@ export const CompanyBanners = () => {
 
                       {/* Région */}
                       <div>
-                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Région</label>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: editForm.country_code ? '#334155' : '#94A3B8' }}>2. Région</label>
                         {(() => {
                           const selectedCountryObj = countries.find(c => String(c.code).toUpperCase() === String(editForm.country_code).toUpperCase());
-                          const availableRegions = editForm.country_code
-                            ? regions.filter(r => selectedCountryObj && String(r.country_id) === String(selectedCountryObj.id))
-                            : regions;
+                          const availableRegions = editForm.country_code && selectedCountryObj
+                            ? regions.filter(r => String(r.country_id) === String(selectedCountryObj.id))
+                            : [];
+                          const hasCountry = Boolean(editForm.country_code);
+
                           return (
                             <select
                               value={editForm.region_id || ''}
@@ -790,15 +792,26 @@ export const CompanyBanners = () => {
                                   commune_id: ''
                                 });
                               }}
+                              disabled={!hasCountry}
                               className="input-field"
-                              style={{ background: 'white' }}
+                              style={{ 
+                                background: hasCountry ? 'white' : '#F1F5F9',
+                                cursor: hasCountry ? 'pointer' : 'not-allowed',
+                                color: hasCountry ? '#0F172A' : '#94A3B8'
+                              }}
                             >
-                              <option value="">Toutes les régions</option>
-                              {availableRegions.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {getLocationName(r, r.code || `Région #${r.id}`)}
-                                </option>
-                              ))}
+                              {!hasCountry ? (
+                                <option value="">— Veuillez d'abord choisir un pays —</option>
+                              ) : (
+                                <>
+                                  <option value="">Toutes les régions ({getLocationName(selectedCountryObj, editForm.country_code)})</option>
+                                  {availableRegions.map((r) => (
+                                    <option key={r.id} value={r.id}>
+                                      {getLocationName(r, r.code || `Région #${r.id}`)}
+                                    </option>
+                                  ))}
+                                </>
+                              )}
                             </select>
                           );
                         })()}
@@ -808,18 +821,14 @@ export const CompanyBanners = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                       {/* Préfecture */}
                       <div>
-                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Préfecture</label>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: editForm.region_id ? '#334155' : '#94A3B8' }}>3. Préfecture</label>
                         {(() => {
-                          const selectedCountryObj = countries.find(c => String(c.code).toUpperCase() === String(editForm.country_code).toUpperCase());
-                          let availablePrefectures = prefectures;
-                          if (editForm.region_id) {
-                            availablePrefectures = prefectures.filter(p => String(p.region_id) === String(editForm.region_id));
-                          } else if (editForm.country_code && selectedCountryObj) {
-                            const countryRegionIds = regions
-                              .filter(r => String(r.country_id) === String(selectedCountryObj.id))
-                              .map(r => String(r.id));
-                            availablePrefectures = prefectures.filter(p => countryRegionIds.includes(String(p.region_id)));
-                          }
+                          const selectedRegionObj = regions.find(r => String(r.id) === String(editForm.region_id));
+                          const availablePrefectures = editForm.region_id
+                            ? prefectures.filter(p => String(p.region_id) === String(editForm.region_id))
+                            : [];
+                          const hasRegion = Boolean(editForm.region_id);
+
                           return (
                             <select
                               value={editForm.prefecture_id || ''}
@@ -831,15 +840,26 @@ export const CompanyBanners = () => {
                                   commune_id: ''
                                 });
                               }}
+                              disabled={!hasRegion}
                               className="input-field"
-                              style={{ background: 'white' }}
+                              style={{ 
+                                background: hasRegion ? 'white' : '#F1F5F9',
+                                cursor: hasRegion ? 'pointer' : 'not-allowed',
+                                color: hasRegion ? '#0F172A' : '#94A3B8'
+                              }}
                             >
-                              <option value="">Toutes les préfectures</option>
-                              {availablePrefectures.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {getLocationName(p, p.code || `Préfecture #${p.id}`)}
-                                </option>
-                              ))}
+                              {!hasRegion ? (
+                                <option value="">— Veuillez d'abord choisir une région —</option>
+                              ) : (
+                                <>
+                                  <option value="">Toutes les préfectures ({getLocationName(selectedRegionObj, 'Région')})</option>
+                                  {availablePrefectures.map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {getLocationName(p, p.code || `Préfecture #${p.id}`)}
+                                    </option>
+                                  ))}
+                                </>
+                              )}
                             </select>
                           );
                         })()}
@@ -847,24 +867,38 @@ export const CompanyBanners = () => {
 
                       {/* Commune / Ville */}
                       <div>
-                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: '#334155' }}>Commune / Ville</label>
+                        <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '600', color: editForm.prefecture_id ? '#334155' : '#94A3B8' }}>4. Commune / Ville</label>
                         {(() => {
+                          const selectedPrefObj = prefectures.find(p => String(p.id) === String(editForm.prefecture_id));
                           const availableCommunes = editForm.prefecture_id
                             ? communes.filter(c => String(c.prefecture_id) === String(editForm.prefecture_id))
-                            : communes;
+                            : [];
+                          const hasPrefecture = Boolean(editForm.prefecture_id);
+
                           return (
                             <select
                               value={editForm.commune_id || ''}
                               onChange={e => setEditForm({ ...editForm, commune_id: e.target.value })}
+                              disabled={!hasPrefecture}
                               className="input-field"
-                              style={{ background: 'white' }}
+                              style={{ 
+                                background: hasPrefecture ? 'white' : '#F1F5F9',
+                                cursor: hasPrefecture ? 'pointer' : 'not-allowed',
+                                color: hasPrefecture ? '#0F172A' : '#94A3B8'
+                              }}
                             >
-                              <option value="">Toutes les communes</option>
-                              {availableCommunes.map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {getLocationName(c, c.code || `Commune #${c.id}`)}
-                                </option>
-                              ))}
+                              {!hasPrefecture ? (
+                                <option value="">— Veuillez d'abord choisir une préfecture —</option>
+                              ) : (
+                                <>
+                                  <option value="">Toutes les communes ({getLocationName(selectedPrefObj, 'Préfecture')})</option>
+                                  {availableCommunes.map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {getLocationName(c, c.code || `Commune #${c.id}`)}
+                                    </option>
+                                  ))}
+                                </>
+                              )}
                             </select>
                           );
                         })()}

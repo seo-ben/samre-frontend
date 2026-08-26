@@ -1783,9 +1783,9 @@ export const UsersPage = () => {
                         <select
                           style={inputStyle}
                           value={editForm.country_id}
-                          onChange={e => setEditForm({ ...editForm, country_id: e.target.value })}
+                          onChange={e => setEditForm({ ...editForm, country_id: e.target.value, region_id: '', prefecture_id: '', commune_id: '' })}
                         >
-                          <option value="">Sélectionner...</option>
+                          <option value="">Sélectionner un pays...</option>
                           {(countries.length > 0 ? countries : staticCountries).filter(c => c.id && (c.name || c.code || (c.translations && c.translations.length > 0))).map((c, idx) => {
                             const displayName = getCountryName(c.id);
                             const displayCode = getCountryCode(c.id);
@@ -1800,46 +1800,80 @@ export const UsersPage = () => {
 
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                         <div>
-                          <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Région</span>
+                          <span style={{ fontSize: '12.3px', color: editForm.country_id ? 'var(--gray-medium)' : '#94a3b8' }}>Région</span>
                           <select
-                            style={inputStyle}
+                            style={{
+                              ...inputStyle,
+                              background: editForm.country_id ? '#fff' : '#f1f5f9',
+                              cursor: editForm.country_id ? 'pointer' : 'not-allowed',
+                              color: editForm.country_id ? 'inherit' : '#94a3b8'
+                            }}
                             value={editForm.region_id}
                             onChange={e => setEditForm({ ...editForm, region_id: e.target.value, prefecture_id: '', commune_id: '' })}
+                            disabled={!editForm.country_id}
                           >
-                            <option value="">Sélectionner...</option>
-                            {regions.map((r, idx) => (
-                              <option key={r.id || idx} value={r.id}>{r.translations?.[0]?.name || r.name || r.id}</option>
-                            ))}
+                            {!editForm.country_id ? (
+                              <option value="">— Veuillez d'abord choisir un pays —</option>
+                            ) : (
+                              <>
+                                <option value="">Sélectionner une région...</option>
+                                {regions.filter(r => String(r.country_id) === String(editForm.country_id)).map((r, idx) => (
+                                  <option key={r.id || idx} value={r.id}>{r.translations?.[0]?.name || r.name || r.id}</option>
+                                ))}
+                              </>
+                            )}
                           </select>
                         </div>
                         <div>
-                          <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Préfecture</span>
+                          <span style={{ fontSize: '12.3px', color: editForm.region_id ? 'var(--gray-medium)' : '#94a3b8' }}>Préfecture</span>
                           <select
-                            style={inputStyle}
+                            style={{
+                              ...inputStyle,
+                              background: editForm.region_id ? '#fff' : '#f1f5f9',
+                              cursor: editForm.region_id ? 'pointer' : 'not-allowed',
+                              color: editForm.region_id ? 'inherit' : '#94a3b8'
+                            }}
                             value={editForm.prefecture_id}
                             onChange={e => setEditForm({ ...editForm, prefecture_id: e.target.value, commune_id: '' })}
                             disabled={!editForm.region_id}
                           >
-                            <option value="">Sélectionner...</option>
-                            {prefectures.filter(p => String(p.region_id) === String(editForm.region_id)).map((p, idx) => (
-                              <option key={p.id || idx} value={p.id}>{p.translations?.[0]?.name || p.name || p.id}</option>
-                            ))}
+                            {!editForm.region_id ? (
+                              <option value="">— Veuillez d'abord choisir une région —</option>
+                            ) : (
+                              <>
+                                <option value="">Sélectionner une préfecture...</option>
+                                {prefectures.filter(p => String(p.region_id) === String(editForm.region_id)).map((p, idx) => (
+                                  <option key={p.id || idx} value={p.id}>{p.translations?.[0]?.name || p.name || p.id}</option>
+                                ))}
+                              </>
+                            )}
                           </select>
                         </div>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '12.3px', color: 'var(--gray-medium)' }}>Commune</span>
+                        <span style={{ fontSize: '12.3px', color: editForm.prefecture_id ? 'var(--gray-medium)' : '#94a3b8' }}>Commune</span>
                         <select
-                          style={inputStyle}
+                          style={{
+                            ...inputStyle,
+                            background: editForm.prefecture_id ? '#fff' : '#f1f5f9',
+                            cursor: editForm.prefecture_id ? 'pointer' : 'not-allowed',
+                            color: editForm.prefecture_id ? 'inherit' : '#94a3b8'
+                          }}
                           value={editForm.commune_id}
                           onChange={e => setEditForm({ ...editForm, commune_id: e.target.value })}
                           disabled={!editForm.prefecture_id}
                         >
-                          <option value="">Sélectionner...</option>
-                          {communes.filter(c => String(c.prefecture_id) === String(editForm.prefecture_id)).map((c, idx) => (
-                            <option key={c.id || idx} value={c.id}>{c.translations?.[0]?.name || c.name || c.id}</option>
-                          ))}
+                          {!editForm.prefecture_id ? (
+                            <option value="">— Veuillez d'abord choisir une préfecture —</option>
+                          ) : (
+                            <>
+                              <option value="">Sélectionner une commune...</option>
+                              {communes.filter(c => String(c.prefecture_id) === String(editForm.prefecture_id)).map((c, idx) => (
+                                <option key={c.id || idx} value={c.id}>{c.translations?.[0]?.name || c.name || c.id}</option>
+                              ))}
+                            </>
+                          )}
                         </select>
                       </div>
 
