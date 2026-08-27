@@ -721,35 +721,93 @@ export const SurveysManagementPage = () => {
             onClick={(e) => {
               if (e.target === e.currentTarget && !deleting) setSurveyToDelete(null);
             }}
-            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden animate-in fade-in duration-150"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 99999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(4px)',
+              padding: '16px'
+            }}
           >
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div 
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                maxWidth: '450px',
+                width: '100%',
+                padding: '24px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                border: '1px solid #e2e8f0'
+              }}
+              className="space-y-4"
+            >
               <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                  <AlertTriangle size={22} />
+                <div 
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '12px',
+                    backgroundColor: '#fee2e2',
+                    color: '#dc2626',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  <AlertTriangle size={24} style={{ color: '#dc2626' }} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900 font-poppins">
+                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>
                     Supprimer ce sondage ?
                   </h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                  <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', lineHeight: '1.5' }}>
                     Êtes-vous sûr de vouloir supprimer définitivement le sondage :
                   </p>
-                  <p className="text-xs font-bold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/80 mt-2 line-clamp-2">
+                  <div 
+                    style={{
+                      backgroundColor: '#f8fafc',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      marginTop: '8px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      color: '#1e293b'
+                    }}
+                    className="line-clamp-2"
+                  >
                     "{surveyToDelete.question}"
-                  </p>
-                  <p className="text-[11px] text-rose-600 font-medium mt-2">
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '600', marginTop: '8px' }}>
                     ⚠️ Cette action est irréversible et effacera tous les votes et statistiques associés.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
                 <button
                   type="button"
                   disabled={deleting}
                   onClick={() => setSurveyToDelete(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                  style={{
+                    padding: '9px 16px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
+                    color: '#334155',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                  className="hover:bg-gray-50 transition"
                 >
                   Annuler
                 </button>
@@ -757,17 +815,31 @@ export const SurveysManagementPage = () => {
                   type="button"
                   disabled={deleting}
                   onClick={confirmDeleteSurvey}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60"
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    backgroundColor: '#dc2626',
+                    color: '#ffffff',
+                    fontSize: '12px',
+                    fontWeight: '800',
+                    cursor: deleting ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 10px rgba(220, 38, 38, 0.35)'
+                  }}
+                  className="hover:opacity-90 transition cursor-pointer"
                 >
                   {deleting ? (
                     <>
-                      <RefreshCw size={13} className="animate-spin" />
-                      <span>Suppression...</span>
+                      <RefreshCw size={13} className="animate-spin text-white" />
+                      <span style={{ color: '#ffffff' }}>Suppression...</span>
                     </>
                   ) : (
                     <>
-                      <Trash2 size={14} />
-                      <span>Supprimer définitivement</span>
+                      <Trash2 size={14} style={{ color: '#ffffff' }} />
+                      <span style={{ color: '#ffffff' }}>Supprimer définitivement</span>
                     </>
                   )}
                 </button>
