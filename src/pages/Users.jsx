@@ -399,6 +399,7 @@ export const UsersPage = () => {
       form.profile_email = prof.email || '';
       form.description = prof.description || '';
       form.has_badge = !!prof.has_badge;
+      form.can_publish_international = !!prof.can_publish_international;
       form.badge_granted_at = prof.badge_granted_at ? prof.badge_granted_at.substring(0, 19).replace('T', ' ') : '';
       form.prefecture_id = prof.prefecture_id || '';
       form.region_id = form.prefecture_id ? (prefectures.find(p => String(p.id) === String(form.prefecture_id))?.region_id || '') : '';
@@ -456,6 +457,7 @@ export const UsersPage = () => {
         data.description = editForm.description || null;
         data.profile_email = editForm.profile_email || null;
         data.has_badge = editForm.has_badge ? 1 : 0;
+        data.can_publish_international = editForm.can_publish_international ? 1 : 0;
         data.badge_granted_at = editForm.badge_granted_at || null;
         data.prefecture_id = editForm.prefecture_id ? Number(editForm.prefecture_id) : null;
         data.commune_id = editForm.commune_id ? Number(editForm.commune_id) : null;
@@ -1559,6 +1561,7 @@ export const UsersPage = () => {
                         {renderField('Entreprise viable', selectedUser.companyProfile?.is_viable ? 'Oui' : 'Non')}
                         {renderField('Date de validation viabilité', safeFormatDateTime(selectedUser.companyProfile?.viable_at, '—'), '—')}
                         {renderField('Badge de vérification', selectedUser.companyProfile?.has_badge ? 'Oui' : 'Non')}
+                        {renderField('Publication offres internationales', selectedUser.companyProfile?.can_publish_international ? 'Autorisée (Oui)' : 'Non')}
                         {renderField('Date d\'attribution du badge', safeFormatDateTime(selectedUser.companyProfile?.badge_granted_at, '—'), '—')}
                         {renderField('Score de complétude', selectedUser.companyProfile?.completeness_score ? `${selectedUser.companyProfile.completeness_score}%` : '0%')}
                       </div>
@@ -2152,6 +2155,16 @@ export const UsersPage = () => {
                               }}
                             />
                             Badge SAMRE
+                          </label>
+                        </div>
+                        <div style={{ padding: '10px', background: '#f5f3ff', borderRadius: '8px', border: '1px solid #ddd6fe', display: 'flex', alignItems: 'center', gridColumn: '1 / -1' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer', margin: 0, color: '#5b21b6' }}>
+                            <input
+                              type="checkbox"
+                              checked={!!editForm.can_publish_international}
+                              onChange={e => setEditForm({ ...editForm, can_publish_international: e.target.checked })}
+                            />
+                            🌍 Autoriser la publication d'offres internationales
                           </label>
                         </div>
                       </div>
