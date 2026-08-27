@@ -5,13 +5,13 @@ import {
   Filter, Shield, ArrowRight, Send, User, Calendar, MapPin, 
   Phone, Layers, Check, AlertTriangle, MessageCircle, FileText, 
   ChevronRight, CheckCheck, Paperclip, Image as ImageIcon, Download, X,
-  Users, ChevronDown
+  Users, ChevronDown, ArrowDown
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useRealtime } from '../contexts/RealtimeContext';
 
-// Helper pour grouper les messages par date de façon élégante
+// Helper pour grouper les messages par date
 const formatMessageDate = (dateString) => {
   if (!dateString) return 'Date inconnue';
   const date = new Date(dateString);
@@ -78,9 +78,11 @@ export const ServiceExchangesManagement = () => {
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
 
-  // Scroll to bottom refs
-  const chatBottomRef = useRef(null);
-  const modalChatBottomRef = useRef(null);
+  // Refs de conteneurs de messages avec scroll
+  const modalMessagesContainerRef = useRef(null);
+  const globalMessagesContainerRef = useRef(null);
+  const lastScrolledModalConvId = useRef(null);
+  const lastScrolledGlobalConvId = useRef(null);
 
   // Toast notifications
   const [toast, setToast] = useState(null);
@@ -102,18 +104,28 @@ export const ServiceExchangesManagement = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Scroll automatique vers le bas pour afficher les derniers messages
+  // Défilement automatique vers le bas UNIQUEMENT lors de la sélection initiale d'une conversation
   useEffect(() => {
-    if (modalChatBottomRef.current) {
-      modalChatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (selectedExchangeConv?.id && selectedExchangeConv.id !== lastScrolledModalConvId.current) {
+      lastScrolledModalConvId.current = selectedExchangeConv.id;
+      setTimeout(() => {
+        if (modalMessagesContainerRef.current) {
+          modalMessagesContainerRef.current.scrollTop = modalMessagesContainerRef.current.scrollHeight;
+        }
+      }, 60);
     }
-  }, [selectedExchangeConv, exchangeConversations]);
+  }, [selectedExchangeConv?.id]);
 
   useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (selectedConversation?.id && selectedConversation.id !== lastScrolledGlobalConvId.current) {
+      lastScrolledGlobalConvId.current = selectedConversation.id;
+      setTimeout(() => {
+        if (globalMessagesContainerRef.current) {
+          globalMessagesContainerRef.current.scrollTop = globalMessagesContainerRef.current.scrollHeight;
+        }
+      }, 60);
     }
-  }, [selectedConversation, conversations]);
+  }, [selectedConversation?.id]);
 
   // Fetch exchanges list
   const fetchExchanges = useCallback(async (isSilent = false) => {
@@ -167,6 +179,7 @@ export const ServiceExchangesManagement = () => {
     setLoadingExchangeChat(true);
     setExchangeConversations([]);
     setSelectedExchangeConv(null);
+    lastScrolledModalConvId.current = null;
     setModalSearch('');
 
     try {
@@ -191,14 +204,14 @@ export const ServiceExchangesManagement = () => {
     fetchExchanges(false);
   }, [fetchExchanges]);
 
-  // Synchronisation en arrière-plan sans clignotement
+  // Synchronisation en arrière-plan sans clignotement ni perturbation du scroll
   useEffect(() => {
     if (syncCounter > 0) {
       fetchExchanges(true);
       if (activeTab === 'conversations') {
         fetchConversations(true);
       }
-      // Actualiser le chat en cours si modal ouvert
+      // Actualiser les conversations en arrière-plan sans forcer le scroll
       if (exchangeChatModal) {
         apiClient.get(`/v1/admin/service-exchanges/conversations?exchange_id=${exchangeChatModal.id}`)
           .then(res => {
@@ -207,7 +220,12 @@ export const ServiceExchangesManagement = () => {
               setExchangeConversations(list);
               if (selectedExchangeConv) {
                 const updated = list.find(c => c.id === selectedExchangeConv.id);
-                if (updated) setSelectedExchangeConv(updated);
+                if (updated) {
+                  // Mettre à jour les messages uniquement si de nouveaux messages sont arrivés
+                  if (updated.messages?.length !== selectedExchangeConv.messages?.length) {
+                    setSelectedExchangeConv(updated);
+                  }
+                }
               }
             }
           })
@@ -244,10 +262,19 @@ export const ServiceExchangesManagement = () => {
     return name.toLowerCase().includes(modalSearch.toLowerCase());
   });
 
-  // Trier les messages du plus ancien au plus récent (Oldest at TOP -> Newest at BOTTOM)
+  // Trier les messages du plus ancien au plus récent (Haut = Ancien, Bas = Nouveau)
   const getSortedMessages = (messagesList) => {
     if (!messagesList || !Array.isArray(messagesList)) return [];
     return [...messagesList].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  };
+
+  const scrollToBottomModal = () => {
+    if (modalMessagesContainerRef.current) {
+      modalMessagesContainerRef.current.scrollTo({
+        top: modalMessagesContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   };
 
   return (
@@ -497,7 +524,7 @@ export const ServiceExchangesManagement = () => {
                             </div>
                           </td>
 
-                          {/* 3. Discussions (Cliquable pour ouvrir directement les discussions complètes) */}
+                          {/* 3. Discussions */}
                           <td className="px-5 py-4">
                             <button
                               onClick={() => handleOpenExchangeDiscussions(item)}
@@ -565,13 +592,13 @@ export const ServiceExchangesManagement = () => {
           </div>
         )}
 
-        {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS (PRO CHAT VIEW) */}
+        {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS */}
         {activeTab === 'conversations' && (
           <div className="bg-white rounded-b-xl border border-slate-200 border-t-0 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-12 h-[680px] min-h-[500px]">
+            <div className="flex flex-col lg:flex-row h-[680px] min-h-[500px]">
               
-              {/* Left sidebar: Conversations list */}
-              <div className="lg:col-span-4 border-r border-slate-200 flex flex-col min-h-0 h-full bg-slate-50/50">
+              {/* Left sidebar */}
+              <div className="w-full lg:w-80 border-r border-slate-200 flex flex-col min-h-0 h-full bg-slate-50/50 shrink-0">
                 <div className="shrink-0 p-3 border-b border-slate-200/80 bg-white">
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -650,8 +677,8 @@ export const ServiceExchangesManagement = () => {
                 </div>
               </div>
 
-              {/* Right panel: Full Pro Chat Viewer */}
-              <div className="lg:col-span-8 flex flex-col min-h-0 h-full justify-between bg-[#F8FAFC]">
+              {/* Right panel: Full Chat */}
+              <div className="flex-1 min-w-0 flex flex-col min-h-0 h-full bg-[#F8FAFC]">
                 {selectedConversation ? (
                   <>
                     {/* Header */}
@@ -684,8 +711,12 @@ export const ServiceExchangesManagement = () => {
                       </div>
                     </div>
 
-                    {/* Messages bubbles (Scrollable from Oldest at top to Newest at bottom) */}
-                    <div className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-4">
+                    {/* Messages Container */}
+                    <div 
+                      ref={globalMessagesContainerRef}
+                      className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-5"
+                      style={{ overscrollBehavior: 'contain' }}
+                    >
                       {(!selectedConversation.messages || selectedConversation.messages.length === 0) ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                           <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
@@ -698,7 +729,6 @@ export const ServiceExchangesManagement = () => {
                           const recipientName = selectedConversation.recipient_user?.company_profile?.company_name || selectedConversation.recipient_user?.name || 'Annonceur';
                           const senderDisplayName = isCreator ? creatorName : recipientName;
 
-                          // Groupement de date élégant façon Dribbble
                           const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(arr[index - 1].created_at);
 
                           return (
@@ -714,7 +744,6 @@ export const ServiceExchangesManagement = () => {
                               )}
 
                               {isCreator ? (
-                                /* Incoming Message (Left) */
                                 <div className="flex items-start gap-3 justify-start max-w-[82%]">
                                   <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
                                     {creatorName.charAt(0).toUpperCase()}
@@ -725,7 +754,6 @@ export const ServiceExchangesManagement = () => {
                                       <span className="text-[10px] text-slate-400 font-medium">{formatMessageTime(msg.created_at)}</span>
                                     </div>
                                     <div className="bg-white text-slate-800 text-[13px] leading-relaxed p-3.5 rounded-2xl rounded-tl-sm border border-slate-200/70 shadow-xs whitespace-pre-wrap select-text">
-                                      {/* Attachment if present */}
                                       {msg.attachment_url && (
                                         <div className="mb-2">
                                           {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
@@ -758,7 +786,6 @@ export const ServiceExchangesManagement = () => {
                                   </div>
                                 </div>
                               ) : (
-                                /* Outgoing Message (Right) */
                                 <div className="flex items-start gap-3 justify-end ml-auto max-w-[82%]">
                                   <div className="flex-1 min-w-0 flex flex-col items-end">
                                     <div className="flex items-center justify-end gap-2 mb-1">
@@ -766,7 +793,6 @@ export const ServiceExchangesManagement = () => {
                                       <span className="text-xs font-bold text-blue-700">{senderDisplayName}</span>
                                     </div>
                                     <div className="bg-blue-600 text-white text-[13px] leading-relaxed p-3.5 rounded-2xl rounded-tr-sm shadow-xs whitespace-pre-wrap select-text">
-                                      {/* Attachment if present */}
                                       {msg.attachment_url && (
                                         <div className="mb-2">
                                           {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
@@ -810,7 +836,6 @@ export const ServiceExchangesManagement = () => {
                           );
                         })
                       )}
-                      <div ref={chatBottomRef} />
                     </div>
 
                     {/* Bottom Bar */}
@@ -836,7 +861,7 @@ export const ServiceExchangesManagement = () => {
           </div>
         )}
 
-        {/* MODAL PRO : DISCUSSIONS COMPLÈTES (DESIGN DRIBBLE / MODERN CHAT STYLE) */}
+        {/* MODAL PRO : DISCUSSIONS COMPLÈTES DE PARTENARIAT */}
         {exchangeChatModal && (
           <div 
             onClick={(e) => {
@@ -844,9 +869,12 @@ export const ServiceExchangesManagement = () => {
             }}
             className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden"
           >
-            <div className="bg-white rounded-3xl max-w-4xl w-full h-[650px] max-h-[88vh] min-h-[500px] flex flex-col shadow-2xl overflow-hidden border border-slate-200/80 relative animate-in fade-in zoom-in-95 duration-200">
+            <div 
+              className="bg-white rounded-3xl max-w-4xl w-full flex flex-col shadow-2xl overflow-hidden border border-slate-200/80 relative animate-in fade-in zoom-in-95 duration-200"
+              style={{ height: '650px', maxHeight: '88vh' }}
+            >
               
-              {/* 1. Modal Header (Pinned at Top) */}
+              {/* 1. Modal Header (Pinned Top) */}
               <div className="shrink-0 px-6 py-3.5 bg-white border-b border-slate-100 flex items-center justify-between select-none">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
@@ -905,10 +933,10 @@ export const ServiceExchangesManagement = () => {
               </div>
 
               {/* 3. Main Split Body */}
-              <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
+              <div className="flex-1 min-h-0 flex flex-row overflow-hidden">
                 
-                {/* Left: Candidates list (Only if multiple or toggleable) */}
-                <div className="md:col-span-4 border-r border-slate-100 flex flex-col min-h-0 h-full bg-slate-50/40">
+                {/* Left: Candidates list */}
+                <div className="w-72 sm:w-80 border-r border-slate-100 flex flex-col min-h-0 h-full bg-slate-50/40 shrink-0">
                   <div className="shrink-0 p-3 border-b border-slate-100 bg-white">
                     <div className="relative">
                       <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -982,12 +1010,16 @@ export const ServiceExchangesManagement = () => {
                   </div>
                 </div>
 
-                {/* Right: Modern Chat Body */}
-                <div className="md:col-span-8 flex flex-col min-h-0 h-full justify-between bg-[#F8FAFC]">
+                {/* Right: Modern Chat Body with guaranteed inner scroll */}
+                <div className="flex-1 min-w-0 flex flex-col min-h-0 h-full bg-[#F8FAFC] relative">
                   {selectedExchangeConv ? (
                     <>
                       {/* Messages Thread: Chronological Order (Oldest at top -> Newest at bottom) */}
-                      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-5">
+                      <div 
+                        ref={modalMessagesContainerRef}
+                        className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-5"
+                        style={{ overscrollBehavior: 'contain' }}
+                      >
                         {(!selectedExchangeConv.messages || selectedExchangeConv.messages.length === 0) ? (
                           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                             <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
@@ -1112,8 +1144,17 @@ export const ServiceExchangesManagement = () => {
                             );
                           })
                         )}
-                        <div ref={modalChatBottomRef} />
                       </div>
+
+                      {/* Scroll to bottom quick button */}
+                      <button
+                        onClick={scrollToBottomModal}
+                        className="absolute bottom-16 right-6 p-2 bg-white/90 hover:bg-white text-slate-700 hover:text-blue-600 rounded-full shadow-md border border-slate-200/80 transition-all opacity-80 hover:opacity-100 flex items-center gap-1 text-[11px] font-semibold"
+                        title="Aller tout en bas aux derniers messages"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Derniers messages</span>
+                      </button>
 
                       {/* 4. Bottom Footer (Pinned) */}
                       <div className="shrink-0 px-6 py-3 bg-white border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 shadow-xs">
