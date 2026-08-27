@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Building2, CheckCircle2, XCircle, ShieldCheck, AlertCircle, 
-  Search, ExternalLink, RefreshCw, FileText, Phone, Mail, MapPin, Eye
+  Search, ExternalLink, RefreshCw, FileText, Phone, Mail, MapPin, Eye, Globe
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 
@@ -46,6 +46,26 @@ export function CompanyManagement() {
     }
   };
 
+  const toggleInternational = async (companyId, currentStatus) => {
+    setActionLoading(true);
+    try {
+      await apiClient.post(`/v1/admin/companies/${companyId}/toggle-international`, {
+        can_publish_international: !currentStatus,
+      });
+      setToastMessage({ 
+        type: 'success', 
+        text: !currentStatus 
+          ? 'Autorisation de publication internationale accordée !' 
+          : 'Autorisation de publication internationale retirée.' 
+      });
+      fetchCompanies();
+    } catch (err) {
+      setToastMessage({ type: 'error', text: 'Erreur lors de la mise à jour de l\'autorisation internationale.' });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const filteredCompanies = companies.filter(c => 
     c.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.sector?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -55,11 +75,11 @@ export function CompanyManagement() {
   return (
     <div className="p-6 space-y-6 bg-slate-900 min-h-screen text-slate-100">
       {toastMessage && (
-        <div className={`p-4 rounded-xl text-white font-medium flex justify-between items-center ${
+        <div className={`p-4 rounded-xl text-white font-medium flex justify-between items-center shadow-lg ${
           toastMessage.type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'
         }`}>
           <span>{toastMessage.text}</span>
-          <button onClick={() => setToastMessage(null)} className="text-white/80 hover:text-white">✕</button>
+          <button onClick={() => setToastMessage(null)} className="text-white/80 hover:text-white ml-4">✕</button>
         </div>
       )}
 
@@ -72,7 +92,7 @@ export function CompanyManagement() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">Gestion & Viabilité des Entreprises</h1>
-              <p className="text-slate-400 text-sm">Contrôle des dossiers d'immatriculation (RCCM/NIF), crédibilité et badges entreprise.</p>
+              <p className="text-slate-400 text-sm">Contrôle des dossiers d'immatriculation (RCCM/NIF), viabilité et autorisation des offres internationales.</p>
             </div>
           </div>
         </div>
@@ -98,24 +118,14 @@ export function CompanyManagement() {
             className="w-full pl-10 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 text-sm"
           />
         </div>
-        <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 flex items-center justify-between">
-          <span className="text-slate-400 text-sm">Total Entreprises</span>
-          <span className="text-xl font-bold text-white">{companies.length}</span>
-        </div>
-        <div className="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50 flex items-center justify-between">
-          <span className="text-slate-400 text-sm">Entreprises Viables</span>
-          <span className="text-xl font-bold text-emerald-400">
-            {companies.filter(c => c.is_viable).length}
-          </span>
-        </div>
       </div>
 
-      {/* Main Table */}
+      {/* Table Content */}
       <div className="bg-slate-800/80 rounded-2xl border border-slate-700/50 overflow-hidden backdrop-blur-xl">
         {loading ? (
-          <div className="p-12 text-center text-slate-400 flex flex-col items-center gap-3">
-            <RefreshCw className="w-8 h-8 animate-spin text-blue-400" />
-            <span>Chargement des entreprises...</span>
+          <div className="p-12 flex flex-col items-center justify-center text-slate-400">
+            <RefreshCw className="w-8 h-8 animate-spin text-blue-400 mb-2" />
+            <p>Chargement des entreprises...</p>
           </div>
         ) : filteredCompanies.length === 0 ? (
           <div className="p-12 text-center text-slate-400">
@@ -131,7 +141,8 @@ export function CompanyManagement() {
                   <th className="p-4">Localisation</th>
                   <th className="p-4">Immatriculation (RCCM/NIF)</th>
                   <th className="p-4 text-center">Score Complétude</th>
-                  <th className="p-4 text-center">Viabilité / Crédibilité</th>
+                  <th className="p-4 text-center">Offres Internationales</th>
+                  <th className="p-4 text-center">Viabilité</th>
                   <th className="p-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -175,6 +186,21 @@ export function CompanyManagement() {
                       }`}>
                         {comp.completeness_score || 0}%
                       </span>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => toggleInternational(comp.id, comp.can_publish_international)}
+                        disabled={actionLoading}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 mx-auto transition ${
+                          comp.can_publish_international
+                            ? 'bg-purple-500/20 text-purple-300 hover:bg-rose-500/20 hover:text-rose-300 border border-purple-500/40'
+                            : 'bg-slate-700 text-slate-400 hover:bg-purple-500/20 hover:text-purple-300 border border-slate-600'
+                        }`}
+                        title={comp.can_publish_international ? "Cliquer pour révoquer l'autorisation internationale" : "Cliquer pour accorder l'autorisation de publication internationale"}
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>{comp.can_publish_international ? '🌍 Autorisée' : '🔒 Restreinte'}</span>
+                      </button>
                     </td>
                     <td className="p-4 text-center">
                       <button
@@ -259,6 +285,27 @@ export function CompanyManagement() {
                   <span className="text-slate-400 text-xs block">Taille (Employés)</span>
                   <span className="text-slate-200">{selectedCompany.employee_count_range || 'Non spécifié'}</span>
                 </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/40 rounded-xl border border-slate-700/50 flex items-center justify-between">
+                <div>
+                  <span className="text-white font-semibold block text-sm">Publication d'offres internationales</span>
+                  <span className="text-xs text-slate-400">Autorise l'entreprise à poster des offres de stage/emploi à l'étranger ou en télétravail international.</span>
+                </div>
+                <button
+                  onClick={() => {
+                    toggleInternational(selectedCompany.id, selectedCompany.can_publish_international);
+                    setSelectedCompany({ ...selectedCompany, can_publish_international: !selectedCompany.can_publish_international });
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                    selectedCompany.can_publish_international
+                      ? 'bg-purple-600 text-white hover:bg-purple-700'
+                      : 'bg-slate-700 text-slate-300 hover:bg-purple-600 hover:text-white'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  {selectedCompany.can_publish_international ? 'Autorisée' : 'Désactivée'}
+                </button>
               </div>
             </div>
 
