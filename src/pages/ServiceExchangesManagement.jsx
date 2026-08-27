@@ -4,13 +4,14 @@ import {
   CheckCircle2, XCircle, Clock, Trash2, Eye, ExternalLink, 
   Filter, Shield, ArrowRight, Send, User, Calendar, MapPin, 
   Phone, Layers, Check, AlertTriangle, MessageCircle, FileText, 
-  ChevronRight, CheckCheck, Paperclip, Image as ImageIcon, Download, X
+  ChevronRight, CheckCheck, Paperclip, Image as ImageIcon, Download, X,
+  Users, ChevronDown
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useRealtime } from '../contexts/RealtimeContext';
 
-// Helper pour grouper les messages par date façon WhatsApp
+// Helper pour grouper les messages par date de façon élégante
 const formatMessageDate = (dateString) => {
   if (!dateString) return 'Date inconnue';
   const date = new Date(dateString);
@@ -64,7 +65,7 @@ export const ServiceExchangesManagement = () => {
   // Selected Exchange Modal (Détails de l'offre)
   const [selectedExchange, setSelectedExchange] = useState(null);
 
-  // Modal des discussions spécifiques à un partenariat (WhatsApp style)
+  // Modal des discussions spécifiques à un partenariat (Modern Chat UI)
   const [exchangeChatModal, setExchangeChatModal] = useState(null);
   const [exchangeConversations, setExchangeConversations] = useState([]);
   const [selectedExchangeConv, setSelectedExchangeConv] = useState(null);
@@ -101,7 +102,7 @@ export const ServiceExchangesManagement = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Scroll automatique en bas de discussion
+  // Scroll automatique vers le bas pour afficher les derniers messages
   useEffect(() => {
     if (modalChatBottomRef.current) {
       modalChatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -243,6 +244,12 @@ export const ServiceExchangesManagement = () => {
     return name.toLowerCase().includes(modalSearch.toLowerCase());
   });
 
+  // Trier les messages du plus ancien au plus récent (Oldest at TOP -> Newest at BOTTOM)
+  const getSortedMessages = (messagesList) => {
+    if (!messagesList || !Array.isArray(messagesList)) return [];
+    return [...messagesList].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6 pb-12">
@@ -258,7 +265,7 @@ export const ServiceExchangesManagement = () => {
               </h1>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              Gérez les opportunités de partenariats de services et supervisez l'intégralité des discussions et négociations inter-entreprises en temps réel.
+              Gérez les opportunités de partenariats et supervisez l'intégralité des échanges et négociations inter-entreprises en direct.
             </p>
           </div>
 
@@ -496,12 +503,12 @@ export const ServiceExchangesManagement = () => {
                               onClick={() => handleOpenExchangeDiscussions(item)}
                               className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
                                 convCount > 0
-                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 shadow-sm'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 shadow-sm'
                                   : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                               }`}
-                              title="Voir l'intégralité des discussions WhatsApp faites autour de ce partenariat"
+                              title="Superviser les discussions complètes"
                             >
-                              <MessageSquare className={`w-3.5 h-3.5 ${convCount > 0 ? 'text-emerald-600' : 'text-slate-400'}`} />
+                              <MessageSquare className={`w-3.5 h-3.5 ${convCount > 0 ? 'text-blue-600' : 'text-slate-400'}`} />
                               <span>{convCount} discussion{convCount > 1 ? 's' : ''}</span>
                               <ChevronRight className="w-3.5 h-3.5 ml-0.5 opacity-60" />
                             </button>
@@ -526,10 +533,10 @@ export const ServiceExchangesManagement = () => {
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => handleOpenExchangeDiscussions(item)}
-                                className="px-2.5 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg flex items-center gap-1 border border-emerald-200 transition-colors"
-                                title="Voir les discussions complètes (WhatsApp)"
+                                className="px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center gap-1 border border-blue-200 transition-colors"
+                                title="Voir les discussions complètes"
                               >
-                                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                                <MessageCircle className="w-3.5 h-3.5 text-blue-600" />
                                 <span className="hidden sm:inline">Discussions</span>
                               </button>
                               <button
@@ -558,14 +565,14 @@ export const ServiceExchangesManagement = () => {
           </div>
         )}
 
-        {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS (WHATSAPP WEB STYLE) */}
+        {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS (PRO CHAT VIEW) */}
         {activeTab === 'conversations' && (
           <div className="bg-white rounded-b-xl border border-slate-200 border-t-0 shadow-sm overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-12 h-[680px] min-h-[500px]">
               
               {/* Left sidebar: Conversations list */}
-              <div className="lg:col-span-4 border-r border-slate-200 flex flex-col min-h-0 h-full bg-white">
-                <div className="shrink-0 p-3 border-b border-slate-100 bg-slate-50/75">
+              <div className="lg:col-span-4 border-r border-slate-200 flex flex-col min-h-0 h-full bg-slate-50/50">
+                <div className="shrink-0 p-3 border-b border-slate-200/80 bg-white">
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                     <input
@@ -573,7 +580,7 @@ export const ServiceExchangesManagement = () => {
                       placeholder="Rechercher une discussion..."
                       value={companySearch}
                       onChange={(e) => setCompanySearch(e.target.value)}
-                      className="w-full pl-9 pr-4 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="w-full pl-9 pr-4 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                     />
                   </div>
                 </div>
@@ -581,7 +588,7 @@ export const ServiceExchangesManagement = () => {
                 <div className="flex-1 min-h-0 divide-y divide-slate-100 overflow-y-auto">
                   {loadingConversations ? (
                     <div className="text-center py-12 text-slate-400 text-sm">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-500" />
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-500" />
                       Chargement des conversations...
                     </div>
                   ) : conversations.length === 0 ? (
@@ -603,17 +610,17 @@ export const ServiceExchangesManagement = () => {
                           onClick={() => setSelectedConversation(conv)}
                           className={`p-3.5 cursor-pointer transition-all flex items-start gap-3 ${
                             isSelected
-                              ? 'bg-[#f0f2f5] border-l-4 border-emerald-600'
-                              : 'bg-white hover:bg-slate-50'
+                              ? 'bg-white shadow-sm border-l-4 border-blue-600'
+                              : 'hover:bg-slate-100/70'
                           }`}
                         >
-                          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
                             {creatorName.charAt(0).toUpperCase()}
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-1">
-                              <span className="font-semibold text-slate-900 text-xs truncate">
+                              <span className="font-bold text-slate-900 text-xs truncate">
                                 {creatorName} ↔ {recipientName}
                               </span>
                               {lastTime && (
@@ -623,7 +630,7 @@ export const ServiceExchangesManagement = () => {
                               )}
                             </div>
 
-                            <p className="text-[11px] text-emerald-700 font-medium mt-0.5 truncate">
+                            <p className="text-[11px] text-blue-600 font-medium mt-0.5 truncate">
                               🏷️ {exchangeTitle}
                             </p>
 
@@ -631,7 +638,7 @@ export const ServiceExchangesManagement = () => {
                               <p className="text-xs text-slate-500 line-clamp-1 italic">
                                 {lastMsg ? lastMsg.message : 'Aucun message'}
                               </p>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold shrink-0 ml-1">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-bold shrink-0 ml-1">
                                 {conv.messages?.length || 0}
                               </span>
                             </div>
@@ -643,18 +650,14 @@ export const ServiceExchangesManagement = () => {
                 </div>
               </div>
 
-              {/* Right panel: Full WhatsApp Thread Viewer */}
-              <div className="lg:col-span-8 flex flex-col min-h-0 h-full justify-between" style={{
-                backgroundColor: '#efeae2',
-                backgroundImage: 'radial-gradient(#d1d7db 0.85px, transparent 0.85px)',
-                backgroundSize: '18px 18px',
-              }}>
+              {/* Right panel: Full Pro Chat Viewer */}
+              <div className="lg:col-span-8 flex flex-col min-h-0 h-full justify-between bg-[#F8FAFC]">
                 {selectedConversation ? (
                   <>
-                    {/* WhatsApp Top Header */}
-                    <div className="shrink-0 p-3.5 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                    {/* Header */}
+                    <div className="shrink-0 px-6 py-3.5 bg-white border-b border-slate-200 shadow-xs flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs">
                           {(selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name || 'C').charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -667,105 +670,142 @@ export const ServiceExchangesManagement = () => {
                               {selectedConversation.recipient_user?.company_profile?.company_name || selectedConversation.recipient_user?.name}
                             </span>
                           </div>
-                          <p className="text-xs text-emerald-700 font-medium mt-0.5">
-                            Partenariat : <span className="text-slate-800">{selectedConversation.service_exchange?.title}</span>
+                          <p className="text-xs text-blue-600 font-medium mt-0.5">
+                            Partenariat : <span className="text-slate-700 font-semibold">{selectedConversation.service_exchange?.title}</span>
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full flex items-center gap-1">
+                        <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                           Supervision Active
                         </span>
                       </div>
                     </div>
 
-                    {/* Messages bubbles (WhatsApp Left / Right) */}
-                    <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4">
+                    {/* Messages bubbles (Scrollable from Oldest at top to Newest at bottom) */}
+                    <div className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-4">
                       {(!selectedConversation.messages || selectedConversation.messages.length === 0) ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                           <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
                           <p className="text-xs font-medium">Aucun message échangé dans cette discussion.</p>
                         </div>
                       ) : (
-                        selectedConversation.messages.map((msg, index) => {
+                        getSortedMessages(selectedConversation.messages).map((msg, index, arr) => {
                           const isCreator = msg.sender_id === selectedConversation.creator_user_id;
                           const creatorName = selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name || 'Candidat';
                           const recipientName = selectedConversation.recipient_user?.company_profile?.company_name || selectedConversation.recipient_user?.name || 'Annonceur';
                           const senderDisplayName = isCreator ? creatorName : recipientName;
 
-                          // Groupement de date
-                          const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(selectedConversation.messages[index - 1].created_at);
+                          // Groupement de date élégant façon Dribbble
+                          const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(arr[index - 1].created_at);
 
                           return (
                             <React.Fragment key={msg.id}>
                               {showDate && (
-                                <div className="flex justify-center my-3 sticky top-1 z-10">
-                                  <span className="bg-white/90 backdrop-blur text-slate-600 text-[11px] font-semibold px-3 py-1 rounded-full shadow-sm border border-slate-200/80">
+                                <div className="relative flex py-2 items-center justify-center my-2">
+                                  <div className="flex-grow border-t border-slate-200/80"></div>
+                                  <span className="flex-shrink mx-4 text-[11px] font-semibold text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200/80 shadow-xs">
                                     {formatMessageDate(msg.created_at)}
                                   </span>
+                                  <div className="flex-grow border-t border-slate-200/80"></div>
                                 </div>
                               )}
 
-                              <div className={`flex ${isCreator ? 'justify-start' : 'justify-end'} mb-2`}>
-                                <div className={`relative max-w-[78%] px-4 py-2.5 shadow-sm ${
-                                  isCreator
-                                    ? 'bg-white text-slate-900 rounded-2xl rounded-tl-none border border-slate-200/70'
-                                    : 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-none border border-[#bbf7d0]'
-                                }`}>
-                                  {/* Sender Label */}
-                                  <div className={`text-[11px] font-bold mb-1 ${
-                                    isCreator ? 'text-blue-700' : 'text-emerald-800'
-                                  }`}>
-                                    {senderDisplayName}
+                              {isCreator ? (
+                                /* Incoming Message (Left) */
+                                <div className="flex items-start gap-3 justify-start max-w-[82%]">
+                                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                    {creatorName.charAt(0).toUpperCase()}
                                   </div>
-
-                                  {/* Attachment if present */}
-                                  {msg.attachment_url && (
-                                    <div className="mb-2">
-                                      {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
-                                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
-                                          <img 
-                                            src={msg.attachment_url} 
-                                            alt={msg.attachment_name || 'Pièce jointe'} 
-                                            className="rounded-lg max-h-48 w-full object-cover border border-black/10 hover:opacity-95"
-                                          />
-                                        </a>
-                                      ) : (
-                                        <a 
-                                          href={msg.attachment_url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-2 p-2 bg-black/5 hover:bg-black/10 rounded-lg border border-black/5 transition-colors"
-                                        >
-                                          <FileText className="w-5 h-5 text-emerald-700 shrink-0" />
-                                          <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-slate-800 truncate">{msg.attachment_name || 'Document joint'}</p>
-                                            <span className="text-[10px] text-slate-500">Télécharger</span>
-                                          </div>
-                                          <Download className="w-4 h-4 text-slate-500" />
-                                        </a>
-                                      )}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-bold text-slate-900">{senderDisplayName}</span>
+                                      <span className="text-[10px] text-slate-400 font-medium">{formatMessageTime(msg.created_at)}</span>
                                     </div>
-                                  )}
-
-                                  {/* Message Text */}
-                                  <p className="text-[13px] leading-relaxed whitespace-pre-wrap select-text">
-                                    {msg.message}
-                                  </p>
-
-                                  {/* Bottom Timestamp & Checks */}
-                                  <div className="flex items-center justify-end gap-1 mt-1">
-                                    <span className="text-[10px] text-slate-400 font-medium">
-                                      {formatMessageTime(msg.created_at)}
-                                    </span>
-                                    {!isCreator && (
-                                      <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />
-                                    )}
+                                    <div className="bg-white text-slate-800 text-[13px] leading-relaxed p-3.5 rounded-2xl rounded-tl-sm border border-slate-200/70 shadow-xs whitespace-pre-wrap select-text">
+                                      {/* Attachment if present */}
+                                      {msg.attachment_url && (
+                                        <div className="mb-2">
+                                          {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                            <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                              <img 
+                                                src={msg.attachment_url} 
+                                                alt={msg.attachment_name || 'Pièce jointe'} 
+                                                className="rounded-xl max-h-48 w-full object-cover border border-slate-200 hover:opacity-95"
+                                              />
+                                            </a>
+                                          ) : (
+                                            <a 
+                                              href={msg.attachment_url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-2.5 p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                                            >
+                                              <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                                              <div className="min-w-0 flex-1">
+                                                <p className="text-xs font-semibold text-slate-800 truncate">{msg.attachment_name || 'Document joint'}</p>
+                                                <span className="text-[10px] text-slate-400">Cliquer pour ouvrir</span>
+                                              </div>
+                                              <Download className="w-4 h-4 text-slate-400" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      )}
+                                      <p>{msg.message}</p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
+                              ) : (
+                                /* Outgoing Message (Right) */
+                                <div className="flex items-start gap-3 justify-end ml-auto max-w-[82%]">
+                                  <div className="flex-1 min-w-0 flex flex-col items-end">
+                                    <div className="flex items-center justify-end gap-2 mb-1">
+                                      <span className="text-[10px] text-slate-400 font-medium">{formatMessageTime(msg.created_at)}</span>
+                                      <span className="text-xs font-bold text-blue-700">{senderDisplayName}</span>
+                                    </div>
+                                    <div className="bg-blue-600 text-white text-[13px] leading-relaxed p-3.5 rounded-2xl rounded-tr-sm shadow-xs whitespace-pre-wrap select-text">
+                                      {/* Attachment if present */}
+                                      {msg.attachment_url && (
+                                        <div className="mb-2">
+                                          {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                            <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                              <img 
+                                                src={msg.attachment_url} 
+                                                alt={msg.attachment_name || 'Pièce jointe'} 
+                                                className="rounded-xl max-h-48 w-full object-cover border border-white/20 hover:opacity-95"
+                                              />
+                                            </a>
+                                          ) : (
+                                            <a 
+                                              href={msg.attachment_url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="flex items-center gap-2.5 p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-colors"
+                                            >
+                                              <FileText className="w-5 h-5 text-white shrink-0" />
+                                              <div className="min-w-0 flex-1">
+                                                <p className="text-xs font-semibold text-white truncate">{msg.attachment_name || 'Document joint'}</p>
+                                                <span className="text-[10px] text-blue-100">Cliquer pour ouvrir</span>
+                                              </div>
+                                              <Download className="w-4 h-4 text-white" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      )}
+                                      <p>{msg.message}</p>
+                                      <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-blue-200">
+                                        <CheckCheck className="w-3.5 h-3.5" />
+                                        <span>Lu</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                    {recipientName.charAt(0).toUpperCase()}
+                                  </div>
+                                </div>
+                              )}
                             </React.Fragment>
                           );
                         })
@@ -773,13 +813,13 @@ export const ServiceExchangesManagement = () => {
                       <div ref={chatBottomRef} />
                     </div>
 
-                    {/* WhatsApp Bottom Bar (Supervision notice) */}
-                    <div className="shrink-0 p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
+                    {/* Bottom Bar */}
+                    <div className="shrink-0 px-6 py-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-xs">
                       <div className="flex items-center gap-2 text-slate-500">
-                        <Shield className="w-4 h-4 text-emerald-600" />
-                        <span>Mode supervision administrateur (Lecture seule des messages en direct)</span>
+                        <Shield className="w-4 h-4 text-blue-600" />
+                        <span>Mode supervision administrateur en direct (Lecture seule)</span>
                       </div>
-                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                      <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
                         {selectedConversation.messages?.length || 0} messages échangés
                       </span>
                     </div>
@@ -796,67 +836,80 @@ export const ServiceExchangesManagement = () => {
           </div>
         )}
 
-        {/* MODAL : DISCUSSIONS COMPLÈTES STYLE VRAI CHAT WHATSAPP (GAUCHE / DROITE) */}
+        {/* MODAL PRO : DISCUSSIONS COMPLÈTES (DESIGN DRIBBLE / MODERN CHAT STYLE) */}
         {exchangeChatModal && (
           <div 
             onClick={(e) => {
               if (e.target === e.currentTarget) setExchangeChatModal(null);
             }}
-            className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden"
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-hidden"
           >
-            <div className="bg-white rounded-2xl max-w-5xl w-full h-[88vh] max-h-[88vh] min-h-[500px] flex flex-col shadow-2xl overflow-hidden border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl max-w-4xl w-full h-[650px] max-h-[88vh] min-h-[500px] flex flex-col shadow-2xl overflow-hidden border border-slate-200/80 relative animate-in fade-in zoom-in-95 duration-200">
               
-              {/* WhatsApp Modal Header (Always pinned at top with shrink-0) */}
-              <div className="shrink-0 p-4 bg-emerald-800 text-white flex items-center justify-between shadow-md select-none">
+              {/* 1. Modal Header (Pinned at Top) */}
+              <div className="shrink-0 px-6 py-3.5 bg-white border-b border-slate-100 flex items-center justify-between select-none">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center font-bold text-base shadow-sm">
-                    {(exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name || 'P').charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                    {(selectedExchangeConv?.creator_user?.company_profile?.company_name || selectedExchangeConv?.creator_user?.name || exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name || 'P').charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-base text-white">
-                        Discussions WhatsApp du Partenariat
+                      <h3 className="font-bold text-base text-slate-900">
+                        {selectedExchangeConv?.creator_user?.company_profile?.company_name || selectedExchangeConv?.creator_user?.name || 'Discussion Partenariat'}
                       </h3>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
-                        Annonceur : {exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name}
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Partenaire B2B
                       </span>
                     </div>
-                    <p className="text-xs text-emerald-100 mt-0.5 line-clamp-1 font-medium">
-                      Offre : <strong className="text-white">{exchangeChatModal.title}</strong>
+                    <p className="text-xs text-slate-500 mt-0.5 line-clamp-1 font-medium">
+                      Offre : <strong className="text-slate-800">{exchangeChatModal.title}</strong>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  {/* Phone contact if available */}
+                  {(selectedExchangeConv?.creator_user?.phone || selectedExchangeConv?.creator_user?.company_profile?.phone) && (
+                    <a 
+                      href={`tel:${selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone}`}
+                      className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-200 transition-colors"
+                      title="Contacter par téléphone"
+                    >
+                      <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone}</span>
+                    </a>
+                  )}
+
+                  {/* Clean Close Button */}
                   <button
                     onClick={() => setExchangeChatModal(null)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 rounded-lg border border-white/20 transition-all shadow-sm"
-                    title="Fermer la fenêtre (ou appuyez sur Échap)"
+                    className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors shadow-xs"
+                    title="Fermer la discussion (ou touche Échap)"
                   >
-                    <X className="w-4 h-4" />
-                    <span>Fermer</span>
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
 
-              {/* Offer & Need Compact Banner (shrink-0) */}
-              <div className="shrink-0 bg-emerald-50/90 border-b border-emerald-200/80 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div className="bg-white/80 p-2 rounded-lg border border-emerald-200/60 flex items-start gap-2">
-                  <span className="font-bold text-emerald-950 shrink-0">🟢 Offre :</span>
-                  <span className="text-emerald-900 line-clamp-1">{exchangeChatModal.offer}</span>
+              {/* 2. Context Deal Bar (Pinned) */}
+              <div className="shrink-0 px-6 py-2.5 bg-slate-50/80 border-b border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="flex items-center gap-2 truncate">
+                  <span className="font-bold text-emerald-700 shrink-0">🟢 Offre :</span>
+                  <span className="text-slate-700 truncate">{exchangeChatModal.offer}</span>
                 </div>
-                <div className="bg-white/80 p-2 rounded-lg border border-blue-200/60 flex items-start gap-2">
-                  <span className="font-bold text-blue-950 shrink-0">🔵 Besoin :</span>
-                  <span className="text-blue-900 line-clamp-1">{exchangeChatModal.need}</span>
+                <div className="flex items-center gap-2 truncate">
+                  <span className="font-bold text-blue-700 shrink-0">🔵 Besoin :</span>
+                  <span className="text-slate-700 truncate">{exchangeChatModal.need}</span>
                 </div>
               </div>
 
-              {/* Content Body: WhatsApp Split View with Strict Heights */}
+              {/* 3. Main Split Body */}
               <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
                 
-                {/* Left: Candidates List (WhatsApp Chat List Style) */}
-                <div className="md:col-span-4 border-r border-slate-200 flex flex-col min-h-0 h-full bg-white">
-                  <div className="shrink-0 p-3 border-b border-slate-100 bg-slate-50">
+                {/* Left: Candidates list (Only if multiple or toggleable) */}
+                <div className="md:col-span-4 border-r border-slate-100 flex flex-col min-h-0 h-full bg-slate-50/40">
+                  <div className="shrink-0 p-3 border-b border-slate-100 bg-white">
                     <div className="relative">
                       <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                       <input
@@ -864,15 +917,15 @@ export const ServiceExchangesManagement = () => {
                         placeholder="Filtrer les candidats..."
                         value={modalSearch}
                         onChange={(e) => setModalSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="flex-1 min-h-0 divide-y divide-slate-100 overflow-y-auto">
+                  <div className="flex-1 min-h-0 divide-y divide-slate-100/80 overflow-y-auto p-2 space-y-1">
                     {loadingExchangeChat ? (
                       <div className="text-center py-12 text-slate-400 text-xs">
-                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
+                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-600" />
                         Chargement des discussions...
                       </div>
                     ) : filteredModalConversations.length === 0 ? (
@@ -891,19 +944,19 @@ export const ServiceExchangesManagement = () => {
                           <div
                             key={conv.id}
                             onClick={() => setSelectedExchangeConv(conv)}
-                            className={`p-3 cursor-pointer transition-all flex items-start gap-3 ${
+                            className={`p-3 cursor-pointer transition-all rounded-2xl flex items-start gap-3 ${
                               isSelected
-                                ? 'bg-[#f0f2f5] border-l-4 border-emerald-600'
-                                : 'bg-white hover:bg-slate-50'
+                                ? 'bg-white shadow-sm border border-slate-200/80 text-blue-600'
+                                : 'hover:bg-slate-100/70 text-slate-800'
                             }`}
                           >
-                            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                               {partnerName.charAt(0).toUpperCase()}
                             </div>
 
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between">
-                                <span className="font-semibold text-slate-900 text-xs truncate">
+                                <span className="font-bold text-slate-900 text-xs truncate">
                                   {partnerName}
                                 </span>
                                 {lastTime && (
@@ -915,10 +968,10 @@ export const ServiceExchangesManagement = () => {
 
                               <div className="flex items-center justify-between mt-1">
                                 <p className="text-xs text-slate-500 line-clamp-1 italic">
-                                  {lastMsg ? `"${lastMsg.message}"` : 'Discussion ouverte'}
+                                  {lastMsg ? `"${lastMsg.message}"` : 'Discussion engagée'}
                                 </p>
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold shrink-0 ml-1">
-                                  {conv.messages?.length || 0} msg
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-600 text-white font-bold shrink-0 ml-1">
+                                  {conv.messages?.length || 0}
                                 </span>
                               </div>
                             </div>
@@ -929,139 +982,132 @@ export const ServiceExchangesManagement = () => {
                   </div>
                 </div>
 
-                {/* Right: WhatsApp Chat Box */}
-                <div className="md:col-span-8 flex flex-col min-h-0 h-full justify-between" style={{
-                  backgroundColor: '#efeae2',
-                  backgroundImage: 'radial-gradient(#d1d7db 0.85px, transparent 0.85px)',
-                  backgroundSize: '18px 18px',
-                }}>
+                {/* Right: Modern Chat Body */}
+                <div className="md:col-span-8 flex flex-col min-h-0 h-full justify-between bg-[#F8FAFC]">
                   {selectedExchangeConv ? (
                     <>
-                      {/* Chat Contact Header (shrink-0) */}
-                      <div className="shrink-0 p-3 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                            {(selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name || 'C').charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-900 text-xs">
-                                {selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name}
-                              </span>
-                              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                                Candidat
-                              </span>
-                              <span className="text-xs text-slate-400">↔</span>
-                              <span className="font-bold text-slate-900 text-xs">
-                                {exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name}
-                              </span>
-                              <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
-                                Annonceur
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-slate-500 mt-0.5">
-                              Supervision de négociation • {selectedExchangeConv.messages?.length || 0} message(s)
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Phone if available */}
-                        {(selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone) && (
-                          <a 
-                            href={`tel:${selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone}`}
-                            className="text-xs bg-emerald-50 text-emerald-800 font-semibold px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1 hover:bg-emerald-100"
-                          >
-                            <Phone className="w-3 h-3 text-emerald-600" />
-                            <span>{selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone}</span>
-                          </a>
-                        )}
-                      </div>
-
-                      {/* Chat Messages (WhatsApp Left / Right with strict inner overflow-y-auto) */}
-                      <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4">
+                      {/* Messages Thread: Chronological Order (Oldest at top -> Newest at bottom) */}
+                      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-5">
                         {(!selectedExchangeConv.messages || selectedExchangeConv.messages.length === 0) ? (
                           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                             <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
                             <p className="text-xs font-medium">Aucun message pour cette discussion.</p>
                           </div>
                         ) : (
-                          selectedExchangeConv.messages.map((msg, index) => {
+                          getSortedMessages(selectedExchangeConv.messages).map((msg, index, arr) => {
                             const isCreator = msg.sender_id === selectedExchangeConv.creator_user_id;
                             const creatorName = selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name || 'Candidat';
                             const recipientName = exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name || 'Annonceur';
                             const senderDisplayName = isCreator ? creatorName : recipientName;
 
                             // Groupement par date
-                            const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(selectedExchangeConv.messages[index - 1].created_at);
+                            const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(arr[index - 1].created_at);
 
                             return (
                               <React.Fragment key={msg.id}>
                                 {showDate && (
-                                  <div className="flex justify-center my-3 sticky top-1 z-10">
-                                    <span className="bg-white/90 backdrop-blur text-slate-600 text-[11px] font-semibold px-3 py-1 rounded-full shadow-sm border border-slate-200/80">
+                                  <div className="relative flex py-2 items-center justify-center my-2">
+                                    <div className="flex-grow border-t border-slate-200/80"></div>
+                                    <span className="flex-shrink mx-4 text-[11px] font-semibold text-slate-500 bg-white px-3 py-1 rounded-full border border-slate-200/80 shadow-xs">
                                       {formatMessageDate(msg.created_at)}
                                     </span>
+                                    <div className="flex-grow border-t border-slate-200/80"></div>
                                   </div>
                                 )}
 
-                                <div className={`flex ${isCreator ? 'justify-start' : 'justify-end'} mb-2`}>
-                                  <div className={`relative max-w-[78%] px-4 py-2.5 shadow-sm ${
-                                    isCreator
-                                      ? 'bg-white text-slate-900 rounded-2xl rounded-tl-none border border-slate-200/70'
-                                      : 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-none border border-[#bbf7d0]'
-                                  }`}>
-                                    {/* Sender Label */}
-                                    <div className={`text-[11px] font-bold mb-1 ${
-                                      isCreator ? 'text-blue-700' : 'text-emerald-800'
-                                    }`}>
-                                      {senderDisplayName}
+                                {isCreator ? (
+                                  /* Incoming Message (Party A / Candidat - Gauche) */
+                                  <div className="flex items-start gap-3 justify-start max-w-[84%]">
+                                    <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                      {creatorName.charAt(0).toUpperCase()}
                                     </div>
-
-                                    {/* Attachment if present */}
-                                    {msg.attachment_url && (
-                                      <div className="mb-2">
-                                        {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
-                                          <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
-                                            <img 
-                                              src={msg.attachment_url} 
-                                              alt={msg.attachment_name || 'Pièce jointe'} 
-                                              className="rounded-lg max-h-48 w-full object-cover border border-black/10 hover:opacity-95"
-                                            />
-                                          </a>
-                                        ) : (
-                                          <a 
-                                            href={msg.attachment_url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-2 p-2 bg-black/5 hover:bg-black/10 rounded-lg border border-black/5 transition-colors"
-                                          >
-                                            <FileText className="w-5 h-5 text-emerald-700 shrink-0" />
-                                            <div className="min-w-0 flex-1">
-                                              <p className="text-xs font-semibold text-slate-800 truncate">{msg.attachment_name || 'Document joint'}</p>
-                                              <span className="text-[10px] text-slate-500">Télécharger</span>
-                                            </div>
-                                            <Download className="w-4 h-4 text-slate-500" />
-                                          </a>
-                                        )}
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs font-bold text-slate-900">{senderDisplayName}</span>
+                                        <span className="text-[10px] text-slate-400 font-medium">{formatMessageTime(msg.created_at)}</span>
                                       </div>
-                                    )}
-
-                                    {/* Message Text */}
-                                    <p className="text-[13px] leading-relaxed whitespace-pre-wrap select-text">
-                                      {msg.message}
-                                    </p>
-
-                                    {/* Bottom Timestamp & Checks */}
-                                    <div className="flex items-center justify-end gap-1 mt-1">
-                                      <span className="text-[10px] text-slate-400 font-medium">
-                                        {formatMessageTime(msg.created_at)}
-                                      </span>
-                                      {!isCreator && (
-                                        <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />
-                                      )}
+                                      <div className="bg-white text-slate-800 text-[13.5px] leading-relaxed p-3.5 rounded-2xl rounded-tl-sm border border-slate-200/70 shadow-xs whitespace-pre-wrap select-text">
+                                        {/* Attachment if present */}
+                                        {msg.attachment_url && (
+                                          <div className="mb-2">
+                                            {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                              <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                                <img 
+                                                  src={msg.attachment_url} 
+                                                  alt={msg.attachment_name || 'Pièce jointe'} 
+                                                  className="rounded-xl max-h-48 w-full object-cover border border-slate-200 hover:opacity-95"
+                                                />
+                                              </a>
+                                            ) : (
+                                              <a 
+                                                href={msg.attachment_url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2.5 p-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                                              >
+                                                <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                  <p className="text-xs font-semibold text-slate-800 truncate">{msg.attachment_name || 'Document joint'}</p>
+                                                  <span className="text-[10px] text-slate-400">Cliquer pour ouvrir</span>
+                                                </div>
+                                                <Download className="w-4 h-4 text-slate-400" />
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                        <p>{msg.message}</p>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
+                                ) : (
+                                  /* Outgoing Message (Party B / Annonceur - Droite) */
+                                  <div className="flex items-start gap-3 justify-end ml-auto max-w-[84%]">
+                                    <div className="flex-1 min-w-0 flex flex-col items-end">
+                                      <div className="flex items-center justify-end gap-2 mb-1">
+                                        <span className="text-[10px] text-slate-400 font-medium">{formatMessageTime(msg.created_at)}</span>
+                                        <span className="text-xs font-bold text-blue-700">{senderDisplayName}</span>
+                                      </div>
+                                      <div className="bg-blue-600 text-white text-[13.5px] leading-relaxed p-3.5 rounded-2xl rounded-tr-sm shadow-xs whitespace-pre-wrap select-text">
+                                        {/* Attachment if present */}
+                                        {msg.attachment_url && (
+                                          <div className="mb-2">
+                                            {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                              <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                                <img 
+                                                  src={msg.attachment_url} 
+                                                  alt={msg.attachment_name || 'Pièce jointe'} 
+                                                  className="rounded-xl max-h-48 w-full object-cover border border-white/20 hover:opacity-95"
+                                                />
+                                              </a>
+                                            ) : (
+                                              <a 
+                                                href={msg.attachment_url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2.5 p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/20 transition-colors"
+                                              >
+                                                <FileText className="w-5 h-5 text-white shrink-0" />
+                                                <div className="min-w-0 flex-1">
+                                                  <p className="text-xs font-semibold text-white truncate">{msg.attachment_name || 'Document joint'}</p>
+                                                  <span className="text-[10px] text-blue-100">Cliquer pour ouvrir</span>
+                                                </div>
+                                                <Download className="w-4 h-4 text-white" />
+                                              </a>
+                                            )}
+                                          </div>
+                                        )}
+                                        <p>{msg.message}</p>
+                                        <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-blue-200">
+                                          <CheckCheck className="w-3.5 h-3.5" />
+                                          <span>Lu</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                                      {recipientName.charAt(0).toUpperCase()}
+                                    </div>
+                                  </div>
+                                )}
                               </React.Fragment>
                             );
                           })
@@ -1069,15 +1115,15 @@ export const ServiceExchangesManagement = () => {
                         <div ref={modalChatBottomRef} />
                       </div>
 
-                      {/* WhatsApp Bottom Bar (shrink-0) */}
-                      <div className="shrink-0 p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
+                      {/* 4. Bottom Footer (Pinned) */}
+                      <div className="shrink-0 px-6 py-3 bg-white border-t border-slate-100 flex items-center justify-between text-xs text-slate-600 shadow-xs">
                         <div className="flex items-center gap-2 text-slate-500">
-                          <Shield className="w-4 h-4 text-emerald-600" />
-                          <span>Mode supervision administrateur (Lecture seule des messages en direct)</span>
+                          <Shield className="w-4 h-4 text-blue-600" />
+                          <span>Supervision administrateur (Lecture seule des messages en direct)</span>
                         </div>
                         <button
                           onClick={() => setExchangeChatModal(null)}
-                          className="px-4 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors shadow-sm"
+                          className="px-4 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors shadow-xs"
                         >
                           Fermer
                         </button>
@@ -1103,9 +1149,9 @@ export const ServiceExchangesManagement = () => {
             onClick={(e) => {
               if (e.target === e.currentTarget) setSelectedExchange(null);
             }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4"
           >
-            <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
                   <Handshake className="w-5 h-5 text-emerald-600" />
@@ -1113,9 +1159,9 @@ export const ServiceExchangesManagement = () => {
                 </div>
                 <button
                   onClick={() => setSelectedExchange(null)}
-                  className="text-slate-400 hover:text-slate-600 p-1"
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
                 >
-                  <XCircle className="w-5 h-5" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -1127,7 +1173,7 @@ export const ServiceExchangesManagement = () => {
               </div>
 
               {/* 🟢 Offer */}
-              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
                 <p className="text-xs font-bold text-emerald-900 flex items-center gap-1.5 mb-1">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   Ce que cette entreprise PROPOSE :
@@ -1136,7 +1182,7 @@ export const ServiceExchangesManagement = () => {
               </div>
 
               {/* 🔵 Need */}
-              <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl">
                 <p className="text-xs font-bold text-blue-900 flex items-center gap-1.5 mb-1">
                   <Handshake className="w-4 h-4 text-blue-600" />
                   Ce qu'elle RECHERCHE en partenariat :
@@ -1158,22 +1204,22 @@ export const ServiceExchangesManagement = () => {
                     setSelectedExchange(null);
                     handleOpenExchangeDiscussions(ex);
                   }}
-                  className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl flex items-center gap-1.5 transition-colors"
                 >
-                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                  <MessageSquare className="w-4 h-4 text-blue-600" />
                   Voir les discussions ({selectedExchange.proposals_count || 0})
                 </button>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleDeleteExchange(selectedExchange.id)}
-                    className="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-1.5 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" /> Supprimer
                   </button>
                   <button
                     onClick={() => setSelectedExchange(null)}
-                    className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                    className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
                   >
                     Fermer
                   </button>
