@@ -20,13 +20,51 @@ import {
   PieChart,
   HelpCircle,
   ChevronRight,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
   Sparkles,
   Share2,
   X,
-  Check
+  Check,
+  AlertTriangle
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { useRealtime } from '../contexts/RealtimeContext';
+
+// Helper de badge d'audience
+const getAudienceBadge = (aud) => {
+  switch (aud) {
+    case 'candidate':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          <Users size={11} />
+          Candidats
+        </span>
+      );
+    case 'company':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+          <Building2 size={11} />
+          Entreprises
+        </span>
+      );
+    case 'visitor':
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <UserCheck size={11} />
+          Visiteurs
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <Sparkles size={11} />
+          Tous
+        </span>
+      );
+  }
+};
 
 export const SurveysManagementPage = () => {
   const { syncCounter, refreshNow } = useRealtime();
@@ -35,6 +73,7 @@ export const SurveysManagementPage = () => {
   const [kpis, setKpis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
   const [pagination, setPagination] = useState(null);
 
   // Filtres
@@ -47,6 +86,10 @@ export const SurveysManagementPage = () => {
   const [editingSurvey, setEditingSurvey] = useState(null);
   const [selectedAnalytics, setSelectedAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  
+  // Modal de confirmation de suppression personnalisée (pas d'alerte javascript native)
+  const [surveyToDelete, setSurveyToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Formulaire de création / édition
   const [formData, setFormData] = useState({
@@ -73,6 +116,7 @@ export const SurveysManagementPage = () => {
       if (e.key === 'Escape') {
         setShowCreateModal(false);
         setSelectedAnalytics(null);
+        setSurveyToDelete(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -84,7 +128,7 @@ export const SurveysManagementPage = () => {
     try {
       const params = {
         page,
-        per_page: 15,
+        per_page: perPage,
         ...(search && { search }),
         ...(statusFilter && { status: statusFilter }),
         ...(targetFilter && { target_audience: targetFilter })
@@ -104,13 +148,13 @@ export const SurveysManagementPage = () => {
     } finally {
       if (!isSilent) setLoading(false);
     }
-  }, [page, search, statusFilter, targetFilter]);
+  }, [page, perPage, search, statusFilter, targetFilter]);
 
   useEffect(() => {
     fetchSurveys(false);
   }, [fetchSurveys]);
 
-  // Synchronisation en arrière-plan sans rechargement brutal
+  // Synchronisation en arrière-plan sans clignotement
   useEffect(() => {
     if (syncCounter > 0) {
       fetchSurveys(true);
@@ -236,89 +280,106 @@ export const SurveysManagementPage = () => {
     }
   };
 
-  // Supprimer sondage
-  const handleDeleteSurvey = async (survey) => {
-    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer définitivement ce sondage ?\n"${survey.question}"`)) {
-      return;
-    }
+  // Confirmer et supprimer le sondage
+  const confirmDeleteSurvey = async () => {
+    if (!surveyToDelete) return;
+    setDeleting(true);
     try {
-      await apiClient.delete(`/v1/admin/surveys/${survey.id}`);
-      showToast('Sondage supprimé avec succès.');
+      await apiClient.delete(`/v1/admin/surveys/${surveyToDelete.id}`);
+      showToast('Sondage supprimé définitivement avec succès.');
+      setSurveyToDelete(null);
       fetchSurveys(false);
       refreshNow();
     } catch (err) {
       console.error('Erreur suppression:', err);
       showToast('Erreur lors de la suppression.', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const getAudienceBadge = (aud) => {
-    switch (aud) {
-      case 'candidate':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
-            <Users size={12} />
-            Candidats
-          </span>
-        );
-      case 'company':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
-            <Building2 size={12} />
-            Entreprises
-          </span>
-        );
-      case 'visitor':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-            <UserCheck size={12} />
-            Visiteurs (Autre)
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <Sparkles size={12} />
-            Tout le monde
-          </span>
-        );
+  // Calcul des numéros de page pour la pagination
+  const renderPaginationButtons = () => {
+    if (!pagination || pagination.last_page <= 1) return null;
+    const totalPages = pagination.last_page;
+    const currentPage = pagination.current_page;
+    const pages = [];
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+      pages.push(1);
+      if (startPage > 2) pages.push('...');
     }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) pages.push('...');
+      pages.push(totalPages);
+    }
+
+    return pages.map((p, idx) => {
+      if (p === '...') {
+        return (
+          <span key={`ellipsis-${idx}`} className="px-2 py-1 text-slate-400 text-xs select-none">
+            ...
+          </span>
+        );
+      }
+      return (
+        <button
+          key={p}
+          onClick={() => setPage(p)}
+          className={`w-7 h-7 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
+            currentPage === p
+              ? 'bg-orange-600 text-white shadow-xs'
+              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          {p}
+        </button>
+      );
+    });
   };
 
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 pb-12">
         
         {/* Header Title & Bouton Nouveau Sondage Très Visible */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight font-poppins flex items-center gap-2.5">
-              <div className="p-2 rounded-2xl bg-orange-500/10 text-orange-600">
-                <Vote size={26} />
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight font-poppins flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-orange-500/10 text-orange-600">
+                <Vote size={22} />
               </div>
               Sondages & Enquêtes Publiques
             </h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-0.5">
               Pilotez, ciblez et analysez les sondages interactifs auprès des candidats, entreprises et visiteurs.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => fetchSurveys(false)}
-              className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition shadow-sm cursor-pointer"
+              className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 transition shadow-xs cursor-pointer"
               title="Actualiser les données"
             >
-              <RefreshCw size={16} className={loading ? 'animate-spin text-orange-600' : ''} />
+              <RefreshCw size={15} className={loading ? 'animate-spin text-orange-600' : ''} />
             </button>
 
             {/* Bouton Nouveau Sondage : Haute visibilité Orange */}
             <button
               onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-extrabold text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
               style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
             >
-              <Plus size={18} className="text-white shrink-0" />
+              <Plus size={16} className="text-white shrink-0" />
               <span className="text-white font-extrabold tracking-wide">Nouveau Sondage</span>
             </button>
           </div>
@@ -326,80 +387,80 @@ export const SurveysManagementPage = () => {
 
         {/* Toast Alert */}
         {toast && (
-          <div className={`p-4 rounded-xl flex items-center gap-3 shadow-md transition-all ${
+          <div className={`p-3.5 rounded-xl flex items-center gap-3 shadow-md transition-all ${
             toast.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
           }`}>
-            {toast.type === 'error' ? <XCircle className="w-5 h-5 text-red-600" /> : <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
-            <span className="text-sm font-medium">{toast.message}</span>
+            {toast.type === 'error' ? <XCircle className="w-4 h-4 text-red-600 shrink-0" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+            <span className="text-xs font-semibold">{toast.message}</span>
           </div>
         )}
 
-        {/* KPIs Globaux */}
+        {/* KPIs Globaux - Compacts */}
         {kpis && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
-                <Vote size={24} />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0">
+                <Vote size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Sondages</p>
-                <p className="text-2xl font-black text-slate-900 font-poppins mt-0.5">{kpis.total_surveys || 0}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Sondages</p>
+                <p className="text-lg font-black text-slate-900 font-poppins">{kpis.total_surveys || 0}</p>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
-                <CheckCircle2 size={24} />
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Sondages Actifs</p>
-                <p className="text-2xl font-black text-slate-900 font-poppins mt-0.5">{kpis.active_surveys || 0}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sondages Actifs</p>
+                <p className="text-lg font-black text-slate-900 font-poppins">{kpis.active_surveys || 0}</p>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                <TrendingUp size={24} />
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <TrendingUp size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Votes</p>
-                <p className="text-2xl font-black text-slate-900 font-poppins mt-0.5">{kpis.total_votes || 0}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Votes</p>
+                <p className="text-lg font-black text-slate-900 font-poppins">{kpis.total_votes || 0}</p>
               </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">
-                <BarChart3 size={24} />
+            <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                <BarChart3 size={20} />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Moyenne / Sondage</p>
-                <p className="text-2xl font-black text-slate-900 font-poppins mt-0.5">{kpis.avg_participation || 0} votes</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Moyenne / Sondage</p>
+                <p className="text-lg font-black text-slate-900 font-poppins">{kpis.avg_participation || 0} votes</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Filtres & Recherche */}
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Filtres & Recherche Compacts */}
+        <div className="p-3 bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-center justify-between gap-2.5">
           <form onSubmit={handleSearchSubmit} className="relative w-full md:w-80">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               placeholder="Rechercher une question..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition"
             />
           </form>
 
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <select
               value={targetFilter}
               onChange={(e) => {
                 setTargetFilter(e.target.value);
                 setPage(1);
               }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
             >
               <option value="">Toutes les cibles</option>
               <option value="all">Tout le monde</option>
@@ -414,7 +475,7 @@ export const SurveysManagementPage = () => {
                 setStatusFilter(e.target.value);
                 setPage(1);
               }}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
+              className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition cursor-pointer"
             >
               <option value="">Tous les statuts</option>
               <option value="active">En cours (Actifs)</option>
@@ -423,41 +484,41 @@ export const SurveysManagementPage = () => {
           </div>
         </div>
 
-        {/* Tableau des sondages */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Tableau Dense & Compact des Sondages */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
           {loading ? (
-            <div className="p-12 text-center text-slate-400">
-              <RefreshCw size={28} className="animate-spin mx-auto text-orange-500 mb-3" />
-              <p className="text-sm font-medium">Chargement des sondages...</p>
+            <div className="p-10 text-center text-slate-400">
+              <RefreshCw size={24} className="animate-spin mx-auto text-orange-500 mb-2" />
+              <p className="text-xs font-medium">Chargement des sondages...</p>
             </div>
           ) : surveys.length === 0 ? (
-            <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
-              <Vote size={44} className="text-slate-300 mb-3" />
-              <p className="text-base font-bold text-slate-800">Aucun sondage trouvé</p>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm">
+            <div className="p-10 text-center text-slate-500 flex flex-col items-center justify-center">
+              <Vote size={36} className="text-slate-300 mb-2" />
+              <p className="text-sm font-bold text-slate-800">Aucun sondage trouvé</p>
+              <p className="text-xs text-slate-400 mt-0.5 max-w-sm">
                 Créez votre premier sondage interactif pour recueillir l'avis des utilisateurs.
               </p>
               <button
                 onClick={handleOpenCreate}
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
                 style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
               >
-                <Plus size={18} className="text-white" />
-                <span className="text-white font-bold">Créer mon premier sondage</span>
+                <Plus size={15} className="text-white" />
+                <span>Créer un premier sondage</span>
               </button>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50/80 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
                   <tr>
-                    <th className="py-3.5 px-4">Question & Intitulé</th>
-                    <th className="py-3.5 px-4">Cible</th>
-                    <th className="py-3.5 px-4">Mode</th>
-                    <th className="py-3.5 px-4">Créé le</th>
-                    <th className="py-3.5 px-4">Total Votes</th>
-                    <th className="py-3.5 px-4">Statut</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    <th className="py-2.5 px-3.5">Question & Intitulé</th>
+                    <th className="py-2.5 px-3">Cible</th>
+                    <th className="py-2.5 px-3">Mode</th>
+                    <th className="py-2.5 px-3">Créé le</th>
+                    <th className="py-2.5 px-3">Total Votes</th>
+                    <th className="py-2.5 px-3">Statut</th>
+                    <th className="py-2.5 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
@@ -466,102 +527,105 @@ export const SurveysManagementPage = () => {
                     const isActive = survey.status === 'active';
 
                     return (
-                      <tr key={survey.id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 max-w-sm">
-                          <div>
-                            <p className="text-sm font-bold text-slate-900 line-clamp-2">
-                              {survey.question}
+                      <tr key={survey.id} className="hover:bg-slate-50/80 transition-colors">
+                        {/* 1. Question (Compact) */}
+                        <td className="py-2 px-3.5 max-w-xs md:max-w-md">
+                          <p className="text-xs font-bold text-slate-900 line-clamp-1" title={survey.question}>
+                            {survey.question}
+                          </p>
+                          {survey.description && (
+                            <p className="text-[10.5px] text-slate-400 truncate mt-0.5" title={survey.description}>
+                              {survey.description}
                             </p>
-                            {survey.description && (
-                              <p className="text-xs text-slate-400 truncate mt-0.5">
-                                {survey.description}
-                              </p>
-                            )}
-                          </div>
+                          )}
                         </td>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        {/* 2. Cible */}
+                        <td className="py-2 px-3 whitespace-nowrap">
                           {getAudienceBadge(survey.target_audience)}
                         </td>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap text-xs">
+                        {/* 3. Mode */}
+                        <td className="py-2 px-3 whitespace-nowrap text-[10px]">
                           {survey.is_multiple_choice ? (
-                            <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
-                              Choix multiple
+                            <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
+                              Multiple
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-semibold">
-                              Choix unique
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold">
+                              Unique
                             </span>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 text-xs text-slate-500 whitespace-nowrap">
-                          <p className="font-semibold text-slate-700">
+                        {/* 4. Date */}
+                        <td className="py-2 px-3 text-[11px] text-slate-500 whitespace-nowrap">
+                          <span className="font-semibold text-slate-700">
                             {date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            {date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </p>
+                          </span>
                         </td>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-black text-slate-900 font-poppins">{survey.total_votes}</span>
-                            <span className="text-xs text-slate-400 font-semibold">voix</span>
+                        {/* 5. Votes */}
+                        <td className="py-2 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs font-black text-slate-900 font-poppins">{survey.total_votes}</span>
+                            <span className="text-[10px] text-slate-400">voix</span>
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        {/* 6. Statut */}
+                        <td className="py-2 px-3 whitespace-nowrap">
                           {isActive ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 size={12} className="text-emerald-500" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 size={10} className="text-emerald-500" />
                               En cours
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                              <XCircle size={12} className="text-slate-400" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                              <XCircle size={10} className="text-slate-400" />
                               Clôturé
                             </span>
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
+                        {/* 7. Actions (Icon Button Group) */}
+                        <td className="py-2 px-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleOpenAnalytics(survey)}
-                              className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 text-orange-700 transition cursor-pointer"
+                              className="p-1 rounded-md bg-orange-50 hover:bg-orange-100 text-orange-700 transition cursor-pointer"
                               title="Analyser les résultats et graphiques"
                             >
-                              <BarChart3 size={15} />
+                              <BarChart3 size={14} />
                             </button>
 
                             <button
                               onClick={() => handleOpenEdit(survey)}
-                              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                              className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
                               title="Modifier"
                             >
-                              <Edit3 size={15} />
+                              <Edit3 size={14} />
                             </button>
 
                             <button
                               onClick={() => handleToggleStatus(survey)}
-                              className={`p-1.5 rounded-lg transition cursor-pointer ${
+                              className={`p-1 rounded-md transition cursor-pointer ${
                                 isActive 
                                   ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' 
                                   : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
                               }`}
                               title={isActive ? 'Clôturer le sondage' : 'Réactiver'}
                             >
-                              {isActive ? <Clock size={15} /> : <CheckCircle2 size={15} />}
+                              {isActive ? <Clock size={14} /> : <CheckCircle2 size={14} />}
                             </button>
 
+                            {/* Ouvre le modal de confirmation personnalisé (pas d'alerte JS) */}
                             <button
-                              onClick={() => handleDeleteSurvey(survey)}
-                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                              title="Supprimer"
+                              onClick={() => setSurveyToDelete(survey)}
+                              className="p-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                              title="Supprimer définitivement"
                             >
-                              <Trash2 size={15} />
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </td>
@@ -573,31 +637,144 @@ export const SurveysManagementPage = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {pagination && pagination.last_page > 1 && (
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-xs text-slate-500 font-medium">
-                Page <span className="font-bold">{pagination.current_page}</span> sur <span className="font-bold">{pagination.last_page}</span> ({pagination.total} sondages)
-              </p>
-              <div className="flex gap-1">
-                <button
-                  disabled={pagination.current_page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="px-3 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
-                >
-                  Précédent
-                </button>
-                <button
-                  disabled={pagination.current_page >= pagination.last_page}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="px-3 py-1 rounded-lg border border-slate-200 text-xs font-semibold disabled:opacity-40 hover:bg-slate-50 cursor-pointer"
-                >
-                  Suivant
-                </button>
+          {/* Pagination Riche & Complète */}
+          {pagination && (
+            <div className="p-3 bg-slate-50/75 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+              
+              {/* Info pagination */}
+              <div className="flex items-center gap-3">
+                <span>
+                  Affichage de <strong className="text-slate-900">{((pagination.current_page - 1) * pagination.per_page) + (surveys.length > 0 ? 1 : 0)}</strong> à <strong className="text-slate-900">{Math.min(pagination.current_page * pagination.per_page, pagination.total)}</strong> sur <strong className="text-slate-900">{pagination.total}</strong> sondages
+                </span>
+
+                {/* Sélecteur de nombre de lignes par page */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-slate-400">Lignes :</span>
+                  <select
+                    value={perPage}
+                    onChange={(e) => {
+                      setPerPage(parseInt(e.target.value));
+                      setPage(1);
+                    }}
+                    className="px-2 py-0.5 bg-white border border-slate-200 rounded text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-orange-500 cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Boutons de navigation */}
+              {pagination.last_page > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    disabled={pagination.current_page <= 1}
+                    onClick={() => setPage(1)}
+                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                    title="Première page"
+                  >
+                    <ChevronsLeft size={14} />
+                  </button>
+
+                  <button
+                    disabled={pagination.current_page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                    title="Page précédente"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+
+                  {/* Numéros de page */}
+                  <div className="flex items-center gap-1 mx-1">
+                    {renderPaginationButtons()}
+                  </div>
+
+                  <button
+                    disabled={pagination.current_page >= pagination.last_page}
+                    onClick={() => setPage((p) => Math.min(pagination.last_page, p + 1))}
+                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                    title="Page suivante"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+
+                  <button
+                    disabled={pagination.current_page >= pagination.last_page}
+                    onClick={() => setPage(pagination.last_page)}
+                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer"
+                    title="Dernière page"
+                  >
+                    <ChevronsRight size={14} />
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* ─── MODAL DE CONFIRMATION DE SUPPRESSION PERSONNALISÉ (PAS DE WINDOW.CONFIRM) ── */}
+        {surveyToDelete && (
+          <div 
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !deleting) setSurveyToDelete(null);
+            }}
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden animate-in fade-in duration-150"
+          >
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-poppins">
+                    Supprimer ce sondage ?
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Êtes-vous sûr de vouloir supprimer définitivement le sondage :
+                  </p>
+                  <p className="text-xs font-bold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/80 mt-2 line-clamp-2">
+                    "{surveyToDelete.question}"
+                  </p>
+                  <p className="text-[11px] text-rose-600 font-medium mt-2">
+                    ⚠️ Cette action est irréversible et effacera tous les votes et statistiques associés.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setSurveyToDelete(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={confirmDeleteSurvey}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60"
+                >
+                  {deleting ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Suppression...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      <span>Supprimer définitivement</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ─── MODAL CRÉATION / ÉDITION DE SONDAGE ───────────────────────────── */}
         {showCreateModal && (

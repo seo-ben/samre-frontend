@@ -65,6 +65,10 @@ export const ServiceExchangesManagement = () => {
   // Selected Exchange Modal (Détails de l'offre)
   const [selectedExchange, setSelectedExchange] = useState(null);
 
+  // Modal de confirmation de suppression personnalisé
+  const [exchangeToDelete, setExchangeToDelete] = useState(null);
+  const [deletingExchange, setDeletingExchange] = useState(false);
+
   // Modal des discussions spécifiques à un partenariat (Modern Chat UI)
   const [exchangeChatModal, setExchangeChatModal] = useState(null);
   const [exchangeConversations, setExchangeConversations] = useState([]);
@@ -240,18 +244,27 @@ export const ServiceExchangesManagement = () => {
     }
   }, [activeTab, fetchConversations]);
 
-  // Delete / Moderate an exchange
-  const handleDeleteExchange = async (id) => {
-    if (!window.confirm('Voulez-vous vraiment supprimer cette offre de partenariat ?')) return;
+  // Delete / Moderate an exchange via custom modal
+  const handleDeleteExchange = (itemOrId) => {
+    const item = typeof itemOrId === 'object' ? itemOrId : exchanges.find(e => e.id === itemOrId) || { id: itemOrId, title: 'cette offre' };
+    setExchangeToDelete(item);
+  };
+
+  const confirmDeleteExchange = async () => {
+    if (!exchangeToDelete) return;
+    setDeletingExchange(true);
     try {
-      await apiClient.delete(`/v1/admin/service-exchanges/${id}`);
+      await apiClient.delete(`/v1/admin/service-exchanges/${exchangeToDelete.id}`);
       showToast('Offre de partenariat supprimée avec succès.');
       setSelectedExchange(null);
-      if (exchangeChatModal?.id === id) setExchangeChatModal(null);
+      if (exchangeChatModal?.id === exchangeToDelete.id) setExchangeChatModal(null);
+      setExchangeToDelete(null);
       fetchExchanges();
       refreshNow();
     } catch (err) {
       showToast('Erreur lors de la suppression.', 'error');
+    } finally {
+      setDeletingExchange(false);
     }
   };
 
@@ -1253,7 +1266,7 @@ export const ServiceExchangesManagement = () => {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleDeleteExchange(selectedExchange.id)}
+                    onClick={() => handleDeleteExchange(selectedExchange)}
                     className="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-1.5 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" /> Supprimer
@@ -1265,6 +1278,67 @@ export const ServiceExchangesManagement = () => {
                     Fermer
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─── MODAL DE CONFIRMATION DE SUPPRESSION (PAS DE JAVASCRIPT ALERT) ── */}
+        {exchangeToDelete && (
+          <div 
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !deletingExchange) setExchangeToDelete(null);
+            }}
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden animate-in fade-in duration-150"
+          >
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={22} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 font-poppins">
+                    Supprimer ce partenariat ?
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Êtes-vous sûr de vouloir supprimer définitivement l'offre de partenariat :
+                  </p>
+                  <p className="text-xs font-bold text-slate-800 bg-slate-50 p-2 rounded-lg border border-slate-200/80 mt-2 line-clamp-2">
+                    "{exchangeToDelete.title || 'Cette offre'}"
+                  </p>
+                  <p className="text-[11px] text-rose-600 font-medium mt-2">
+                    ⚠️ Cette action supprimera également les messages et propositions associés.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  disabled={deletingExchange}
+                  onClick={() => setExchangeToDelete(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingExchange}
+                  onClick={confirmDeleteExchange}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition cursor-pointer disabled:opacity-60"
+                >
+                  {deletingExchange ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" />
+                      <span>Suppression...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={14} />
+                      <span>Supprimer définitivement</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
