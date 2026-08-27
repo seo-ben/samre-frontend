@@ -4,7 +4,7 @@ import {
   CheckCircle2, XCircle, Clock, Trash2, Eye, ExternalLink, 
   Filter, Shield, ArrowRight, Send, User, Calendar, MapPin, 
   Phone, Layers, Check, AlertTriangle, MessageCircle, FileText, 
-  ChevronRight, CheckCheck, Paperclip, Image as ImageIcon, Download
+  ChevronRight, CheckCheck, Paperclip, Image as ImageIcon, Download, X
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
@@ -88,6 +88,18 @@ export const ServiceExchangesManagement = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
+
+  // Fermeture des modales avec la touche Echap (Escape)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setExchangeChatModal(null);
+        setSelectedExchange(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Scroll automatique en bas de discussion
   useEffect(() => {
@@ -549,11 +561,11 @@ export const ServiceExchangesManagement = () => {
         {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS (WHATSAPP WEB STYLE) */}
         {activeTab === 'conversations' && (
           <div className="bg-white rounded-b-xl border border-slate-200 border-t-0 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 h-[680px] min-h-[500px]">
               
               {/* Left sidebar: Conversations list */}
-              <div className="lg:col-span-4 border-r border-slate-200 flex flex-col bg-white">
-                <div className="p-3 border-b border-slate-100 bg-slate-50/75">
+              <div className="lg:col-span-4 border-r border-slate-200 flex flex-col min-h-0 h-full bg-white">
+                <div className="shrink-0 p-3 border-b border-slate-100 bg-slate-50/75">
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                     <input
@@ -566,7 +578,7 @@ export const ServiceExchangesManagement = () => {
                   </div>
                 </div>
 
-                <div className="divide-y divide-slate-100 overflow-y-auto max-h-[560px]">
+                <div className="flex-1 min-h-0 divide-y divide-slate-100 overflow-y-auto">
                   {loadingConversations ? (
                     <div className="text-center py-12 text-slate-400 text-sm">
                       <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-500" />
@@ -632,7 +644,7 @@ export const ServiceExchangesManagement = () => {
               </div>
 
               {/* Right panel: Full WhatsApp Thread Viewer */}
-              <div className="lg:col-span-8 flex flex-col justify-between" style={{
+              <div className="lg:col-span-8 flex flex-col min-h-0 h-full justify-between" style={{
                 backgroundColor: '#efeae2',
                 backgroundImage: 'radial-gradient(#d1d7db 0.85px, transparent 0.85px)',
                 backgroundSize: '18px 18px',
@@ -640,7 +652,7 @@ export const ServiceExchangesManagement = () => {
                 {selectedConversation ? (
                   <>
                     {/* WhatsApp Top Header */}
-                    <div className="p-3.5 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                    <div className="shrink-0 p-3.5 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
                           {(selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name || 'C').charAt(0).toUpperCase()}
@@ -670,7 +682,7 @@ export const ServiceExchangesManagement = () => {
                     </div>
 
                     {/* Messages bubbles (WhatsApp Left / Right) */}
-                    <div className="space-y-3 overflow-y-auto flex-1 p-4 max-h-[460px]">
+                    <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4">
                       {(!selectedConversation.messages || selectedConversation.messages.length === 0) ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                           <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
@@ -762,7 +774,7 @@ export const ServiceExchangesManagement = () => {
                     </div>
 
                     {/* WhatsApp Bottom Bar (Supervision notice) */}
-                    <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
+                    <div className="shrink-0 p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
                       <div className="flex items-center gap-2 text-slate-500">
                         <Shield className="w-4 h-4 text-emerald-600" />
                         <span>Mode supervision administrateur (Lecture seule des messages en direct)</span>
@@ -786,11 +798,16 @@ export const ServiceExchangesManagement = () => {
 
         {/* MODAL : DISCUSSIONS COMPLÈTES STYLE VRAI CHAT WHATSAPP (GAUCHE / DROITE) */}
         {exchangeChatModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
-            <div className="bg-white rounded-2xl max-w-5xl w-full flex flex-col h-[90vh] shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+          <div 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setExchangeChatModal(null);
+            }}
+            className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden"
+          >
+            <div className="bg-white rounded-2xl max-w-5xl w-full h-[88vh] max-h-[88vh] min-h-[500px] flex flex-col shadow-2xl overflow-hidden border border-slate-200 relative animate-in fade-in zoom-in-95 duration-200">
               
-              {/* WhatsApp Modal Header */}
-              <div className="p-4 bg-emerald-800 text-white flex items-center justify-between shadow-md">
+              {/* WhatsApp Modal Header (Always pinned at top with shrink-0) */}
+              <div className="shrink-0 p-4 bg-emerald-800 text-white flex items-center justify-between shadow-md select-none">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center font-bold text-base shadow-sm">
                     {(exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name || 'P').charAt(0).toUpperCase()}
@@ -813,15 +830,17 @@ export const ServiceExchangesManagement = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setExchangeChatModal(null)}
-                    className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-white/15 hover:bg-white/25 rounded-lg border border-white/20 transition-all shadow-sm"
+                    title="Fermer la fenêtre (ou appuyez sur Échap)"
                   >
-                    <XCircle className="w-6 h-6" />
+                    <X className="w-4 h-4" />
+                    <span>Fermer</span>
                   </button>
                 </div>
               </div>
 
-              {/* Offer & Need Compact Banner */}
-              <div className="bg-emerald-50/90 border-b border-emerald-200/80 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* Offer & Need Compact Banner (shrink-0) */}
+              <div className="shrink-0 bg-emerald-50/90 border-b border-emerald-200/80 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div className="bg-white/80 p-2 rounded-lg border border-emerald-200/60 flex items-start gap-2">
                   <span className="font-bold text-emerald-950 shrink-0">🟢 Offre :</span>
                   <span className="text-emerald-900 line-clamp-1">{exchangeChatModal.offer}</span>
@@ -832,12 +851,12 @@ export const ServiceExchangesManagement = () => {
                 </div>
               </div>
 
-              {/* Content Body: WhatsApp Split View (Left: Candidates, Right: Full Chat) */}
-              <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-hidden">
+              {/* Content Body: WhatsApp Split View with Strict Heights */}
+              <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
                 
                 {/* Left: Candidates List (WhatsApp Chat List Style) */}
-                <div className="md:col-span-4 border-r border-slate-200 flex flex-col bg-white">
-                  <div className="p-3 border-b border-slate-100 bg-slate-50">
+                <div className="md:col-span-4 border-r border-slate-200 flex flex-col min-h-0 h-full bg-white">
+                  <div className="shrink-0 p-3 border-b border-slate-100 bg-slate-50">
                     <div className="relative">
                       <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                       <input
@@ -850,7 +869,7 @@ export const ServiceExchangesManagement = () => {
                     </div>
                   </div>
 
-                  <div className="divide-y divide-slate-100 overflow-y-auto flex-1">
+                  <div className="flex-1 min-h-0 divide-y divide-slate-100 overflow-y-auto">
                     {loadingExchangeChat ? (
                       <div className="text-center py-12 text-slate-400 text-xs">
                         <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
@@ -911,15 +930,15 @@ export const ServiceExchangesManagement = () => {
                 </div>
 
                 {/* Right: WhatsApp Chat Box */}
-                <div className="md:col-span-8 flex flex-col justify-between" style={{
+                <div className="md:col-span-8 flex flex-col min-h-0 h-full justify-between" style={{
                   backgroundColor: '#efeae2',
                   backgroundImage: 'radial-gradient(#d1d7db 0.85px, transparent 0.85px)',
                   backgroundSize: '18px 18px',
                 }}>
                   {selectedExchangeConv ? (
                     <>
-                      {/* Chat Contact Header */}
-                      <div className="p-3 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                      {/* Chat Contact Header (shrink-0) */}
+                      <div className="shrink-0 p-3 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
                             {(selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name || 'C').charAt(0).toUpperCase()}
@@ -958,8 +977,8 @@ export const ServiceExchangesManagement = () => {
                         )}
                       </div>
 
-                      {/* Chat Messages (WhatsApp Left / Right) */}
-                      <div className="space-y-3 overflow-y-auto flex-1 p-4 max-h-[460px]">
+                      {/* Chat Messages (WhatsApp Left / Right with strict inner overflow-y-auto) */}
+                      <div className="flex-1 min-h-0 space-y-3 overflow-y-auto p-4">
                         {(!selectedExchangeConv.messages || selectedExchangeConv.messages.length === 0) ? (
                           <div className="flex flex-col items-center justify-center py-20 text-slate-400">
                             <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
@@ -1050,15 +1069,15 @@ export const ServiceExchangesManagement = () => {
                         <div ref={modalChatBottomRef} />
                       </div>
 
-                      {/* WhatsApp Bottom Bar (Supervision notice) */}
-                      <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
+                      {/* WhatsApp Bottom Bar (shrink-0) */}
+                      <div className="shrink-0 p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
                         <div className="flex items-center gap-2 text-slate-500">
                           <Shield className="w-4 h-4 text-emerald-600" />
                           <span>Mode supervision administrateur (Lecture seule des messages en direct)</span>
                         </div>
                         <button
                           onClick={() => setExchangeChatModal(null)}
-                          className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                          className="px-4 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors shadow-sm"
                         >
                           Fermer
                         </button>
@@ -1080,7 +1099,12 @@ export const ServiceExchangesManagement = () => {
 
         {/* DETAILS MODAL : FICHE DE PARTENARIAT */}
         {selectedExchange && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedExchange(null);
+            }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          >
             <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
@@ -1089,7 +1113,7 @@ export const ServiceExchangesManagement = () => {
                 </div>
                 <button
                   onClick={() => setSelectedExchange(null)}
-                  className="text-slate-400 hover:text-slate-600"
+                  className="text-slate-400 hover:text-slate-600 p-1"
                 >
                   <XCircle className="w-5 h-5" />
                 </button>
