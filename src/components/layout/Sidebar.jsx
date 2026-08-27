@@ -98,7 +98,7 @@ const NAV = [
   },
   {
     id: 'service-exchanges',
-    label: 'Troc B2B & Échanges',
+    label: 'Partenariats B2B',
     path: '/service-exchanges',
     icon: Handshake,
   },

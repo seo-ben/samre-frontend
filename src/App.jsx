@@ -93,8 +93,10 @@ function App() {
       <Route path="/surveys"            element={<Protected><SurveysManagementPage /></Protected>} />
       <Route path="/sondages"           element={<Protected><SurveysManagementPage /></Protected>} />
 
-      {/* ── Troc B2B & Échanges ─────────────────── */}
+      {/* ── Partenariats B2B & Inter-Entreprises ─────────────────── */}
       <Route path="/service-exchanges"  element={<Protected><ServiceExchangesManagement /></Protected>} />
+      <Route path="/partenariats-b2b"   element={<Protected><ServiceExchangesManagement /></Protected>} />
+      <Route path="/partenariats"       element={<Protected><ServiceExchangesManagement /></Protected>} />
       <Route path="/troc-b2b"           element={<Protected><ServiceExchangesManagement /></Protected>} />
 
       {/* ── Paiements & Finances ─────────────────────────── */}
