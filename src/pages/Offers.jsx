@@ -5,7 +5,7 @@ import {
   Filter, Plus, Bookmark, MoreVertical, 
   MapPin, Clock, Calendar, Euro, Info, 
   ChevronLeft, ChevronRight, CheckCircle2,
-  X, Edit3
+  X, Edit3, Globe
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import CreateOfferModal from '../components/offers/CreateOfferModal';
@@ -293,9 +293,15 @@ export const OffersPage = () => {
                           }}>
                             {offer.contract_type || 'Stage'}
                           </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
-                            <MapPin size={12} /> {offer.commune_name || offer.commune_id || 'Lieu non spécifié'}
-                          </span>
+                          {offer.is_international ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#4f46e5', fontWeight: '600', background: '#f5f3ff', padding: '2px 6px', borderRadius: '4px' }}>
+                              <Globe size={12} /> {offer.location_display || offer.country_name || 'International'}
+                            </span>
+                          ) : (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
+                              <MapPin size={12} /> {offer.location_display || offer.commune_name || offer.commune_id || 'Lieu non spécifié'}
+                            </span>
+                          )}
                           {renderStatusBadge(offer.status)}
                         </div>
                       </div>
@@ -470,9 +476,11 @@ export const OffersPage = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', background: '#f8fafc', borderRadius: '12px 12px 0 0', padding: '20px 20px 10px 20px' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
-                          <MapPin size={16} /> Lieu
+                          {selectedOffer.is_international ? <Globe size={16} color="#4f46e5" /> : <MapPin size={16} />} {selectedOffer.is_international ? 'Destination / Pays' : 'Lieu'}
                         </div>
-                        <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>{selectedOffer.commune_name || selectedOffer.commune_id || "Non précisé"}</div>
+                        <div style={{ color: selectedOffer.is_international ? '#4f46e5' : '#0f172a', fontSize: '14px', fontWeight: selectedOffer.is_international ? '600' : '500' }}>
+                          {selectedOffer.location_display || selectedOffer.country_name || selectedOffer.commune_name || selectedOffer.commune_id || "Non précisé"}
+                        </div>
                       </div>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b', fontSize: '13px', marginBottom: '8px' }}>
