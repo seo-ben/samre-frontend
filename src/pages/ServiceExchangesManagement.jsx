@@ -1,13 +1,42 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Handshake, Building2, MessageSquare, Search, RefreshCw, 
   CheckCircle2, XCircle, Clock, Trash2, Eye, ExternalLink, 
   Filter, Shield, ArrowRight, Send, User, Calendar, MapPin, 
-  Phone, Layers, Check, AlertTriangle, MessageCircle, FileText, ChevronRight
+  Phone, Layers, Check, AlertTriangle, MessageCircle, FileText, 
+  ChevronRight, CheckCheck, Paperclip, Image as ImageIcon, Download
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useRealtime } from '../contexts/RealtimeContext';
+
+// Helper pour grouper les messages par date façon WhatsApp
+const formatMessageDate = (dateString) => {
+  if (!dateString) return 'Date inconnue';
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return "Aujourd'hui";
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Hier';
+  } else {
+    return date.toLocaleDateString('fr-FR', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined,
+    });
+  }
+};
+
+const formatMessageTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 export const ServiceExchangesManagement = () => {
   const { syncCounter, refreshNow } = useRealtime();
@@ -35,17 +64,22 @@ export const ServiceExchangesManagement = () => {
   // Selected Exchange Modal (Détails de l'offre)
   const [selectedExchange, setSelectedExchange] = useState(null);
 
-  // Modal des discussions spécifiques à un partenariat
+  // Modal des discussions spécifiques à un partenariat (WhatsApp style)
   const [exchangeChatModal, setExchangeChatModal] = useState(null);
   const [exchangeConversations, setExchangeConversations] = useState([]);
   const [selectedExchangeConv, setSelectedExchangeConv] = useState(null);
   const [loadingExchangeChat, setLoadingExchangeChat] = useState(false);
+  const [modalSearch, setModalSearch] = useState('');
 
   // Supervision globale Conversations state
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
+
+  // Scroll to bottom refs
+  const chatBottomRef = useRef(null);
+  const modalChatBottomRef = useRef(null);
 
   // Toast notifications
   const [toast, setToast] = useState(null);
@@ -54,6 +88,19 @@ export const ServiceExchangesManagement = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
+
+  // Scroll automatique en bas de discussion
+  useEffect(() => {
+    if (modalChatBottomRef.current) {
+      modalChatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [selectedExchangeConv, exchangeConversations]);
+
+  useEffect(() => {
+    if (chatBottomRef.current) {
+      chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [selectedConversation, conversations]);
 
   // Fetch exchanges list
   const fetchExchanges = useCallback(async (isSilent = false) => {
@@ -107,6 +154,7 @@ export const ServiceExchangesManagement = () => {
     setLoadingExchangeChat(true);
     setExchangeConversations([]);
     setSelectedExchangeConv(null);
+    setModalSearch('');
 
     try {
       const res = await apiClient.get(`/v1/admin/service-exchanges/conversations?exchange_id=${item.id}`);
@@ -176,16 +224,12 @@ export const ServiceExchangesManagement = () => {
     }
   };
 
-  // Update exchange status
-  const handleUpdateStatus = async (id, newStatus) => {
-    try {
-      await apiClient.put(`/v1/admin/service-exchanges/${id}/status`, { status: newStatus });
-      showToast(`Statut mis à jour : ${newStatus}`);
-      fetchExchanges();
-    } catch (err) {
-      showToast('Erreur lors du changement de statut.', 'error');
-    }
-  };
+  // Filtrer les candidats dans le modal
+  const filteredModalConversations = exchangeConversations.filter(c => {
+    if (!modalSearch.trim()) return true;
+    const name = c.creator_user?.company_profile?.company_name || c.creator_user?.name || '';
+    return name.toLowerCase().includes(modalSearch.toLowerCase());
+  });
 
   return (
     <MainLayout>
@@ -194,7 +238,7 @@ export const ServiceExchangesManagement = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg">
                 <Handshake className="w-6 h-6" />
               </div>
               <h1 className="text-2xl font-bold text-slate-900">
@@ -236,9 +280,9 @@ export const ServiceExchangesManagement = () => {
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Partenariats</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-1">{stats.total_exchanges}</h3>
-              <p className="text-xs text-blue-600 font-medium mt-1">{stats.b2b_exchanges} Partenariats B2B Entreprises</p>
+              <p className="text-xs text-emerald-600 font-medium mt-1">{stats.b2b_exchanges} Partenariats B2B Entreprises</p>
             </div>
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
               <Handshake className="w-6 h-6" />
             </div>
           </div>
@@ -247,9 +291,9 @@ export const ServiceExchangesManagement = () => {
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Discussions & Négociations</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-1">{stats.total_conversations}</h3>
-              <p className="text-xs text-emerald-600 font-medium mt-1">Supervisées par l'Admin</p>
+              <p className="text-xs text-blue-600 font-medium mt-1">Supervisées par l'Admin</p>
             </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
               <MessageSquare className="w-6 h-6" />
             </div>
           </div>
@@ -283,7 +327,7 @@ export const ServiceExchangesManagement = () => {
             onClick={() => setActiveTab('exchanges')}
             className={`py-3.5 px-4 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
               activeTab === 'exchanges'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-emerald-600 text-emerald-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -294,7 +338,7 @@ export const ServiceExchangesManagement = () => {
             onClick={() => setActiveTab('conversations')}
             className={`py-3.5 px-4 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all ${
               activeTab === 'conversations'
-                ? 'border-blue-600 text-blue-600'
+                ? 'border-emerald-600 text-emerald-700'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -315,14 +359,14 @@ export const ServiceExchangesManagement = () => {
                   placeholder="Rechercher une entreprise, un partenariat..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <select
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="all">Tous les types (B2B & Étudiants)</option>
                 <option value="b2b">🏢 Partenariats B2B Entreprises</option>
@@ -332,7 +376,7 @@ export const ServiceExchangesManagement = () => {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="all">Toutes les catégories</option>
                 <option value="tech">💻 Tech & Digital</option>
@@ -347,7 +391,7 @@ export const ServiceExchangesManagement = () => {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
                 <option value="all">Tous les statuts</option>
                 <option value="active">🟢 Actif</option>
@@ -373,7 +417,7 @@ export const ServiceExchangesManagement = () => {
                   {loading ? (
                     <tr>
                       <td colSpan="5" className="text-center py-12 text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
+                        <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-500" />
                         Chargement des offres de partenariat...
                       </td>
                     </tr>
@@ -395,14 +439,14 @@ export const ServiceExchangesManagement = () => {
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3">
                               <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xs ${
-                                isB2B ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                                isB2B ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
                               }`}>
                                 {isB2B ? <Building2 className="w-4 h-4" /> : <User className="w-4 h-4" />}
                               </div>
                               <div>
                                 <p className="font-semibold text-slate-900">{authorName}</p>
                                 <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded mt-0.5 ${
-                                  isB2B ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+                                  isB2B ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60' : 'bg-blue-50 text-blue-600 border border-blue-200/60'
                                 }`}>
                                   {isB2B ? 'PARTENARIAT B2B' : 'ENTRAIDE'}
                                 </span>
@@ -416,12 +460,12 @@ export const ServiceExchangesManagement = () => {
                             
                             {/* Aperçu offre vs besoin */}
                             <div className="mt-1.5 space-y-1">
-                              <div className="text-[11px] text-emerald-800 bg-emerald-50/80 px-2 py-0.5 rounded border border-emerald-200/50 line-clamp-1">
-                                <span className="font-bold text-emerald-900">Offre : </span>
+                              <div className="text-[11px] text-emerald-900 bg-emerald-50/90 px-2 py-0.5 rounded border border-emerald-200/60 line-clamp-1">
+                                <span className="font-bold text-emerald-950">Offre : </span>
                                 {item.offer}
                               </div>
-                              <div className="text-[11px] text-blue-800 bg-blue-50/80 px-2 py-0.5 rounded border border-blue-200/50 line-clamp-1">
-                                <span className="font-bold text-blue-900">Besoin : </span>
+                              <div className="text-[11px] text-blue-900 bg-blue-50/90 px-2 py-0.5 rounded border border-blue-200/60 line-clamp-1">
+                                <span className="font-bold text-blue-950">Besoin : </span>
                                 {item.need}
                               </div>
                             </div>
@@ -440,12 +484,12 @@ export const ServiceExchangesManagement = () => {
                               onClick={() => handleOpenExchangeDiscussions(item)}
                               className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all ${
                                 convCount > 0
-                                  ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 shadow-sm'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100 shadow-sm'
                                   : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
                               }`}
-                              title="Voir l'intégralité des discussions faites autour de ce partenariat"
+                              title="Voir l'intégralité des discussions WhatsApp faites autour de ce partenariat"
                             >
-                              <MessageSquare className={`w-3.5 h-3.5 ${convCount > 0 ? 'text-blue-600' : 'text-slate-400'}`} />
+                              <MessageSquare className={`w-3.5 h-3.5 ${convCount > 0 ? 'text-emerald-600' : 'text-slate-400'}`} />
                               <span>{convCount} discussion{convCount > 1 ? 's' : ''}</span>
                               <ChevronRight className="w-3.5 h-3.5 ml-0.5 opacity-60" />
                             </button>
@@ -470,10 +514,10 @@ export const ServiceExchangesManagement = () => {
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 onClick={() => handleOpenExchangeDiscussions(item)}
-                                className="px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center gap-1 border border-blue-200 transition-colors"
-                                title="Voir les discussions complètes"
+                                className="px-2.5 py-1.5 text-xs font-medium text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg flex items-center gap-1 border border-emerald-200 transition-colors"
+                                title="Voir les discussions complètes (WhatsApp)"
                               >
-                                <MessageCircle className="w-3.5 h-3.5" />
+                                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                                 <span className="hidden sm:inline">Discussions</span>
                               </button>
                               <button
@@ -502,72 +546,84 @@ export const ServiceExchangesManagement = () => {
           </div>
         )}
 
-        {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS INTER-ENTREPRISES */}
+        {/* TAB 2 : SUPERVISION GLOBALE DES DISCUSSIONS (WHATSAPP WEB STYLE) */}
         {activeTab === 'conversations' && (
-          <div className="bg-white rounded-b-xl border border-slate-200 border-t-0 shadow-sm">
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
+          <div className="bg-white rounded-b-xl border border-slate-200 border-t-0 shadow-sm overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[620px]">
               
               {/* Left sidebar: Conversations list */}
-              <div className="lg:col-span-4 border-r border-slate-200 p-4 space-y-3">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Filtrer par entreprise..."
-                    value={companySearch}
-                    onChange={(e) => setCompanySearch(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+              <div className="lg:col-span-4 border-r border-slate-200 flex flex-col bg-white">
+                <div className="p-3 border-b border-slate-100 bg-slate-50/75">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Rechercher une discussion..."
+                      value={companySearch}
+                      onChange={(e) => setCompanySearch(e.target.value)}
+                      className="w-full pl-9 pr-4 py-1.5 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2 overflow-y-auto max-h-[520px]">
+                <div className="divide-y divide-slate-100 overflow-y-auto max-h-[560px]">
                   {loadingConversations ? (
-                    <div className="text-center py-8 text-slate-400 text-sm">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-500" />
+                    <div className="text-center py-12 text-slate-400 text-sm">
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-500" />
                       Chargement des conversations...
                     </div>
                   ) : conversations.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400 text-sm">
+                    <div className="text-center py-12 text-slate-400 text-sm">
                       Aucune discussion enregistrée.
                     </div>
                   ) : (
                     conversations.map((conv) => {
                       const isSelected = selectedConversation?.id === conv.id;
-                      const creatorName = conv.creator_user?.company_profile?.company_name || conv.creator_user?.name || 'Entreprise A';
-                      const recipientName = conv.recipient_user?.company_profile?.company_name || conv.recipient_user?.name || 'Entreprise B';
-                      const exchangeTitle = conv.service_exchange?.title || 'Offre de partenariat';
+                      const creatorName = conv.creator_user?.company_profile?.company_name || conv.creator_user?.name || 'Candidat';
+                      const recipientName = conv.recipient_user?.company_profile?.company_name || conv.recipient_user?.name || 'Annonceur';
+                      const exchangeTitle = conv.service_exchange?.title || 'Partenariat';
+                      const lastMsg = conv.latest_message;
+                      const lastTime = lastMsg ? formatMessageTime(lastMsg.created_at) : '';
 
                       return (
                         <div
                           key={conv.id}
                           onClick={() => setSelectedConversation(conv)}
-                          className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                          className={`p-3.5 cursor-pointer transition-all flex items-start gap-3 ${
                             isSelected
-                              ? 'bg-blue-50/80 border-blue-300 shadow-sm'
-                              : 'bg-white border-slate-200 hover:bg-slate-50'
+                              ? 'bg-[#f0f2f5] border-l-4 border-emerald-600'
+                              : 'bg-white hover:bg-slate-50'
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4 text-blue-600" />
-                              <span className="font-semibold text-slate-900 text-xs truncate max-w-[120px]">{creatorName}</span>
-                              <ArrowRight className="w-3 h-3 text-slate-400" />
-                              <span className="font-semibold text-slate-900 text-xs truncate max-w-[120px]">{recipientName}</span>
-                            </div>
-                            <span className="text-[10px] text-slate-400">
-                              {conv.messages?.length || 0} msg
-                            </span>
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+                            {creatorName.charAt(0).toUpperCase()}
                           </div>
 
-                          <p className="text-xs font-medium text-slate-700 mt-2 truncate">
-                            🏷️ {exchangeTitle}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-semibold text-slate-900 text-xs truncate">
+                                {creatorName} ↔ {recipientName}
+                              </span>
+                              {lastTime && (
+                                <span className="text-[10px] text-slate-400 shrink-0 font-medium">
+                                  {lastTime}
+                                </span>
+                              )}
+                            </div>
 
-                          {conv.latest_message && (
-                            <p className="text-xs text-slate-500 mt-1 line-clamp-1 italic">
-                              "{conv.latest_message.message}"
+                            <p className="text-[11px] text-emerald-700 font-medium mt-0.5 truncate">
+                              🏷️ {exchangeTitle}
                             </p>
-                          )}
+
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-xs text-slate-500 line-clamp-1 italic">
+                                {lastMsg ? lastMsg.message : 'Aucun message'}
+                              </p>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold shrink-0 ml-1">
+                                {conv.messages?.length || 0}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       );
                     })
@@ -575,72 +631,144 @@ export const ServiceExchangesManagement = () => {
                 </div>
               </div>
 
-              {/* Right panel: Full Chat Thread Viewer for Admin */}
-              <div className="lg:col-span-8 p-6 flex flex-col justify-between bg-slate-50/50">
+              {/* Right panel: Full WhatsApp Thread Viewer */}
+              <div className="lg:col-span-8 flex flex-col justify-between" style={{
+                backgroundColor: '#efeae2',
+                backgroundImage: 'radial-gradient(#d1d7db 0.85px, transparent 0.85px)',
+                backgroundSize: '18px 18px',
+              }}>
                 {selectedConversation ? (
                   <>
-                    {/* Header */}
-                    <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-between mb-4">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 text-sm">
-                            {selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name}
-                          </span>
-                          <span className="text-xs text-slate-400 font-bold">↔</span>
-                          <span className="font-bold text-slate-900 text-sm">
-                            {selectedConversation.recipient_user?.company_profile?.company_name || selectedConversation.recipient_user?.name}
-                          </span>
+                    {/* WhatsApp Top Header */}
+                    <div className="p-3.5 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                          {(selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name || 'C').charAt(0).toUpperCase()}
                         </div>
-                        <p className="text-xs text-blue-600 font-medium mt-0.5">
-                          Partenariat : {selectedConversation.service_exchange?.title}
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900 text-sm">
+                              {selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name}
+                            </span>
+                            <span className="text-xs text-slate-400 font-bold">↔</span>
+                            <span className="font-bold text-slate-900 text-sm">
+                              {selectedConversation.recipient_user?.company_profile?.company_name || selectedConversation.recipient_user?.name}
+                            </span>
+                          </div>
+                          <p className="text-xs text-emerald-700 font-medium mt-0.5">
+                            Partenariat : <span className="text-slate-800">{selectedConversation.service_exchange?.title}</span>
+                          </p>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-                          Supervision Admin Active
+                        <span className="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                          Supervision Active
                         </span>
                       </div>
                     </div>
 
-                    {/* Messages bubbles */}
-                    <div className="space-y-3 overflow-y-auto flex-1 p-2 max-h-[420px]">
+                    {/* Messages bubbles (WhatsApp Left / Right) */}
+                    <div className="space-y-3 overflow-y-auto flex-1 p-4 max-h-[460px]">
                       {(!selectedConversation.messages || selectedConversation.messages.length === 0) ? (
-                        <p className="text-center text-slate-400 text-sm py-12">Aucun message dans cette conversation.</p>
+                        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                          <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
+                          <p className="text-xs font-medium">Aucun message échangé dans cette discussion.</p>
+                        </div>
                       ) : (
-                        selectedConversation.messages.map((msg) => {
+                        selectedConversation.messages.map((msg, index) => {
                           const isCreator = msg.sender_id === selectedConversation.creator_user_id;
-                          const senderName = msg.sender?.name || msg.sender?.first_name || (isCreator ? 'Initiateur' : 'Destinataire');
+                          const creatorName = selectedConversation.creator_user?.company_profile?.company_name || selectedConversation.creator_user?.name || 'Candidat';
+                          const recipientName = selectedConversation.recipient_user?.company_profile?.company_name || selectedConversation.recipient_user?.name || 'Annonceur';
+                          const senderDisplayName = isCreator ? creatorName : recipientName;
+
+                          // Groupement de date
+                          const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(selectedConversation.messages[index - 1].created_at);
 
                           return (
-                            <div
-                              key={msg.id}
-                              className={`flex flex-col ${isCreator ? 'items-start' : 'items-end'}`}
-                            >
-                              <div className="flex items-center gap-1.5 mb-1 px-1">
-                                <span className="text-[11px] font-bold text-slate-600">{senderName}</span>
-                                <span className="text-[10px] text-slate-400">
-                                  {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                            <React.Fragment key={msg.id}>
+                              {showDate && (
+                                <div className="flex justify-center my-3 sticky top-1 z-10">
+                                  <span className="bg-white/90 backdrop-blur text-slate-600 text-[11px] font-semibold px-3 py-1 rounded-full shadow-sm border border-slate-200/80">
+                                    {formatMessageDate(msg.created_at)}
+                                  </span>
+                                </div>
+                              )}
+
+                              <div className={`flex ${isCreator ? 'justify-start' : 'justify-end'} mb-2`}>
+                                <div className={`relative max-w-[78%] px-4 py-2.5 shadow-sm ${
+                                  isCreator
+                                    ? 'bg-white text-slate-900 rounded-2xl rounded-tl-none border border-slate-200/70'
+                                    : 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-none border border-[#bbf7d0]'
+                                }`}>
+                                  {/* Sender Label */}
+                                  <div className={`text-[11px] font-bold mb-1 ${
+                                    isCreator ? 'text-blue-700' : 'text-emerald-800'
+                                  }`}>
+                                    {senderDisplayName}
+                                  </div>
+
+                                  {/* Attachment if present */}
+                                  {msg.attachment_url && (
+                                    <div className="mb-2">
+                                      {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                        <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                          <img 
+                                            src={msg.attachment_url} 
+                                            alt={msg.attachment_name || 'Pièce jointe'} 
+                                            className="rounded-lg max-h-48 w-full object-cover border border-black/10 hover:opacity-95"
+                                          />
+                                        </a>
+                                      ) : (
+                                        <a 
+                                          href={msg.attachment_url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 p-2 bg-black/5 hover:bg-black/10 rounded-lg border border-black/5 transition-colors"
+                                        >
+                                          <FileText className="w-5 h-5 text-emerald-700 shrink-0" />
+                                          <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-slate-800 truncate">{msg.attachment_name || 'Document joint'}</p>
+                                            <span className="text-[10px] text-slate-500">Télécharger</span>
+                                          </div>
+                                          <Download className="w-4 h-4 text-slate-500" />
+                                        </a>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Message Text */}
+                                  <p className="text-[13px] leading-relaxed whitespace-pre-wrap select-text">
+                                    {msg.message}
+                                  </p>
+
+                                  {/* Bottom Timestamp & Checks */}
+                                  <div className="flex items-center justify-end gap-1 mt-1">
+                                    <span className="text-[10px] text-slate-400 font-medium">
+                                      {formatMessageTime(msg.created_at)}
+                                    </span>
+                                    {!isCreator && (
+                                      <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className={`p-3.5 rounded-2xl max-w-lg text-sm shadow-sm ${
-                                isCreator
-                                  ? 'bg-white text-slate-800 border border-slate-200 rounded-tl-sm'
-                                  : 'bg-blue-600 text-white rounded-tr-sm'
-                              }`}>
-                                <p className="whitespace-pre-line leading-relaxed">{msg.message}</p>
-                              </div>
-                            </div>
+                            </React.Fragment>
                           );
                         })
                       )}
+                      <div ref={chatBottomRef} />
                     </div>
 
-                    {/* Admin notice */}
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl mt-4 flex items-center gap-2 text-xs text-blue-800">
-                      <Shield className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>
-                        En tant qu'administrateur, vous avez accès à l'intégralité des discussions pour assurer la qualité des collaborations et prévenir les litiges inter-entreprises.
+                    {/* WhatsApp Bottom Bar (Supervision notice) */}
+                    <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Shield className="w-4 h-4 text-emerald-600" />
+                        <span>Mode supervision administrateur (Lecture seule des messages en direct)</span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                        {selectedConversation.messages?.length || 0} messages échangés
                       </span>
                     </div>
                   </>
@@ -656,173 +784,294 @@ export const ServiceExchangesManagement = () => {
           </div>
         )}
 
-        {/* MODAL : DISCUSSIONS COMPLÈTES AUTOUR D'UN PARTENARIAT SPÉCIFIQUE */}
+        {/* MODAL : DISCUSSIONS COMPLÈTES STYLE VRAI CHAT WHATSAPP (GAUCHE / DROITE) */}
         {exchangeChatModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-4xl w-full flex flex-col max-h-[90vh] shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+            <div className="bg-white rounded-2xl max-w-5xl w-full flex flex-col h-[90vh] shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
               
-              {/* Modal Header */}
-              <div className="p-5 bg-gradient-to-r from-blue-900 to-indigo-900 text-white flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Handshake className="w-5 h-5 text-blue-300" />
-                    <h3 className="font-bold text-lg text-white">Discussions du Partenariat</h3>
-                    <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
-                      {exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name}
-                    </span>
+              {/* WhatsApp Modal Header */}
+              <div className="p-4 bg-emerald-800 text-white flex items-center justify-between shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center font-bold text-base shadow-sm">
+                    {(exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name || 'P').charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-xs text-blue-200 mt-1 font-medium line-clamp-1">
-                    Opportunité : <strong className="text-white">{exchangeChatModal.title}</strong>
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-base text-white">
+                        Discussions WhatsApp du Partenariat
+                      </h3>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-white/20 text-white">
+                        Annonceur : {exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name}
+                      </span>
+                    </div>
+                    <p className="text-xs text-emerald-100 mt-0.5 line-clamp-1 font-medium">
+                      Offre : <strong className="text-white">{exchangeChatModal.title}</strong>
+                    </p>
+                  </div>
                 </div>
 
-                <button
-                  onClick={() => setExchangeChatModal(null)}
-                  className="p-1.5 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <XCircle className="w-6 h-6" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setExchangeChatModal(null)}
+                    className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <XCircle className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
 
-              {/* Offer & Need Reminder Banner */}
-              <div className="bg-slate-50 border-b border-slate-200 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="bg-emerald-50 text-emerald-900 p-2.5 rounded-lg border border-emerald-200/80">
-                  <span className="font-bold block mb-0.5">🟢 Offre proposée :</span>
-                  <p className="line-clamp-2">{exchangeChatModal.offer}</p>
+              {/* Offer & Need Compact Banner */}
+              <div className="bg-emerald-50/90 border-b border-emerald-200/80 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="bg-white/80 p-2 rounded-lg border border-emerald-200/60 flex items-start gap-2">
+                  <span className="font-bold text-emerald-950 shrink-0">🟢 Offre :</span>
+                  <span className="text-emerald-900 line-clamp-1">{exchangeChatModal.offer}</span>
                 </div>
-                <div className="bg-blue-50 text-blue-900 p-2.5 rounded-lg border border-blue-200/80">
-                  <span className="font-bold block mb-0.5">🔵 Recherche en contrepartie :</span>
-                  <p className="line-clamp-2">{exchangeChatModal.need}</p>
+                <div className="bg-white/80 p-2 rounded-lg border border-blue-200/60 flex items-start gap-2">
+                  <span className="font-bold text-blue-950 shrink-0">🔵 Besoin :</span>
+                  <span className="text-blue-900 line-clamp-1">{exchangeChatModal.need}</span>
                 </div>
               </div>
 
-              {/* Content Body: Conversations split */}
-              <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-hidden min-h-[420px]">
+              {/* Content Body: WhatsApp Split View (Left: Candidates, Right: Full Chat) */}
+              <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-hidden">
                 
-                {/* Left: Companies that engaged discussion on this deal */}
-                <div className="md:col-span-4 border-r border-slate-200 p-4 overflow-y-auto bg-slate-50/50 space-y-2">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                    Entreprises candidates ({exchangeConversations.length})
-                  </h4>
+                {/* Left: Candidates List (WhatsApp Chat List Style) */}
+                <div className="md:col-span-4 border-r border-slate-200 flex flex-col bg-white">
+                  <div className="p-3 border-b border-slate-100 bg-slate-50">
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Filtrer les candidats..."
+                        value={modalSearch}
+                        onChange={(e) => setModalSearch(e.target.value)}
+                        className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
 
-                  {loadingExchangeChat ? (
-                    <div className="text-center py-12 text-slate-400 text-xs">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-blue-500" />
-                      Chargement des discussions...
-                    </div>
-                  ) : exchangeConversations.length === 0 ? (
-                    <div className="text-center py-12 px-4 text-slate-400 text-xs bg-white rounded-xl border border-dashed border-slate-200">
-                      <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                      Aucune entreprise n'a encore formulé de proposition sur cette offre.
-                    </div>
-                  ) : (
-                    exchangeConversations.map((conv) => {
-                      const isSelected = selectedExchangeConv?.id === conv.id;
-                      const partnerName = conv.creator_user?.company_profile?.company_name || conv.creator_user?.name || 'Entreprise Partenaire';
-                      
-                      return (
-                        <div
-                          key={conv.id}
-                          onClick={() => setSelectedExchangeConv(conv)}
-                          className={`p-3 rounded-xl border cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-100/80'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs truncate">{partnerName}</span>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
-                              isSelected ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {conv.messages?.length || 0} msg
-                            </span>
+                  <div className="divide-y divide-slate-100 overflow-y-auto flex-1">
+                    {loadingExchangeChat ? (
+                      <div className="text-center py-12 text-slate-400 text-xs">
+                        <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
+                        Chargement des discussions...
+                      </div>
+                    ) : filteredModalConversations.length === 0 ? (
+                      <div className="text-center py-12 px-4 text-slate-400 text-xs">
+                        <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                        Aucune entreprise n'a encore formulé de proposition.
+                      </div>
+                    ) : (
+                      filteredModalConversations.map((conv) => {
+                        const isSelected = selectedExchangeConv?.id === conv.id;
+                        const partnerName = conv.creator_user?.company_profile?.company_name || conv.creator_user?.name || 'Entreprise Partenaire';
+                        const lastMsg = conv.latest_message;
+                        const lastTime = lastMsg ? formatMessageTime(lastMsg.created_at) : '';
+
+                        return (
+                          <div
+                            key={conv.id}
+                            onClick={() => setSelectedExchangeConv(conv)}
+                            className={`p-3 cursor-pointer transition-all flex items-start gap-3 ${
+                              isSelected
+                                ? 'bg-[#f0f2f5] border-l-4 border-emerald-600'
+                                : 'bg-white hover:bg-slate-50'
+                            }`}
+                          >
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0">
+                              {partnerName.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="font-semibold text-slate-900 text-xs truncate">
+                                  {partnerName}
+                                </span>
+                                {lastTime && (
+                                  <span className="text-[10px] text-slate-400 font-medium shrink-0">
+                                    {lastTime}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between mt-1">
+                                <p className="text-xs text-slate-500 line-clamp-1 italic">
+                                  {lastMsg ? `"${lastMsg.message}"` : 'Discussion ouverte'}
+                                </p>
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white font-bold shrink-0 ml-1">
+                                  {conv.messages?.length || 0} msg
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          {conv.latest_message && (
-                            <p className={`text-[11px] mt-1.5 line-clamp-1 italic ${
-                              isSelected ? 'text-blue-100' : 'text-slate-500'
-                            }`}>
-                              "{conv.latest_message.message}"
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
 
-                {/* Right: Messages Thread */}
-                <div className="md:col-span-8 p-4 flex flex-col justify-between overflow-y-auto bg-white">
+                {/* Right: WhatsApp Chat Box */}
+                <div className="md:col-span-8 flex flex-col justify-between" style={{
+                  backgroundColor: '#efeae2',
+                  backgroundImage: 'radial-gradient(#d1d7db 0.85px, transparent 0.85px)',
+                  backgroundSize: '18px 18px',
+                }}>
                   {selectedExchangeConv ? (
                     <>
-                      <div className="pb-3 border-b border-slate-100 flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-blue-600" />
-                          <span className="font-bold text-slate-900 text-sm">
-                            Discussion avec {selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name}
-                          </span>
+                      {/* Chat Contact Header */}
+                      <div className="p-3 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                            {(selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name || 'C').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-slate-900 text-xs">
+                                {selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name}
+                              </span>
+                              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                Candidat
+                              </span>
+                              <span className="text-xs text-slate-400">↔</span>
+                              <span className="font-bold text-slate-900 text-xs">
+                                {exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name}
+                              </span>
+                              <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200">
+                                Annonceur
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 mt-0.5">
+                              Supervision de négociation • {selectedExchangeConv.messages?.length || 0} message(s)
+                            </p>
+                          </div>
                         </div>
-                        <span className="text-xs text-slate-500">
-                          Total : {selectedExchangeConv.messages?.length || 0} message(s)
-                        </span>
-                      </div>
 
-                      {/* Chat Messages */}
-                      <div className="space-y-3 overflow-y-auto flex-1 p-2 max-h-[360px]">
-                        {(!selectedExchangeConv.messages || selectedExchangeConv.messages.length === 0) ? (
-                          <p className="text-center text-slate-400 text-xs py-10">Aucun message pour cette discussion.</p>
-                        ) : (
-                          selectedExchangeConv.messages.map((msg) => {
-                            const isCreator = msg.sender_id === selectedExchangeConv.creator_user_id;
-                            const senderName = msg.sender?.company_profile?.company_name || msg.sender?.name || (isCreator ? 'Candidat' : 'Auteur du partenariat');
-
-                            return (
-                              <div
-                                key={msg.id}
-                                className={`flex flex-col ${isCreator ? 'items-start' : 'items-end'}`}
-                              >
-                                <div className="flex items-center gap-1.5 mb-1 px-1">
-                                  <span className="text-[11px] font-bold text-slate-600">{senderName}</span>
-                                  <span className="text-[10px] text-slate-400">
-                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                </div>
-                                <div className={`p-3.5 rounded-2xl max-w-md text-xs leading-relaxed shadow-sm ${
-                                  isCreator
-                                    ? 'bg-slate-100 text-slate-800 rounded-tl-sm'
-                                    : 'bg-blue-600 text-white rounded-tr-sm'
-                                }`}>
-                                  <p className="whitespace-pre-line">{msg.message}</p>
-                                </div>
-                              </div>
-                            );
-                          })
+                        {/* Phone if available */}
+                        {(selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone) && (
+                          <a 
+                            href={`tel:${selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone}`}
+                            className="text-xs bg-emerald-50 text-emerald-800 font-semibold px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1 hover:bg-emerald-100"
+                          >
+                            <Phone className="w-3 h-3 text-emerald-600" />
+                            <span>{selectedExchangeConv.creator_user?.phone || selectedExchangeConv.creator_user?.company_profile?.phone}</span>
+                          </a>
                         )}
                       </div>
 
-                      <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl mt-3 flex items-center gap-2 text-[11px] text-blue-800">
-                        <Shield className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span>Supervision administrateur active en lecture intégrale.</span>
+                      {/* Chat Messages (WhatsApp Left / Right) */}
+                      <div className="space-y-3 overflow-y-auto flex-1 p-4 max-h-[460px]">
+                        {(!selectedExchangeConv.messages || selectedExchangeConv.messages.length === 0) ? (
+                          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                            <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
+                            <p className="text-xs font-medium">Aucun message pour cette discussion.</p>
+                          </div>
+                        ) : (
+                          selectedExchangeConv.messages.map((msg, index) => {
+                            const isCreator = msg.sender_id === selectedExchangeConv.creator_user_id;
+                            const creatorName = selectedExchangeConv.creator_user?.company_profile?.company_name || selectedExchangeConv.creator_user?.name || 'Candidat';
+                            const recipientName = exchangeChatModal.company_profile?.company_name || exchangeChatModal.user?.name || 'Annonceur';
+                            const senderDisplayName = isCreator ? creatorName : recipientName;
+
+                            // Groupement par date
+                            const showDate = index === 0 || formatMessageDate(msg.created_at) !== formatMessageDate(selectedExchangeConv.messages[index - 1].created_at);
+
+                            return (
+                              <React.Fragment key={msg.id}>
+                                {showDate && (
+                                  <div className="flex justify-center my-3 sticky top-1 z-10">
+                                    <span className="bg-white/90 backdrop-blur text-slate-600 text-[11px] font-semibold px-3 py-1 rounded-full shadow-sm border border-slate-200/80">
+                                      {formatMessageDate(msg.created_at)}
+                                    </span>
+                                  </div>
+                                )}
+
+                                <div className={`flex ${isCreator ? 'justify-start' : 'justify-end'} mb-2`}>
+                                  <div className={`relative max-w-[78%] px-4 py-2.5 shadow-sm ${
+                                    isCreator
+                                      ? 'bg-white text-slate-900 rounded-2xl rounded-tl-none border border-slate-200/70'
+                                      : 'bg-[#d9fdd3] text-slate-900 rounded-2xl rounded-tr-none border border-[#bbf7d0]'
+                                  }`}>
+                                    {/* Sender Label */}
+                                    <div className={`text-[11px] font-bold mb-1 ${
+                                      isCreator ? 'text-blue-700' : 'text-emerald-800'
+                                    }`}>
+                                      {senderDisplayName}
+                                    </div>
+
+                                    {/* Attachment if present */}
+                                    {msg.attachment_url && (
+                                      <div className="mb-2">
+                                        {msg.attachment_type?.startsWith('image') || msg.attachment_url.match(/\.(jpeg|jpg|png|gif|webp)$/i) ? (
+                                          <a href={msg.attachment_url} target="_blank" rel="noopener noreferrer">
+                                            <img 
+                                              src={msg.attachment_url} 
+                                              alt={msg.attachment_name || 'Pièce jointe'} 
+                                              className="rounded-lg max-h-48 w-full object-cover border border-black/10 hover:opacity-95"
+                                            />
+                                          </a>
+                                        ) : (
+                                          <a 
+                                            href={msg.attachment_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 p-2 bg-black/5 hover:bg-black/10 rounded-lg border border-black/5 transition-colors"
+                                          >
+                                            <FileText className="w-5 h-5 text-emerald-700 shrink-0" />
+                                            <div className="min-w-0 flex-1">
+                                              <p className="text-xs font-semibold text-slate-800 truncate">{msg.attachment_name || 'Document joint'}</p>
+                                              <span className="text-[10px] text-slate-500">Télécharger</span>
+                                            </div>
+                                            <Download className="w-4 h-4 text-slate-500" />
+                                          </a>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Message Text */}
+                                    <p className="text-[13px] leading-relaxed whitespace-pre-wrap select-text">
+                                      {msg.message}
+                                    </p>
+
+                                    {/* Bottom Timestamp & Checks */}
+                                    <div className="flex items-center justify-end gap-1 mt-1">
+                                      <span className="text-[10px] text-slate-400 font-medium">
+                                        {formatMessageTime(msg.created_at)}
+                                      </span>
+                                      {!isCreator && (
+                                        <CheckCheck className="w-3.5 h-3.5 text-[#53bdeb]" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </React.Fragment>
+                            );
+                          })
+                        )}
+                        <div ref={modalChatBottomRef} />
+                      </div>
+
+                      {/* WhatsApp Bottom Bar (Supervision notice) */}
+                      <div className="p-3 bg-white border-t border-slate-200 flex items-center justify-between text-xs text-slate-600 shadow-inner">
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <Shield className="w-4 h-4 text-emerald-600" />
+                          <span>Mode supervision administrateur (Lecture seule des messages en direct)</span>
+                        </div>
+                        <button
+                          onClick={() => setExchangeChatModal(null)}
+                          className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                        >
+                          Fermer
+                        </button>
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-slate-400 py-16">
-                      <MessageSquare className="w-10 h-10 text-slate-300 mb-2" />
-                      <p className="text-xs font-semibold">Sélectionnez une discussion à gauche pour afficher les messages.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-slate-400 py-20">
+                      <MessageSquare className="w-12 h-12 text-slate-300 mb-3" />
+                      <p className="font-semibold text-sm">Sélectionnez une discussion à gauche pour afficher tous les messages.</p>
                     </div>
                   )}
                 </div>
 
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button
-                  onClick={() => setExchangeChatModal(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg shadow-sm"
-                >
-                  Fermer
-                </button>
               </div>
 
             </div>
@@ -835,7 +1084,7 @@ export const ServiceExchangesManagement = () => {
             <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <Handshake className="w-5 h-5 text-blue-600" />
+                  <Handshake className="w-5 h-5 text-emerald-600" />
                   <h3 className="font-bold text-slate-900 text-base">Fiche de Partenariat B2B</h3>
                 </div>
                 <button
@@ -885,9 +1134,9 @@ export const ServiceExchangesManagement = () => {
                     setSelectedExchange(null);
                     handleOpenExchangeDiscussions(ex);
                   }}
-                  className="px-3.5 py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center gap-1.5 transition-colors"
+                  className="px-3.5 py-2 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
-                  <MessageSquare className="w-4 h-4 text-blue-600" />
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
                   Voir les discussions ({selectedExchange.proposals_count || 0})
                 </button>
 
