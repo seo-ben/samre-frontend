@@ -38,8 +38,8 @@ export const SpecialRequestsPage = () => {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
+  const fetchRequests = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
@@ -70,13 +70,19 @@ export const SpecialRequestsPage = () => {
     } catch (err) {
       console.error('Error fetching special requests:', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [statusFilter, categoryFilter, search, page]);
 
   useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests, syncCounter]);
+    fetchRequests(false);
+  }, [fetchRequests]);
+
+  useEffect(() => {
+    if (syncCounter > 0) {
+      fetchRequests(true);
+    }
+  }, [syncCounter, fetchRequests]);
 
   const handleOpenModal = (req) => {
     setSelectedRequest(req);

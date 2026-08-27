@@ -50,8 +50,8 @@ export const ServiceExchangesManagement = () => {
   };
 
   // Fetch exchanges list
-  const fetchExchanges = useCallback(async () => {
-    setLoading(true);
+  const fetchExchanges = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const params = new URLSearchParams();
       if (typeFilter !== 'all') params.append('type', typeFilter);
@@ -68,15 +68,17 @@ export const ServiceExchangesManagement = () => {
       }
     } catch (err) {
       console.error('Error fetching service exchanges:', err);
-      showToast('Erreur lors du chargement des annonces de troc.', 'error');
+      if (!isSilent) {
+        showToast('Erreur lors du chargement des annonces de troc.', 'error');
+      }
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [typeFilter, categoryFilter, statusFilter, search, page]);
 
   // Fetch conversations for supervision
-  const fetchConversations = useCallback(async () => {
-    setLoadingConversations(true);
+  const fetchConversations = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoadingConversations(true);
     try {
       const res = await apiClient.get('/v1/admin/service-exchanges/conversations');
       if (res.data?.success) {
@@ -89,17 +91,28 @@ export const ServiceExchangesManagement = () => {
     } catch (err) {
       console.error('Error fetching conversations:', err);
     } finally {
-      setLoadingConversations(false);
+      if (!isSilent) setLoadingConversations(false);
     }
   }, [selectedConversation]);
 
+  // Initialisation et rechargement lors des changements de filtres / page
   useEffect(() => {
-    fetchExchanges();
-  }, [fetchExchanges, syncCounter]);
+    fetchExchanges(false);
+  }, [fetchExchanges]);
+
+  // Synchronisation en arrière-plan sans détruire l'interface ni clignoter
+  useEffect(() => {
+    if (syncCounter > 0) {
+      fetchExchanges(true);
+      if (activeTab === 'conversations') {
+        fetchConversations(true);
+      }
+    }
+  }, [syncCounter, activeTab, fetchExchanges, fetchConversations]);
 
   useEffect(() => {
     if (activeTab === 'conversations') {
-      fetchConversations();
+      fetchConversations(false);
     }
   }, [activeTab, fetchConversations]);
 

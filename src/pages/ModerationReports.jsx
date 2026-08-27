@@ -37,8 +37,8 @@ export const ModerationReportsPage = () => {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const fetchReports = useCallback(async () => {
-    setLoading(true);
+  const fetchReports = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const params = new URLSearchParams();
       if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
@@ -70,13 +70,19 @@ export const ModerationReportsPage = () => {
     } catch (err) {
       console.error('Error fetching reports:', err);
     } finally {
-      setLoading(false);
+      if (!isSilent) setLoading(false);
     }
   }, [statusFilter, search, page]);
 
   useEffect(() => {
-    fetchReports();
-  }, [fetchReports, syncCounter]);
+    fetchReports(false);
+  }, [fetchReports]);
+
+  useEffect(() => {
+    if (syncCounter > 0) {
+      fetchReports(true);
+    }
+  }, [syncCounter, fetchReports]);
 
   const handleAction = async (type) => {
     if (!selectedReport || !type) return;
