@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, Sparkles, Vote, Trash2, Handshake
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, ShieldCheck, Sparkles, Vote, Trash2, Handshake
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -167,10 +167,17 @@ const NAV = [
     ],
   },
   {
+    id: 'audit-logs',
+    label: 'Journal d\'audit & Logs',
+    path: '/audit-logs',
+    icon: ShieldCheck,
+  },
+  {
     id: 'settings',
     label: 'Paramètres',
     icon: Settings,
     children: [
+      { label: 'Journal d\'audit', path: '/audit-logs', icon: ShieldCheck },
       { label: 'Paramètres système', path: '/cms/quotas',     icon: Sliders },
       { label: 'Comptes admin',    path: '/settings/staff',    icon: UserCog },
       { label: 'Mon profil',       path: '/settings/profile',  icon: UserCheck },

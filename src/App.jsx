@@ -35,6 +35,7 @@ import { SuggestedLocationsPage } from './pages/SuggestedLocations'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
+import { AuditLogsPage } from './pages/AuditLogs'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
@@ -49,6 +50,10 @@ function App() {
 
       {/* ── Dashboard ─────────────────────────── */}
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
+
+      {/* ── Journal d'Audit & Logs ──────────────── */}
+      <Route path="/audit-logs" element={<Protected><AuditLogsPage /></Protected>} />
+      <Route path="/logs"       element={<Protected><AuditLogsPage /></Protected>} />
 
       {/* ── Utilisateurs & Entreprises ──────────────────────── */}
       <Route path="/users"             element={<Protected><UsersPage /></Protected>} />
