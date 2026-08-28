@@ -169,6 +169,39 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
     }));
   };
 
+  const POPULAR_SKILL_CATEGORIES = [
+    {
+      category: 'Bureautique & Digital',
+      skills: ['Pack Office', 'Microsoft Word', 'Microsoft Excel', 'PowerPoint', 'Google Workspace', 'Canva', 'Saisie rapide', 'Gestion d\'emails']
+    },
+    {
+      category: 'Secrétariat & Organisation',
+      skills: ['Accueil physique & téléphonique', 'Gestion d\'agenda', 'Prise de rendez-vous', 'Rédaction administrative', 'Prise de notes & PV', 'Classement & Archivage', 'Gestion du courrier', 'Organisation de réunions']
+    },
+    {
+      category: 'Gestion & Comptabilité',
+      skills: ['Facturation & Devis', 'Comptabilité de base', 'Suivi des paiements', 'Rapprochement bancaire', 'Gestion de caisse', 'Gestion des stocks']
+    },
+    {
+      category: 'Langues & Communication',
+      skills: ['Français professionnel', 'Anglais professionnel', 'Anglais bilingue', 'Aisance relationnelle', 'Communication écrite & orale', 'Relations clients / SAV']
+    },
+    {
+      category: 'Spécialisations',
+      skills: ['Secrétariat médical', 'Secrétariat juridique', 'Assistanat de direction', 'Assistance RH', 'Coordination de projets']
+    }
+  ];
+
+  const handleToggleSkill = (skill) => {
+    const trimmed = skill.trim();
+    if (!trimmed) return;
+    if (formData.skills.includes(trimmed)) {
+      handleRemoveSkill(trimmed);
+    } else {
+      setFormData(prev => ({ ...prev, skills: [...prev.skills, trimmed] }));
+    }
+  };
+
   const handleAddSkill = () => {
     if (skillInput.trim() && !formData.skills.includes(skillInput.trim())) {
       setFormData(prev => ({ ...prev, skills: [...prev.skills, skillInput.trim()] }));
@@ -481,30 +514,157 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
 
           {/* SECTION 4 : Compétences */}
           {currentStep === 4 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', animation: 'fadeIn 0.3s' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input 
-                type="text" 
-                value={skillInput} 
-                onChange={(e) => setSkillInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                placeholder="Ajouter une compétence (ex: Accueil, Word, Bilingue...)" 
-                style={{ ...inputStyle, flex: 1 }} 
-              />
-              <button type="button" onClick={handleAddSkill} style={{ padding: '0 16px', background: '#eef2ff', color: '#4f46e5', border: '1px solid #c7d2fe', borderRadius: '8px', cursor: 'pointer', fontWeight: '500' }}>
-                Ajouter
-              </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', animation: 'fadeIn 0.3s' }}>
+            {/* Saisie personnalisée */}
+            <div>
+              <label style={{ ...labelStyle, marginBottom: '6px', display: 'block' }}>
+                Ajouter une compétence manuelle ou rechercher :
+              </label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  type="text" 
+                  value={skillInput} 
+                  onChange={(e) => setSkillInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
+                  placeholder="Ex: Accueil, Word, Gestion d'agenda, Bilingue, Canva..." 
+                  style={{ ...inputStyle, flex: 1 }} 
+                />
+                <button 
+                  type="button" 
+                  onClick={handleAddSkill} 
+                  style={{ 
+                    padding: '0 18px', 
+                    background: '#1A6FD4', 
+                    color: '#ffffff', 
+                    border: 'none', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer', 
+                    fontWeight: '600',
+                    fontSize: '13.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Plus size={16} /> Ajouter
+                </button>
+              </div>
             </div>
-            {formData.skills.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                {formData.skills.map(s => (
-                  <span key={s} style={{ background: '#f1f5f9', padding: '4px 10px', borderRadius: '999px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {s}
-                    <XCircle size={14} color="#64748b" style={{ cursor: 'pointer' }} onClick={() => handleRemoveSkill(s)} />
-                  </span>
+
+            {/* Compétences sélectionnées */}
+            <div style={{
+              backgroundColor: '#F8FAFC',
+              borderRadius: '12px',
+              padding: '12px 14px',
+              border: '1px solid #E2E8F0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155' }}>
+                  Compétences retenues pour l'offre ({formData.skills.length})
+                </span>
+                {formData.skills.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, skills: [] }))}
+                    style={{ fontSize: '11px', color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                  >
+                    Tout effacer
+                  </button>
+                )}
+              </div>
+
+              {formData.skills.length === 0 ? (
+                <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
+                  Aucune compétence sélectionnée. Cliquez sur les suggestions ci-dessous pour les ajouter en 1 clic.
+                </p>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {formData.skills.map(s => (
+                    <span 
+                      key={s} 
+                      style={{ 
+                        background: '#EFF6FF', 
+                        border: '1px solid #BFDBFE',
+                        color: '#1E40AF',
+                        padding: '4px 10px', 
+                        borderRadius: '999px', 
+                        fontSize: '12.5px', 
+                        fontWeight: '600',
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                      }}
+                    >
+                      {s}
+                      <XCircle 
+                        size={14} 
+                        style={{ cursor: 'pointer', color: '#3B82F6' }} 
+                        onClick={() => handleRemoveSkill(s)} 
+                      />
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Suggestions de compétences recommandées */}
+            <div style={{ marginTop: '2px' }}>
+              <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', display: 'block', marginBottom: '8px' }}>
+                💡 Suggestions recommandées (cliquez pour ajouter / retirer) :
+              </span>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '220px', overflowY: 'auto', paddingRight: '4px' }}>
+                {POPULAR_SKILL_CATEGORIES.map(cat => (
+                  <div key={cat.category} style={{ backgroundColor: '#ffffff', borderRadius: '10px', border: '1px solid #F1F5F9', padding: '8px 10px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: '#64748B', display: 'block', marginBottom: '6px', letterSpacing: '0.03em' }}>
+                      {cat.category}
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {cat.skills.map(skill => {
+                        const isSelected = formData.skills.includes(skill);
+                        return (
+                          <button
+                            type="button"
+                            key={skill}
+                            onClick={() => handleToggleSkill(skill)}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: isSelected ? '700' : '500',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              transition: 'all 0.15s',
+                              backgroundColor: isSelected ? '#1A6FD4' : '#F1F5F9',
+                              color: isSelected ? '#FFFFFF' : '#334155',
+                              border: `1px solid ${isSelected ? '#1A6FD4' : '#E2E8F0'}`,
+                              boxShadow: isSelected ? '0 2px 4px rgba(26, 111, 212, 0.25)' : 'none'
+                            }}
+                            onMouseEnter={e => {
+                              if (!isSelected) {
+                                e.currentTarget.style.backgroundColor = '#E2E8F0';
+                                e.currentTarget.style.color = '#0F172A';
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!isSelected) {
+                                e.currentTarget.style.backgroundColor = '#F1F5F9';
+                                e.currentTarget.style.color = '#334155';
+                              }
+                            }}
+                          >
+                            {isSelected ? '✓' : '+'} {skill}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
           )}
 
