@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, Bell, ChevronRight, Volume2, VolumeX, 
   Monitor, Handshake, CreditCard, 
-  Zap, UserCheck, ShieldCheck 
+  Zap, UserCheck, ShieldCheck, Briefcase, 
+  FileText, Calendar, UserPlus, Award 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -22,17 +23,25 @@ const timeAgo = (dateStr) => {
   }
 };
 
-// Helper d'icône d'alerte
+// Helper d'icône d'alerte selon l'événement
 const getAlertIcon = (type) => {
   switch (type) {
-    case 'report':
-      return <ShieldCheck size={15} color="#DC2626" />;
-    case 'special_request':
-      return <Zap size={15} color="#7E22CE" />;
+    case 'job_offer':
+      return <Briefcase size={15} color="#4F46E5" />;
+    case 'job_application':
+      return <FileText size={15} color="#0284C7" />;
     case 'hiring_declaration':
       return <Handshake size={15} color="#059669" />;
+    case 'special_request':
+      return <Zap size={15} color="#7E22CE" />;
+    case 'report':
+      return <ShieldCheck size={15} color="#DC2626" />;
     case 'verification_badge':
-      return <UserCheck size={15} color="#0284C7" />;
+      return <Award size={15} color="#D97706" />;
+    case 'event':
+      return <Calendar size={15} color="#2563EB" />;
+    case 'user_registered':
+      return <UserPlus size={15} color="#16A34A" />;
     case 'wallet_credit':
       return <CreditCard size={15} color="#059669" />;
     default:
