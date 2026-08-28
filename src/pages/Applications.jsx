@@ -1,346 +1,1669 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { 
-  Filter, FileText, User, Briefcase, Calendar, Info, 
-  ChevronLeft, ChevronRight, Eye, CheckCircle2, X, AlertCircle
+  FileText, User, Briefcase, Calendar, Info, 
+  ChevronLeft, ChevronRight, Eye, CheckCircle2, X, 
+  AlertCircle, Clock, Phone, Mail, MapPin, Building2, 
+  Sparkles, Video, Users, Check, RefreshCw, Send, 
+  Globe, ExternalLink, Download, Search, Filter, 
+  CalendarCheck, Award, MessageSquare, ChevronDown
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 
+// Helper d'extraction propre du titre de l'offre
+const getOfferTitle = (jobOffer) => {
+  if (!jobOffer) return 'Offre d\'emploi';
+  if (jobOffer.title) return jobOffer.title;
+  if (jobOffer.translations && jobOffer.translations.length > 0) {
+    const fr = jobOffer.translations.find(t => t.locale === 'fr' || t.locale?.startsWith('fr'));
+    if (fr?.title) return fr.title;
+    return jobOffer.translations[0].title || 'Offre d\'emploi';
+  }
+  return 'Offre d\'emploi';
+};
+
+// Helper d'extraction propre du nom du candidat
+const getCandidateName = (candidateProfile) => {
+  if (!candidateProfile) return 'Candidat';
+  const name = `${candidateProfile.first_name || ''} ${candidateProfile.last_name || ''}`.trim();
+  if (name) return name;
+  return candidateProfile.user?.display_name || candidateProfile.user?.name || candidateProfile.user?.phone || 'Candidat';
+};
+
+// Formatage de la date en français
+const formatDate = (dateStr) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(d);
+  } catch {
+    return dateStr;
+  }
+};
+
+// Formatage date et heure
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    return new Intl.DateTimeFormat('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(d);
+  } catch {
+    return dateStr;
+  }
+};
+
+// Formatage pour input datetime-local (YYYY-MM-DDTHH:mm)
+const formatToDatetimeLocal = (dateStr) => {
+  if (!dateStr) {
+    const now = new Date();
+    now.setHours(now.getHours() + 24);
+    now.setMinutes(0);
+    now.setSeconds(0);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:00`;
+  }
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export const ApplicationsPage = () => {
   const [applications, setApplications] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    submitted: 0,
+    in_progress: 0,
+    accepted: 0,
+    rejected: 0,
+    with_appointments: 0
+  });
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
-  
-  const [selectedApp, setSelectedApp] = useState(null);
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [statusForm, setStatusForm] = useState({ status: '', note: '' });
-  
-  const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
-
+  // Filtres
   const location = useLocation();
-  const navigate = useNavigate();
-
-  const getStatusFromPath = (path) => {
-    if (path.includes('/applications/by-status')) return 'in_progress';
+  const getInitialStatus = () => {
+    if (location.pathname.includes('/applications/by-status')) return 'in_progress';
     return 'all';
   };
-
-  const [filterStatus, setFilterStatus] = useState(getStatusFromPath(location.pathname));
+  const [filterStatus, setFilterStatus] = useState(getInitialStatus());
+  const [filterAppointment, setFilterAppointment] = useState('all'); // 'all', 'yes', 'no'
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
 
+  // Système de Toasts flottants
+  const [toasts, setToasts] = useState([]);
+  const showToast = useCallback((message, type = 'success') => {
+    const id = Date.now() + Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  }, []);
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // Modals
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  // Formulaires
+  const [statusForm, setStatusForm] = useState({ status: '', note: '' });
+  const [submittingStatus, setSubmittingStatus] = useState(false);
+
+  const [scheduleForm, setScheduleForm] = useState({
+    scheduled_at: '',
+    duration_minutes: 30,
+    location_type: 'online', // 'online', 'in_person', 'phone'
+    location_address: '',
+    meeting_link: '',
+    notes: ''
+  });
+  const [submittingSchedule, setSubmittingSchedule] = useState(false);
+
+  // Debounce de recherche
   useEffect(() => {
-    setFilterStatus(getStatusFromPath(location.pathname));
-  }, [location.pathname]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const fetchApplications = async (page = 1) => {
+  // Chargement des candidatures
+  const fetchApplications = useCallback(async (targetPage = 1) => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/v1/admin/applications', {
-        params: { page, status: filterStatus, search: searchQuery }
-      });
-      setApplications(response.data.data.data);
-      setMeta({
-        current_page: response.data.data.current_page,
-        last_page: response.data.data.last_page,
-        total: response.data.data.total,
-        per_page: response.data.data.per_page,
-      });
+      const params = {
+        page: targetPage,
+        per_page: 15,
+        status: filterStatus !== 'all' ? filterStatus : undefined,
+        has_appointment: filterAppointment !== 'all' ? filterAppointment : undefined,
+        search: debouncedSearch.trim() || undefined
+      };
+      const res = await apiClient.get('/v1/admin/applications', { params });
+      if (res.data?.status === 'success' || res.data?.data) {
+        const payload = res.data.data;
+        setApplications(payload.data || []);
+        setMeta({
+          current_page: payload.current_page,
+          last_page: payload.last_page,
+          total: payload.total,
+          per_page: payload.per_page,
+        });
+        if (res.data.stats) {
+          setStats(res.data.stats);
+        }
+      }
     } catch (error) {
-      console.error('Erreur lors de la récupération des candidatures', error);
+      console.error('Erreur chargement candidatures', error);
+      showToast('Impossible de charger les candidatures.', 'error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus, filterAppointment, debouncedSearch, showToast]);
 
   useEffect(() => {
     fetchApplications(1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus, searchQuery]);
+    setPage(1);
+  }, [fetchApplications]);
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= meta?.last_page) {
+    if (newPage >= 1 && newPage <= (meta?.last_page || 1)) {
+      setPage(newPage);
       fetchApplications(newPage);
     }
   };
 
+  // 1. Ouvrir Modal de changement de statut
   const openStatusModal = (app) => {
     setSelectedApp(app);
-    setStatusForm({ status: app.status, note: app.status_note || '' });
+    setStatusForm({
+      status: app.status || 'submitted',
+      note: app.status_note || ''
+    });
     setShowStatusModal(true);
   };
 
-  const submitStatusChange = async () => {
+  // Soumission statut
+  const submitStatusChange = async (e) => {
+    if (e) e.preventDefault();
     if (!selectedApp) return;
+    setSubmittingStatus(true);
     try {
-      const response = await apiClient.put(`/v1/admin/applications/${selectedApp.id}/status`, {
+      const res = await apiClient.put(`/v1/admin/applications/${selectedApp.id}/status`, {
         status: statusForm.status,
         status_note: statusForm.note
       });
-      setApplications(applications.map(a => a.id === selectedApp.id ? response.data.data : a));
-      setShowStatusModal(false);
-      showToast('Statut de la candidature mis à jour avec succès', 'success');
-    } catch (error) {
-      console.error('Erreur de changement de statut', error);
-      showToast('Erreur lors du changement de statut', 'error');
+      if (res.data?.status === 'success') {
+        const updated = res.data.data;
+        setApplications(prev => prev.map(a => a.id === selectedApp.id ? { ...a, ...updated } : a));
+        if (selectedApp.id === updated.id) {
+          setSelectedApp(prev => ({ ...prev, ...updated }));
+        }
+        setShowStatusModal(false);
+        showToast('Statut mis à jour et candidat notifié avec succès !', 'success');
+        fetchApplications(page);
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Erreur lors du changement de statut.', 'error');
+    } finally {
+      setSubmittingStatus(false);
     }
   };
 
-  const getStatusBadgeProps = (status) => {
-    const badges = {
-      submitted: { label: 'Soumise', bg: '#f1f5f9', color: '#475569' },
-      in_progress: { label: 'En cours', bg: '#dbeafe', color: '#1d4ed8' },
-      accepted: { label: 'Acceptée', bg: '#dcfce7', color: '#15803d' },
-      rejected: { label: 'Rejetée', bg: '#fee2e2', color: '#b91c1c' },
-    };
-    return badges[status] || badges.submitted;
+  // 2. Ouvrir Modal de programmation d'entretien
+  const openScheduleModal = (app) => {
+    setSelectedApp(app);
+    const existing = app.latest_appointment || (app.appointments && app.appointments[0]);
+    setScheduleForm({
+      scheduled_at: existing ? formatToDatetimeLocal(existing.scheduled_at) : formatToDatetimeLocal(),
+      duration_minutes: existing?.duration_minutes || 30,
+      location_type: existing?.location_type || 'online',
+      location_address: existing?.location_address || '',
+      meeting_link: existing?.meeting_link || '',
+      notes: existing?.notes || ''
+    });
+    setShowScheduleModal(true);
+  };
+
+  // Soumission programmation d'entretien
+  const submitScheduleAppointment = async (e) => {
+    e.preventDefault();
+    if (!selectedApp) return;
+    if (!scheduleForm.scheduled_at) {
+      showToast("Veuillez sélectionner la date et l'heure de l'entretien.", 'error');
+      return;
+    }
+
+    setSubmittingSchedule(true);
+    try {
+      const res = await apiClient.post(`/v1/admin/applications/${selectedApp.id}/appointments`, {
+        scheduled_at: scheduleForm.scheduled_at,
+        duration_minutes: Number(scheduleForm.duration_minutes),
+        location_type: scheduleForm.location_type,
+        location_address: scheduleForm.location_address.trim() || null,
+        meeting_link: scheduleForm.meeting_link.trim() || null,
+        notes: scheduleForm.notes.trim() || null,
+      });
+
+      if (res.data?.status === 'success') {
+        const updated = res.data.data;
+        setApplications(prev => prev.map(a => a.id === selectedApp.id ? { ...a, ...updated } : a));
+        if (selectedApp.id === updated.id) {
+          setSelectedApp(prev => ({ ...prev, ...updated }));
+        }
+        setShowScheduleModal(false);
+        showToast("Entretien programmé avec succès ! Notifications envoyées au candidat et à l'entreprise.", 'success');
+        fetchApplications(page);
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || "Erreur lors de la programmation de l'entretien.", 'error');
+    } finally {
+      setSubmittingSchedule(false);
+    }
+  };
+
+  // 3. Ouvrir vue détaillée
+  const openDetailModal = async (app) => {
+    setSelectedApp(app);
+    setShowDetailModal(true);
+    try {
+      const res = await apiClient.get(`/v1/admin/applications/${app.id}`);
+      if (res.data?.status === 'success') {
+        setSelectedApp(res.data.data);
+      }
+    } catch {
+      // Keep basic app
+    }
+  };
+
+  // Badges de statut
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'submitted':
+        return { label: 'Soumise', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+      case 'in_progress':
+        return { label: 'En cours / Entretien', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+      case 'accepted':
+        return { label: 'Retenue / Acceptée', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+      case 'rejected':
+        return { label: 'Non retenue', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' };
+      default:
+        return { label: 'Soumise', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+    }
   };
 
   return (
     <MainLayout>
-      <style>{`
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .app-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .app-table th { padding: 16px; font-weight: 600; color: #64748b; font-size: 14px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
-        .app-table td { padding: 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; }
-        .app-table tr:hover { background: #f8fafc; }
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-      `}</style>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 110px)', fontFamily: 'var(--font-inter)' }}>
-        
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--black-deep)', margin: '0 0 4px 0' }}>Toutes les candidatures</h1>
-            <p style={{ fontSize: '14px', color: 'var(--gray-medium)', margin: 0 }}>Visualisez et gérez les candidatures aux offres</p>
+      {/* ── TOASTS FLOTTANTS MODERNES ── */}
+      <div style={{
+        position: 'fixed',
+        top: '24px',
+        right: '24px',
+        zIndex: 999999,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        pointerEvents: 'none',
+        maxWidth: '420px',
+        width: 'calc(100vw - 48px)',
+      }}>
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            style={{
+              pointerEvents: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 16px',
+              borderRadius: '10px',
+              backgroundColor: t.type === 'success' ? '#ECFDF5' : '#FEF2F2',
+              border: `1px solid ${t.type === 'success' ? '#A7F3D0' : '#FECACA'}`,
+              color: t.type === 'success' ? '#065F46' : '#991B1B',
+              boxShadow: '0 12px 30px -4px rgba(0, 0, 0, 0.12)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+              {t.type === 'success' ? <CheckCircle2 size={18} color="#059669" /> : <AlertCircle size={18} color="#DC2626" />}
+            </div>
+            <div style={{ flex: 1, fontSize: '13px', lineHeight: '1.4', fontWeight: '600' }}>
+              {t.message}
+            </div>
+            <button
+              type="button"
+              onClick={() => removeToast(t.id)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px',
+                color: t.type === 'success' ? '#047857' : '#B91C1C',
+                opacity: 0.7,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <X size={15} />
+            </button>
           </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minHeight: 'calc(100vh - 100px)' }}>
+        
+        {/* ── EN-TÊTE DE LA PAGE ── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '8px',
+                backgroundColor: '#EFF6FF',
+                color: '#1D4ED8',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <FileText size={20} />
+              </div>
+              <div>
+                <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
+                  Candidatures & Postulations
+                </h1>
+                <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
+                  Suivez les dossiers des candidates, filtrez les offres et programmez des entretiens en direct.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => fetchApplications(page)}
+            disabled={loading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid #E2E8F0',
+              backgroundColor: '#FFFFFF',
+              color: '#334155',
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Actualiser
+          </button>
+        </div>
+
+        {/* ── KPI / CARTES DE STATISTIQUES ── */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
           
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div style={{ position: 'relative' }}>
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#EFF6FF', color: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <FileText size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '600' }}>Total Candidatures</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A' }}>
+                {Number(stats.total || 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#F1F5F9', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Clock size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '600' }}>Nouvelles / Soumises</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#475569' }}>
+                {Number(stats.submitted || 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#FAF5FF', color: '#9333EA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CalendarCheck size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '600' }}>Entretiens Fixés / En cours</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#9333EA' }}>
+                {Number(stats.with_appointments || stats.in_progress || 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: '#FFFFFF', padding: '12px 16px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CheckCircle2 size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '600' }}>Retenues / Acceptées</div>
+              <div style={{ fontSize: '18px', fontWeight: '800', color: '#059669' }}>
+                {Number(stats.accepted || 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── BARRE D'OUTILS ET FILTRES ── */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          padding: '12px 16px',
+          borderRadius: '10px',
+          border: '1px solid #E2E8F0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          {/* Recherche textuelle */}
+          <div style={{ position: 'relative', flex: '1 1 280px', maxWidth: '420px' }}>
+            <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Rechercher par candidate, téléphone, offre ou entreprise..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px 8px 36px',
+                borderRadius: '8px',
+                border: '1px solid #CBD5E1',
+                fontSize: '13px',
+                outline: 'none',
+                backgroundColor: '#F8FAFC',
+                color: '#0F172A'
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94A3B8'
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Filtres déroulants */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            
+            {/* Statut */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Filter size={14} color="#64748B" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
                 style={{
-                  padding: '8px 16px 8px 36px',
-                  border: '1px solid var(--gray-border)', borderRadius: '8px', background: '#fff',
-                  fontSize: '14px', fontWeight: '500', color: 'var(--black-deep)', cursor: 'pointer', outline: 'none',
-                  appearance: 'none', minWidth: '180px'
+                  padding: '7px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #CBD5E1',
+                  backgroundColor: '#FFFFFF',
+                  fontSize: '12.5px',
+                  fontWeight: '600',
+                  color: '#334155',
+                  cursor: 'pointer',
+                  outline: 'none'
                 }}
               >
                 <option value="all">Tous les statuts</option>
-                <option value="submitted">Soumises</option>
-                <option value="in_progress">En cours</option>
-                <option value="accepted">Acceptées</option>
-                <option value="rejected">Rejetées</option>
+                <option value="submitted">Soumises (Nouvelles)</option>
+                <option value="in_progress">En cours / Entretien</option>
+                <option value="accepted">Retenues / Acceptées</option>
+                <option value="rejected">Non retenues</option>
               </select>
-              <Filter size={16} color="#64748b" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             </div>
-            
-            <input 
-              type="text" 
-              placeholder="Rechercher par candidat..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+
+            {/* Filtre Entretiens */}
+            <select
+              value={filterAppointment}
+              onChange={(e) => setFilterAppointment(e.target.value)}
               style={{
-                padding: '8px 16px',
-                border: '1px solid var(--gray-border)', borderRadius: '8px', background: '#fff',
-                fontSize: '14px', color: 'var(--black-deep)', outline: 'none', minWidth: '250px'
+                padding: '7px 12px',
+                borderRadius: '8px',
+                border: '1px solid #CBD5E1',
+                backgroundColor: '#FFFFFF',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                color: '#334155',
+                cursor: 'pointer',
+                outline: 'none'
               }}
-            />
+            >
+              <option value="all">Tous les rendez-vous</option>
+              <option value="yes">📅 Entretien Programmé</option>
+              <option value="no">Sans entretien fixé</option>
+            </select>
+
           </div>
         </div>
 
-        {/* Content */}
-        <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid var(--gray-border)', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          <div style={{ flex: 1, overflowY: 'auto' }} className="hide-scrollbar">
-            {loading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Chargement des candidatures...</div>
-            ) : applications.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Aucune candidature trouvée.</div>
-            ) : (
-              <table className="app-table">
-                <thead>
+        {/* ── TABLEAU PRINCIPAL DES CANDIDATURES ── */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '10px',
+          border: '1px solid #E2E8F0',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
+        }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Candidat(e)
+                  </th>
+                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Offre d'Emploi & Entreprise
+                  </th>
+                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Type & Paiement
+                  </th>
+                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Statut & Entretien
+                  </th>
+                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Date Dépôt
+                  </th>
+                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
                   <tr>
-                    <th>Candidat</th>
-                    <th>Offre / Entreprise</th>
-                    <th>Statut</th>
-                    <th>Date</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                    <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 10px auto', color: '#3B82F6' }} />
+                      <div>Chargement des candidatures en cours...</div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {applications.map(app => {
-                    const badge = getStatusBadgeProps(app.status);
+                ) : applications.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
+                      <FileText size={32} color="#CBD5E1" style={{ margin: '0 auto 10px auto' }} />
+                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#334155' }}>Aucune candidature trouvée</div>
+                      <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '4px' }}>Ajustez vos filtres ou effectuez une autre recherche.</div>
+                    </td>
+                  </tr>
+                ) : (
+                  applications.map((app) => {
+                    const candName = getCandidateName(app.candidate_profile);
+                    const offerTitle = getOfferTitle(app.job_offer);
+                    const compName = app.job_offer?.company?.company_name || 'Entreprise SAMRE';
+                    const badge = getStatusBadge(app.status);
+                    const appointment = app.latest_appointment || (app.appointments && app.appointments[0]);
+                    const isInternational = Boolean(app.job_offer?.is_international || app.job_offer?.country_id);
+
                     return (
-                      <tr key={app.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5', fontWeight: '700' }}>
-                              {app.candidate_profile?.first_name?.[0] || ''}{app.candidate_profile?.last_name?.[0] || ''}
+                      <tr 
+                        key={app.id}
+                        style={{ borderBottom: '1px solid #F1F5F9', transition: 'background-color 0.15s ease' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                      >
+                        {/* Candidat */}
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '50%',
+                              background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                              color: '#FFFFFF',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '700',
+                              fontSize: '12px',
+                              flexShrink: 0
+                            }}>
+                              {candName.substring(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <div style={{ fontWeight: '600', color: '#0f172a' }}>{app.candidate_profile?.first_name} {app.candidate_profile?.last_name}</div>
-                              <div style={{ fontSize: '13px', color: '#64748b' }}>{app.candidate_profile?.user?.phone || app.candidate_profile?.user?.email}</div>
+                              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {candName}
+                                {app.candidate_profile?.has_badge && (
+                                  <Award size={13} color="#D97706" title="Badge Vérifié" />
+                                )}
+                              </div>
+                              <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
+                                <Phone size={11} />
+                                {app.candidate_profile?.user?.phone || '—'}
+                              </div>
+                              {app.candidate_profile?.profession && (
+                                <div style={{ fontSize: '10.5px', color: '#4F46E5', fontWeight: '600', marginTop: '2px' }}>
+                                  {app.candidate_profile.profession}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
-                        <td>
-                          <div style={{ fontWeight: '600', color: '#0f172a' }}>{app.job_offer?.translations?.find(t => t.locale === 'fr')?.title || 'Offre'}</div>
-                          <div style={{ fontSize: '13px', color: '#64748b' }}>{app.job_offer?.company?.company_name}</div>
+
+                        {/* Offre & Entreprise */}
+                        <td style={{ padding: '12px 16px' }}>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span>{offerTitle}</span>
+                              {isInternational && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: '#EEF2FF',
+                                  color: '#4F46E5',
+                                  border: '1px solid #C7D2FE',
+                                  fontWeight: '700',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}>
+                                  <Globe size={10} />
+                                  International
+                                </span>
+                              )}
+                              {app.job_offer?.contract_type && (
+                                <span style={{
+                                  fontSize: '10px',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px',
+                                  backgroundColor: '#F1F5F9',
+                                  color: '#475569',
+                                  fontWeight: '600'
+                                }}>
+                                  {app.job_offer.contract_type}
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                              <Building2 size={12} />
+                              {compName}
+                            </div>
+                          </div>
                         </td>
-                        <td>
-                          <span style={{ background: badge.bg, color: badge.color, padding: '4px 10px', borderRadius: '999px', fontSize: '12px', fontWeight: '600' }}>
-                            {badge.label}
-                          </span>
+
+                        {/* Type & Paiement */}
+                        <td style={{ padding: '12px 16px' }}>
+                          {app.is_paid ? (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              backgroundColor: '#FAF5FF',
+                              border: '1px solid #E9D5FF',
+                              color: '#7E22CE',
+                              fontSize: '11px',
+                              fontWeight: '700'
+                            }}>
+                              <Sparkles size={11} />
+                              Payant (1 500 F)
+                            </span>
+                          ) : (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              backgroundColor: '#F8FAFC',
+                              border: '1px solid #E2E8F0',
+                              color: '#64748B',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              Quota Gratuit
+                            </span>
+                          )}
                         </td>
-                        <td>
-                          {new Date(app.created_at).toLocaleDateString('fr-FR')}
+
+                        {/* Statut & Entretien */}
+                        <td style={{ padding: '12px 16px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                            <span style={{
+                              backgroundColor: badge.bg,
+                              color: badge.color,
+                              border: `1px solid ${badge.border}`,
+                              padding: '3px 8px',
+                              borderRadius: '999px',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              {badge.label}
+                            </span>
+
+                            {appointment && appointment.status !== 'cancelled' && (
+                              <div style={{
+                                fontSize: '10.5px',
+                                fontWeight: '700',
+                                color: '#9333EA',
+                                backgroundColor: '#FAF5FF',
+                                border: '1px solid #E9D5FF',
+                                borderRadius: '4px',
+                                padding: '2px 6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                marginTop: '2px'
+                              }}>
+                                <Calendar size={11} />
+                                {formatDateTime(appointment.scheduled_at)}
+                                <span>({appointment.location_type === 'online' ? 'Visio' : appointment.location_type === 'phone' ? 'Tél' : 'Présentiel'})</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <button 
-                            onClick={() => openStatusModal(app)}
-                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#3b82f6', padding: '8px' }}
-                            title="Voir les détails"
-                          >
-                            <Eye size={18} />
-                          </button>
+
+                        {/* Date de dépôt */}
+                        <td style={{ padding: '12px 16px', fontSize: '12.5px', color: '#475569' }}>
+                          {formatDate(app.created_at)}
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                            
+                            {/* Bouton Programmer Entretien */}
+                            <button
+                              onClick={() => openScheduleModal(app)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 10px',
+                                borderRadius: '6px',
+                                backgroundColor: '#FAF5FF',
+                                border: '1px solid #E9D5FF',
+                                color: '#7E22CE',
+                                fontSize: '11.5px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                              }}
+                              title="Programmer ou replanifier un entretien"
+                            >
+                              <Calendar size={13} />
+                              <span>{appointment ? 'Replanifier' : 'Programmer'}</span>
+                            </button>
+
+                            {/* Bouton Changer Statut */}
+                            <button
+                              onClick={() => openStatusModal(app)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: '#F8FAFC',
+                                border: '1px solid #CBD5E1',
+                                color: '#334155',
+                                fontSize: '11.5px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                              }}
+                              title="Changer le statut de la candidature"
+                            >
+                              <span>Statut</span>
+                              <ChevronDown size={12} />
+                            </button>
+
+                            {/* Bouton Voir Détails & CV */}
+                            <button
+                              onClick={() => openDetailModal(app)}
+                              style={{
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                backgroundColor: '#EFF6FF',
+                                border: '1px solid #BFDBFE',
+                                color: '#1D4ED8',
+                                fontSize: '11.5px',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                              title="Consulter le dossier et le CV"
+                            >
+                              <Eye size={14} />
+                            </button>
+
+                          </div>
                         </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
-            )}
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-          
-          {/* Pagination Footer */}
+
+          {/* ── PAGINATION ── */}
           {meta && meta.last_page > 1 && (
-            <div style={{ padding: '16px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-              <span style={{ fontSize: '13px', color: '#64748b' }}>
-                Affichage {(meta.current_page - 1) * meta.per_page + 1} à {Math.min(meta.current_page * meta.per_page, meta.total)} sur {meta.total}
-              </span>
-              <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{
+              padding: '12px 16px',
+              borderTop: '1px solid #E2E8F0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              backgroundColor: '#F8FAFC',
+              fontSize: '12px',
+              color: '#64748B'
+            }}>
+              <div>
+                Affichage de <strong style={{ color: '#0F172A' }}>{(meta.current_page - 1) * meta.per_page + 1}</strong> à <strong style={{ color: '#0F172A' }}>{Math.min(meta.current_page * meta.per_page, meta.total)}</strong> sur <strong style={{ color: '#0F172A' }}>{meta.total}</strong> candidatures
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button
                   onClick={() => handlePageChange(meta.current_page - 1)}
                   disabled={meta.current_page === 1}
-                  style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', cursor: meta.current_page === 1 ? 'not-allowed' : 'pointer', opacity: meta.current_page === 1 ? 0.5 : 1 }}
+                  style={{
+                    padding: '5px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: '#FFFFFF',
+                    cursor: meta.current_page === 1 ? 'not-allowed' : 'pointer',
+                    opacity: meta.current_page === 1 ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={14} />
                 </button>
-                <span style={{ padding: '6px 16px', fontSize: '14px', fontWeight: '500', color: '#334155' }}>
+                <span style={{ fontWeight: '700', color: '#0F172A', padding: '0 4px' }}>
                   {meta.current_page} / {meta.last_page}
                 </span>
                 <button
                   onClick={() => handlePageChange(meta.current_page + 1)}
                   disabled={meta.current_page === meta.last_page}
-                  style={{ padding: '6px 10px', border: '1px solid #e2e8f0', borderRadius: '6px', background: '#fff', cursor: meta.current_page === meta.last_page ? 'not-allowed' : 'pointer', opacity: meta.current_page === meta.last_page ? 0.5 : 1 }}
+                  style={{
+                    padding: '5px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: '#FFFFFF',
+                    cursor: meta.current_page === meta.last_page ? 'not-allowed' : 'pointer',
+                    opacity: meta.current_page === meta.last_page ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
                 >
-                  <ChevronRight size={16} />
+                  <ChevronRight size={14} />
                 </button>
               </div>
             </div>
           )}
         </div>
+
       </div>
 
-      {/* Modal Détails & Statut */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* ── MODAL 1 : PROGRAMMATION D'ENTRETIEN (INTERVIEW SCHEDULING) ── */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {showScheduleModal && selectedApp && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            maxWidth: '560px',
+            width: '100%',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #E2E8F0'
+          }}>
+            {/* Header modal */}
+            <div style={{
+              padding: '16px 20px',
+              backgroundColor: '#FAF5FF',
+              borderBottom: '1px solid #E9D5FF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  backgroundColor: '#F3E8FF',
+                  color: '#7E22CE',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#581C87', margin: 0 }}>
+                    Programmer un Entretien d'Embauche
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#7E22CE', margin: '2px 0 0 0' }}>
+                    Le candidat et l'entreprise recevront directement une notification push.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowScheduleModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#7E22CE' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Récapitulatif Candidat & Offre */}
+            <div style={{ padding: '12px 20px', backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600' }}>CANDIDATE</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>{getCandidateName(selectedApp.candidate_profile)}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600' }}>OFFRE VISÉE</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#4F46E5' }}>{getOfferTitle(selectedApp.job_offer)}</div>
+              </div>
+            </div>
+
+            {/* Formulaire de programmation */}
+            <form onSubmit={submitScheduleAppointment} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              
+              {/* Date et heure */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Date & Heure de l'entretien *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduleForm.scheduled_at}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, scheduled_at: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      outline: 'none',
+                      color: '#0F172A'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Durée estimée
+                  </label>
+                  <select
+                    value={scheduleForm.duration_minutes}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, duration_minutes: Number(e.target.value) })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      outline: 'none',
+                      backgroundColor: '#FFFFFF',
+                      color: '#0F172A'
+                    }}
+                  >
+                    <option value={15}>15 minutes (Entretien express)</option>
+                    <option value={30}>30 minutes (Standard)</option>
+                    <option value={45}>45 minutes (Détaillé)</option>
+                    <option value={60}>1 heure (Complet)</option>
+                    <option value={90}>1 heure 30 minutes</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Mode d'entretien */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                  Modalité de l'entretien *
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: `1px solid ${scheduleForm.location_type === 'online' ? '#7E22CE' : '#CBD5E1'}`,
+                    backgroundColor: scheduleForm.location_type === 'online' ? '#FAF5FF' : '#FFFFFF',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: scheduleForm.location_type === 'online' ? '#7E22CE' : '#334155'
+                  }}>
+                    <input
+                      type="radio"
+                      name="location_type"
+                      value="online"
+                      checked={scheduleForm.location_type === 'online'}
+                      onChange={() => setScheduleForm({ ...scheduleForm, location_type: 'online' })}
+                      style={{ display: 'none' }}
+                    />
+                    <Video size={14} />
+                    Visio / Meet
+                  </label>
+
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: `1px solid ${scheduleForm.location_type === 'in_person' ? '#7E22CE' : '#CBD5E1'}`,
+                    backgroundColor: scheduleForm.location_type === 'in_person' ? '#FAF5FF' : '#FFFFFF',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: scheduleForm.location_type === 'in_person' ? '#7E22CE' : '#334155'
+                  }}>
+                    <input
+                      type="radio"
+                      name="location_type"
+                      value="in_person"
+                      checked={scheduleForm.location_type === 'in_person'}
+                      onChange={() => setScheduleForm({ ...scheduleForm, location_type: 'in_person' })}
+                      style={{ display: 'none' }}
+                    />
+                    <Building2 size={14} />
+                    Présentiel
+                  </label>
+
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: `1px solid ${scheduleForm.location_type === 'phone' ? '#7E22CE' : '#CBD5E1'}`,
+                    backgroundColor: scheduleForm.location_type === 'phone' ? '#FAF5FF' : '#FFFFFF',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: scheduleForm.location_type === 'phone' ? '#7E22CE' : '#334155'
+                  }}>
+                    <input
+                      type="radio"
+                      name="location_type"
+                      value="phone"
+                      checked={scheduleForm.location_type === 'phone'}
+                      onChange={() => setScheduleForm({ ...scheduleForm, location_type: 'phone' })}
+                      style={{ display: 'none' }}
+                    />
+                    <Phone size={14} />
+                    Téléphone
+                  </label>
+
+                </div>
+              </div>
+
+              {/* Champ conditionnel selon le mode */}
+              {scheduleForm.location_type === 'online' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Lien de Visioconférence (Google Meet, Zoom, Teams...)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://meet.google.com/xyz-abcd-efg"
+                    value={scheduleForm.meeting_link}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, meeting_link: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      outline: 'none',
+                      color: '#0F172A'
+                    }}
+                  />
+                </div>
+              )}
+
+              {scheduleForm.location_type === 'in_person' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                    Lieu / Adresse du rendez-vous
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="ex: Siège de l'entreprise, 2ème étage, Salle B"
+                    value={scheduleForm.location_address}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, location_address: e.target.value })}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      fontSize: '13px',
+                      outline: 'none',
+                      color: '#0F172A'
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Instructions & Notes */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                  Instructions & Consignes pour le candidat et le recruteur
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="ex: Se munir d'une pièce d'identité et de son book professionnel..."
+                  value={scheduleForm.notes}
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, notes: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '12.5px',
+                    outline: 'none',
+                    resize: 'vertical',
+                    color: '#0F172A'
+                  }}
+                />
+              </div>
+
+              {/* Boutons d'action */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: '#FFFFFF',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingSchedule}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#7E22CE',
+                    color: '#FFFFFF',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: submittingSchedule ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 2px 4px rgba(126, 34, 206, 0.2)'
+                  }}
+                >
+                  {submittingSchedule ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <CalendarCheck size={14} />
+                  )}
+                  {submittingSchedule ? 'Programmation...' : 'Confirmer & Notifier'}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* ── MODAL 2 : CHANGEMENT RAPIDE DE STATUT ── */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
       {showStatusModal && selectedApp && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: '#0f172a' }}>Détails de la candidature</h2>
-              <button onClick={() => setShowStatusModal(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            maxWidth: '480px',
+            width: '100%',
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #E2E8F0'
+          }}>
+            <div style={{
+              padding: '16px 20px',
+              backgroundColor: '#EFF6FF',
+              borderBottom: '1px solid #BFDBFE',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#1E40AF', margin: 0 }}>
+                Changer le Statut de la Candidature
+              </h3>
+              <button
+                onClick={() => setShowStatusModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1E40AF' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={submitStatusChange} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '8px' }}>
+                  Nouveau Statut
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[
+                    { value: 'submitted', label: 'Soumise (Nouvelle candidature)', color: '#475569', bg: '#F1F5F9' },
+                    { value: 'in_progress', label: 'En cours d\'examen / Entretien', color: '#1D4ED8', bg: '#EFF6FF' },
+                    { value: 'accepted', label: 'Retenue / Acceptée', color: '#047857', bg: '#ECFDF5' },
+                    { value: 'rejected', label: 'Non retenue / Rejetée', color: '#B91C1C', bg: '#FEF2F2' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: `1.5px solid ${statusForm.status === opt.value ? opt.color : '#E2E8F0'}`,
+                        backgroundColor: statusForm.status === opt.value ? opt.bg : '#FFFFFF',
+                        cursor: 'pointer',
+                        fontWeight: statusForm.status === opt.value ? '700' : '500',
+                        color: opt.color
+                      }}
+                    >
+                      <span style={{ fontSize: '13px' }}>{opt.label}</span>
+                      <input
+                        type="radio"
+                        name="status"
+                        value={opt.value}
+                        checked={statusForm.status === opt.value}
+                        onChange={() => setStatusForm({ ...statusForm, status: opt.value })}
+                        style={{ display: 'none' }}
+                      />
+                      {statusForm.status === opt.value && <Check size={16} />}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '4px' }}>
+                  Note explicative (visible par l'admin et transmise dans la notif)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="ex: Profil retenu pour la phase d'entretien technique..."
+                  value={statusForm.note}
+                  onChange={(e) => setStatusForm({ ...statusForm, note: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    fontSize: '12.5px',
+                    outline: 'none',
+                    color: '#0F172A'
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowStatusModal(false)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid #CBD5E1',
+                    backgroundColor: '#FFFFFF',
+                    color: '#475569',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingStatus}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: 'none',
+                    backgroundColor: '#1D4ED8',
+                    color: '#FFFFFF',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: submittingStatus ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {submittingStatus ? 'Mise à jour...' : 'Enregistrer'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {/* ── MODAL 3 : DOSSIER COMPLET DU CANDIDAT & CV ── */}
+      {/* ═══════════════════════════════════════════════════════════════════════ */}
+      {showDetailModal && selectedApp && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            maxWidth: '650px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            border: '1px solid #E2E8F0'
+          }}>
+            {/* Header */}
+            <div style={{
+              padding: '16px 20px',
+              backgroundColor: '#F8FAFC',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'sticky',
+              top: 0,
+              zIndex: 10
+            }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+                  Dossier de Candidature #{selectedApp.id}
+                </h3>
+                <p style={{ fontSize: '12px', color: '#64748B', margin: '2px 0 0 0' }}>
+                  Déposée le {formatDateTime(selectedApp.created_at)}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDetailModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B' }}
+              >
                 <X size={20} />
               </button>
             </div>
-            
-            <div style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
+
+            {/* Corps du dossier */}
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Le Candidat</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Nom complet</span>
-                    <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedApp.candidate_profile?.first_name} {selectedApp.candidate_profile?.last_name}</span>
+              {/* Carte Candidat */}
+              <div style={{ padding: '14px', backgroundColor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: '800',
+                  fontSize: '16px',
+                  flexShrink: 0
+                }}>
+                  {getCandidateName(selectedApp.candidate_profile).substring(0, 2).toUpperCase()}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {getCandidateName(selectedApp.candidate_profile)}
+                    {selectedApp.candidate_profile?.has_badge && (
+                      <span style={{ fontSize: '11px', backgroundColor: '#FEF3C7', color: '#D97706', padding: '1px 6px', borderRadius: '4px', fontWeight: '700' }}>
+                        Profil Vérifié
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Téléphone</span>
-                    <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedApp.candidate_profile?.user?.phone}</span>
+                  <div style={{ fontSize: '12.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '12px', marginTop: '2px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Phone size={12} />
+                      {selectedApp.candidate_profile?.user?.phone || '—'}
+                    </span>
+                    {selectedApp.candidate_profile?.user?.email && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Mail size={12} />
+                        {selectedApp.candidate_profile.user.email}
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Email</span>
-                    <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{selectedApp.candidate_profile?.user?.email || 'Non renseigné'}</span>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '13px', color: '#64748b', display: 'block', marginBottom: '4px' }}>Date</span>
-                    <span style={{ fontSize: '14px', color: '#0f172a', fontWeight: '500' }}>{new Date(selectedApp.created_at).toLocaleDateString('fr-FR')}</span>
-                  </div>
+                  {selectedApp.candidate_profile?.profession && (
+                    <div style={{ fontSize: '12px', color: '#4F46E5', fontWeight: '700', marginTop: '3px' }}>
+                      Profession : {selectedApp.candidate_profile.profession}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>Lettre de motivation</h3>
-                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', fontSize: '14px', color: '#334155', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-                  {selectedApp.cover_letter || "Aucune lettre de motivation fournie par le candidat."}
+              {/* Carte Offre */}
+              <div style={{ padding: '14px', backgroundColor: '#EFF6FF', borderRadius: '8px', border: '1px solid #BFDBFE' }}>
+                <div style={{ fontSize: '11px', color: '#1E40AF', fontWeight: '700', textTransform: 'uppercase' }}>Offre d'emploi associée</div>
+                <div style={{ fontSize: '14px', fontWeight: '800', color: '#1E3A8A', marginTop: '2px' }}>
+                  {getOfferTitle(selectedApp.job_offer)}
+                </div>
+                <div style={{ fontSize: '12px', color: '#3B82F6', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Building2 size={13} />
+                  <span>{selectedApp.job_offer?.company?.company_name || 'Entreprise'}</span>
+                  <span>•</span>
+                  <span>{selectedApp.job_offer?.contract_type || 'Contrat non spécifié'}</span>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '24px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: '600', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>Mettre à jour le statut</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Statut de la candidature</label>
-                    <select 
-                      value={statusForm.status}
-                      onChange={e => setStatusForm({...statusForm, status: e.target.value})}
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', outline: 'none', fontSize: '14px' }}
-                    >
-                      <option value="submitted">Soumise (En attente de traitement)</option>
-                      <option value="in_progress">En cours d'examen</option>
-                      <option value="accepted">Acceptée</option>
-                      <option value="rejected">Rejetée</option>
-                    </select>
+              {/* Lettre de motivation */}
+              {selectedApp.cover_letter ? (
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Lettre de Motivation / Message du Candidat
                   </div>
-                  
-                  <div>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#334155', marginBottom: '6px' }}>Note interne ou justificatif (optionnel)</label>
-                    <textarea 
-                      value={statusForm.note}
-                      onChange={e => setStatusForm({...statusForm, note: e.target.value})}
-                      rows={3}
-                      placeholder="Commentaires sur le choix..."
-                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', outline: 'none', fontSize: '14px', resize: 'vertical' }}
-                    ></textarea>
+                  <div style={{
+                    padding: '12px 14px',
+                    backgroundColor: '#F8FAFC',
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    lineHeight: '1.5',
+                    color: '#334155',
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {selectedApp.cover_letter}
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>
+                  Aucune lettre de motivation rédigée pour cette candidature.
+                </div>
+              )}
+
+              {/* CV ou Document joint */}
+              {selectedApp.cover_letter_file && (
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#334155', marginBottom: '6px' }}>
+                    Document Joint (CV / Lettre)
+                  </div>
+                  <a
+                    href={selectedApp.cover_letter_file}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      backgroundColor: '#F1F5F9',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '8px',
+                      color: '#1E293B',
+                      fontSize: '12.5px',
+                      fontWeight: '700',
+                      textDecoration: 'none'
+                    }}
+                  >
+                    <Download size={15} color="#4F46E5" />
+                    Télécharger le document joint
+                    <ExternalLink size={13} color="#64748B" />
+                  </a>
+                </div>
+              )}
+
+              {/* Entretien Fixé */}
+              {selectedApp.latest_appointment && (
+                <div style={{ padding: '14px', backgroundColor: '#FAF5FF', borderRadius: '8px', border: '1px solid #E9D5FF' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '800', color: '#7E22CE' }}>
+                    <CalendarCheck size={16} />
+                    Entretien d'embauche programmé
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: '#581C87', marginTop: '4px', fontWeight: '600' }}>
+                    Date : {formatDateTime(selectedApp.latest_appointment.scheduled_at)} ({selectedApp.latest_appointment.duration_minutes} min)
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#7E22CE', marginTop: '2px' }}>
+                    Mode : {selectedApp.latest_appointment.location_type === 'online' ? 'Visioconférence' : selectedApp.latest_appointment.location_type === 'phone' ? 'Téléphonique' : 'Présentiel'}
+                  </div>
+                  {selectedApp.latest_appointment.meeting_link && (
+                    <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                      Lien : <a href={selectedApp.latest_appointment.meeting_link} target="_blank" rel="noreferrer" style={{ color: '#7E22CE', fontWeight: '700' }}>{selectedApp.latest_appointment.meeting_link}</a>
+                    </div>
+                  )}
+                  {selectedApp.latest_appointment.location_address && (
+                    <div style={{ fontSize: '12px', color: '#581C87', marginTop: '4px' }}>
+                      Adresse : {selectedApp.latest_appointment.location_address}
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
-            
-            <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#f8fafc', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
-                onClick={() => setShowStatusModal(false)}
-                style={{ padding: '8px 16px', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', color: '#475569', fontWeight: '600', cursor: 'pointer' }}
+
+            {/* Footer */}
+            <div style={{
+              padding: '12px 20px',
+              backgroundColor: '#F8FAFC',
+              borderTop: '1px solid #E2E8F0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  openScheduleModal(selectedApp);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  backgroundColor: '#7E22CE',
+                  color: '#FFFFFF',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer'
+                }}
+              >
+                <Calendar size={14} />
+                Programmer un Entretien
+              </button>
+
+              <button
+                onClick={() => setShowDetailModal(false)}
+                style={{
+                  padding: '8px 14px',
+                  backgroundColor: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  color: '#475569',
+                  borderRadius: '6px',
+                  fontSize: '12.5px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
               >
                 Fermer
-              </button>
-              <button 
-                onClick={submitStatusChange}
-                style={{ padding: '8px 20px', background: '#2563eb', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Mettre à jour
               </button>
             </div>
 
@@ -348,58 +1671,6 @@ export const ApplicationsPage = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
-      {toast && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '24px',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '14px 20px',
-            borderRadius: '12px',
-            background: toast.type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 'rgba(239, 68, 68, 0.95)',
-            backdropFilter: 'blur(8px)',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15)',
-            color: '#ffffff',
-            fontSize: '14px',
-            fontWeight: '600',
-            fontFamily: 'var(--font-inter)',
-            animation: 'slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            maxWidth: '380px',
-            border: toast.type === 'success' ? '1px solid rgba(16, 185, 129, 0.2)' : '1px solid rgba(239, 68, 68, 0.2)',
-          }}
-        >
-          {toast.type === 'success' ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', padding: '4px' }}>
-              <CheckCircle2 size={18} />
-            </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)', borderRadius: '50%', padding: '4px' }}>
-              <AlertCircle size={18} />
-            </div>
-          )}
-          <span style={{ flex: 1 }}>{toast.message}</span>
-          <button
-            onClick={() => setToast(null)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255, 255, 255, 0.8)',
-              cursor: 'pointer',
-              padding: '2px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
     </MainLayout>
   );
 };
