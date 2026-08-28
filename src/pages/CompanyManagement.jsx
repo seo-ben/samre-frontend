@@ -159,22 +159,22 @@ export function CompanyManagement() {
 
   return (
     <MainLayout>
-      <div style={{ padding: '20px', minHeight: '100%', fontFamily: 'var(--font-inter)', color: '#0F172A' }}>
+      <div style={{ padding: 0, minHeight: '100%', fontFamily: 'var(--font-inter)', color: '#0F172A' }}>
         
         {/* Toast Notification */}
         {toastMessage && (
           <div style={{
             position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '12px 18px',
-            borderRadius: '10px',
+            top: '16px',
+            right: '16px',
+            padding: '10px 16px',
+            borderRadius: '8px',
             color: '#ffffff',
             fontWeight: '600',
             fontSize: '13px',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
             zIndex: 2000,
             backgroundColor: toastMessage.type === 'success' ? '#10B981' : '#EF4444',
@@ -183,7 +183,7 @@ export function CompanyManagement() {
             <span>{toastMessage.text}</span>
             <button 
               onClick={() => setToastMessage(null)} 
-              style={{ color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '15px' }}
+              style={{ color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '14px' }}
             >
               ✕
             </button>
@@ -193,39 +193,39 @@ export function CompanyManagement() {
         {/* ── En-tête de la page ── */}
         <div style={{
           backgroundColor: '#ffffff',
-          borderRadius: '14px',
-          padding: '16px 20px',
+          borderRadius: '12px',
+          padding: '10px 16px',
           border: '1px solid #E2E8F0',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '14px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-          marginBottom: '16px'
+          gap: '10px',
+          boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+          marginBottom: '8px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              padding: '10px',
+              padding: '8px',
               backgroundColor: '#EFF6FF',
-              borderRadius: '10px',
+              borderRadius: '8px',
               color: '#1A6FD4',
               border: '1px solid #DBEAFE',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Building2 size={22} />
+              <Building2 size={18} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h1 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
+                <h1 style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A', margin: 0 }}>
                   Gestion & Viabilité des Entreprises
                 </h1>
                 <span style={{
                   fontSize: '11px',
                   fontWeight: '700',
-                  padding: '2px 8px',
+                  padding: '1px 7px',
                   borderRadius: '999px',
                   backgroundColor: '#F1F5F9',
                   color: '#475569'
@@ -233,7 +233,7 @@ export function CompanyManagement() {
                   {stats.total} entreprises
                 </span>
               </div>
-              <p style={{ fontSize: '12.5px', color: '#64748B', margin: '2px 0 0 0' }}>
+              <p style={{ fontSize: '12px', color: '#64748B', margin: '1px 0 0 0' }}>
                 Contrôle des dossiers d'immatriculation (RCCM/NIF), conformité et autorisation des offres internationales.
               </p>
             </div>
@@ -245,12 +245,12 @@ export function CompanyManagement() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '7px 14px',
+              padding: '6px 12px',
               backgroundColor: '#F8FAFC',
               color: '#334155',
               borderRadius: '8px',
               border: '1px solid #CBD5E1',
-              fontSize: '12.5px',
+              fontSize: '12px',
               fontWeight: '600',
               cursor: 'pointer',
               transition: 'all 0.15s'
@@ -258,7 +258,7 @@ export function CompanyManagement() {
             onMouseEnter={e => e.currentTarget.style.backgroundColor = '#E2E8F0'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = '#F8FAFC'}
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Actualiser
           </button>
         </div>
@@ -266,25 +266,25 @@ export function CompanyManagement() {
         {/* ── KPI Cards Compactes ── */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '12px',
-          marginBottom: '16px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '8px',
+          marginBottom: '8px'
         }}>
           {/* Total */}
           <div 
             onClick={() => setActiveTab('ALL')}
             style={{
               backgroundColor: '#ffffff',
-              padding: '12px 16px',
-              borderRadius: '12px',
+              padding: '8px 12px',
+              borderRadius: '10px',
               border: `1.5px solid ${activeTab === 'ALL' ? '#1A6FD4' : '#E2E8F0'}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
               cursor: 'pointer',
               transition: 'all 0.15s'
             }}
           >
-            <div style={{ fontSize: '11.5px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase' }}>Total Entreprises</div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>{stats.total}</div>
+            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '600', textTransform: 'uppercase' }}>Total Entreprises</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', marginTop: '1px' }}>{stats.total}</div>
           </div>
 
           {/* Viables */}
@@ -292,16 +292,16 @@ export function CompanyManagement() {
             onClick={() => setActiveTab('VIABLE')}
             style={{
               backgroundColor: '#ffffff',
-              padding: '12px 16px',
-              borderRadius: '12px',
+              padding: '8px 12px',
+              borderRadius: '10px',
               border: `1.5px solid ${activeTab === 'VIABLE' ? '#16A34A' : '#E2E8F0'}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
               cursor: 'pointer',
               transition: 'all 0.15s'
             }}
           >
-            <div style={{ fontSize: '11.5px', color: '#15803D', fontWeight: '600', textTransform: 'uppercase' }}>Certifiées Viables</div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#16A34A', marginTop: '2px' }}>{stats.viable}</div>
+            <div style={{ fontSize: '11px', color: '#15803D', fontWeight: '600', textTransform: 'uppercase' }}>Certifiées Viables</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#16A34A', marginTop: '1px' }}>{stats.viable}</div>
           </div>
 
           {/* Non certifiées */}
@@ -309,16 +309,16 @@ export function CompanyManagement() {
             onClick={() => setActiveTab('NON_VIABLE')}
             style={{
               backgroundColor: '#ffffff',
-              padding: '12px 16px',
-              borderRadius: '12px',
+              padding: '8px 12px',
+              borderRadius: '10px',
               border: `1.5px solid ${activeTab === 'NON_VIABLE' ? '#D97706' : '#E2E8F0'}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
               cursor: 'pointer',
               transition: 'all 0.15s'
             }}
           >
-            <div style={{ fontSize: '11.5px', color: '#B45309', fontWeight: '600', textTransform: 'uppercase' }}>Non Certifiées</div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#D97706', marginTop: '2px' }}>{stats.nonViable}</div>
+            <div style={{ fontSize: '11px', color: '#B45309', fontWeight: '600', textTransform: 'uppercase' }}>Non Certifiées</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#D97706', marginTop: '1px' }}>{stats.nonViable}</div>
           </div>
 
           {/* Offres Internationales */}
@@ -326,31 +326,31 @@ export function CompanyManagement() {
             onClick={() => setActiveTab('INTL')}
             style={{
               backgroundColor: '#ffffff',
-              padding: '12px 16px',
-              borderRadius: '12px',
+              padding: '8px 12px',
+              borderRadius: '10px',
               border: `1.5px solid ${activeTab === 'INTL' ? '#9333EA' : '#E2E8F0'}`,
               boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
               cursor: 'pointer',
               transition: 'all 0.15s'
             }}
           >
-            <div style={{ fontSize: '11.5px', color: '#7E22CE', fontWeight: '600', textTransform: 'uppercase' }}>Offres Internationales</div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#9333EA', marginTop: '2px' }}>{stats.intlAllowed}</div>
+            <div style={{ fontSize: '11px', color: '#7E22CE', fontWeight: '600', textTransform: 'uppercase' }}>Offres Internationales</div>
+            <div style={{ fontSize: '18px', fontWeight: '800', color: '#9333EA', marginTop: '1px' }}>{stats.intlAllowed}</div>
           </div>
         </div>
 
         {/* ── Filtres & Barre d'Outils ── */}
         <div style={{
           backgroundColor: '#ffffff',
-          borderRadius: '14px',
-          padding: '14px 16px',
+          borderRadius: '12px',
+          padding: '8px 12px',
           border: '1px solid #E2E8F0',
-          marginBottom: '14px',
+          marginBottom: '8px',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '12px'
+          gap: '8px'
         }}>
           {/* Recherche textuelle */}
           <div style={{ position: 'relative', flex: '1 1 280px', minWidth: '240px' }}>
