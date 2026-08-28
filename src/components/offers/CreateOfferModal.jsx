@@ -192,6 +192,20 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
     }
   ];
 
+  const DURATION_OPTIONS = [
+    '1 mois',
+    '2 mois',
+    '3 mois',
+    '4 mois',
+    '5 mois',
+    '6 mois',
+    '9 mois',
+    '12 mois (1 an)',
+    '18 mois',
+    '24 mois (2 ans)',
+    'Indéterminée / Flexible'
+  ];
+
   const handleToggleSkill = (skill) => {
     const trimmed = skill.trim();
     if (!trimmed) return;
@@ -481,8 +495,21 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
                 <input type="date" name="start_date" value={formData.start_date} onChange={handleChange} style={inputStyle} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                <label style={labelStyle}>Durée (Ex: 6 mois)</label>
-                <input type="text" name="duration" value={formData.duration} onChange={handleChange} placeholder="Ex: 6 mois" style={inputStyle} />
+                <label style={labelStyle}>Durée du stage / contrat *</label>
+                <select 
+                  name="duration" 
+                  value={formData.duration} 
+                  onChange={handleChange} 
+                  style={inputStyle}
+                >
+                  <option value="">Sélectionnez une durée</option>
+                  {DURATION_OPTIONS.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                  {formData.duration && !DURATION_OPTIONS.includes(formData.duration) && (
+                    <option value={formData.duration}>{formData.duration}</option>
+                  )}
+                </select>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
                 <label style={labelStyle}>Date limite candidature</label>
