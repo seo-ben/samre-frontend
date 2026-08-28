@@ -30,6 +30,12 @@ const formatDate = (dateStr) => {
 const getActionMeta = (action) => {
   if (!action) return { label: 'Action inconnue', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
 
+  // IA
+  if (action.startsWith('ai.cv_enhancement') || action.startsWith('ai.')) {
+    return { label: '✨ Optimisation CV IA', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
+  }
+
+  // Authentification
   if (action.startsWith('auth.admin_login') || action.startsWith('auth.login')) {
     return { label: 'Connexion', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
   }
@@ -39,8 +45,24 @@ const getActionMeta = (action) => {
   if (action.startsWith('auth.register')) {
     return { label: 'Inscription', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
   }
+
+  // Paiements & Portefeuille
+  if (action.startsWith('wallet.credit')) {
+    return { label: '💳 Rechargement Portefeuille', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+  }
+  if (action.startsWith('wallet.debit')) {
+    return { label: '💳 Débit Portefeuille', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
+  }
+  if (action.startsWith('subscription.purchased')) {
+    return { label: '⭐ Souscription Abonnement', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
+  }
+
+  // Offres
   if (action.startsWith('offer.created')) {
     return { label: 'Offre créée', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' };
+  }
+  if (action.startsWith('offer.updated')) {
+    return { label: 'Offre modifiée', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' };
   }
   if (action.startsWith('offer.validated')) {
     return { label: 'Offre validée', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
@@ -54,14 +76,75 @@ const getActionMeta = (action) => {
   if (action.startsWith('offer.status_changed')) {
     return { label: 'Statut offre modifié', bg: '#FDF4FF', color: '#86198F', border: '#F5D0FE' };
   }
+
+  // Candidatures & Embauches
   if (action.startsWith('application.submitted')) {
     return { label: 'Candidature déposée', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
   }
+  if (action.startsWith('application.status_changed') || action.startsWith('admin.application_status_changed')) {
+    return { label: 'Statut candidature mis à jour', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
+  }
+  if (action.startsWith('hiring.status_changed')) {
+    return { label: 'Déclaration d\'embauche', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
+  }
+  if (action.startsWith('hiring.payment_decision')) {
+    return { label: 'Prime d\'embauche', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
+  }
+
+  // Événements
+  if (action.startsWith('event.created')) {
+    return { label: 'Événement publié', bg: '#EEF2FF', color: '#4F46E5', border: '#C7D2FE' };
+  }
+  if (action.startsWith('event.participated')) {
+    return { label: 'Inscription événement', bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
+  }
+  if (action.startsWith('event.participation_cancelled')) {
+    return { label: 'Annulation participation', bg: '#F8FAFC', color: '#64748B', border: '#CBD5E1' };
+  }
+
+  // Sondages
+  if (action.startsWith('survey.voted')) {
+    return { label: '📊 Vote à un sondage', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
+  }
+  if (action.startsWith('survey.created')) {
+    return { label: '📊 Sondage créé', bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' };
+  }
+
+  // Badges & Vérifications
+  if (action.startsWith('badge.approved')) {
+    return { label: '🏅 Badge vérifié accordé', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+  }
+  if (action.startsWith('badge.rejected')) {
+    return { label: 'Badge rejeté', bg: '#FEF2F2', color: '#991B1B', border: '#FCA5A5' };
+  }
+
+  // Signalements & Modération
+  if (action.startsWith('report.content_banned')) {
+    return { label: '🛡️ Contenu banni (Signalement)', bg: '#FEF2F2', color: '#991B1B', border: '#F87171' };
+  }
+  if (action.startsWith('report.dismissed')) {
+    return { label: 'Signalement classé sans suite', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+  }
+
+  // Partenariats B2B / Troc
+  if (action.startsWith('service_exchange.status_changed')) {
+    return { label: 'Troc B2B mis à jour', bg: '#F0F9FF', color: '#0369A1', border: '#BAE6FD' };
+  }
+  if (action.startsWith('service_exchange.deleted')) {
+    return { label: 'Troc B2B supprimé', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
+  }
+
+  // Entreprises
   if (action.startsWith('company.viability')) {
     return { label: 'Viabilité entreprise', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
   }
   if (action.startsWith('company.international')) {
     return { label: 'Droit international', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
+  }
+
+  // Admin & Demandes spéciales
+  if (action.startsWith('special_request.status_changed')) {
+    return { label: 'Demande spéciale traitée', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
   }
   if (action.startsWith('admin.user_suspended')) {
     return { label: 'Utilisateur suspendu', bg: '#FEF2F2', color: '#991B1B', border: '#FCA5A5' };
@@ -313,14 +396,19 @@ export const AuditLogsPage = () => {
               outline: 'none'
             }}
           >
-            <option value="all">Toutes les actions</option>
-            <option value="auth">Authentification (Connexion/Inscription)</option>
-            <option value="offers">Offres (Création/Validation/Rejet)</option>
-            <option value="applications">Candidatures & Embauches</option>
-            <option value="company">Entreprises & Viabilité</option>
-            <option value="admin">Administration & Modération</option>
-            <option value="wallet">Finances & Portefeuilles</option>
-            <option value="events">Événements</option>
+            <option value="all">Toutes les catégories d'actions</option>
+            <option value="ai">✨ Intelligence Artificielle (Génération CV / IA)</option>
+            <option value="wallet">💳 Finances, Wallets & Abonnements</option>
+            <option value="auth">🔐 Authentification & Sessions</option>
+            <option value="offers">💼 Offres de Stage & Emploi</option>
+            <option value="applications">📄 Candidatures & Embauches</option>
+            <option value="events">📅 Événements & Participations</option>
+            <option value="surveys">📊 Sondages Communautaires</option>
+            <option value="badges">🏅 Badges & Vérifications</option>
+            <option value="reports">🛡️ Modération & Signalements</option>
+            <option value="service_exchanges">🤝 Partenariats B2B / Troc</option>
+            <option value="company">🏢 Entreprises & Viabilité</option>
+            <option value="admin">⚙️ Administration & Paramètres</option>
           </select>
 
           {/* Filtre Type Utilisateur */}
