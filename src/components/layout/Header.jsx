@@ -1,8 +1,44 @@
-import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { Search, Bell, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Search, Bell, ChevronRight, Volume2, VolumeX, 
+  Monitor, Handshake, CreditCard, 
+  Zap, UserCheck, ShieldCheck 
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
+
+// Helper de temps relatif en français
+const timeAgo = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+    if (diff < 60) return 'À l\'instant';
+    if (diff < 3600) return `Il y a ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `Il y a ${Math.floor(diff / 3600)} h`;
+    return `Il y a ${Math.floor(diff / 86400)} j`;
+  } catch {
+    return '';
+  }
+};
+
+// Helper d'icône d'alerte
+const getAlertIcon = (type) => {
+  switch (type) {
+    case 'report':
+      return <ShieldCheck size={15} color="#DC2626" />;
+    case 'special_request':
+      return <Zap size={15} color="#7E22CE" />;
+    case 'hiring_declaration':
+      return <Handshake size={15} color="#059669" />;
+    case 'verification_badge':
+      return <UserCheck size={15} color="#0284C7" />;
+    case 'wallet_credit':
+      return <CreditCard size={15} color="#059669" />;
+    default:
+      return <Bell size={15} color="#1D4ED8" />;
+  }
+};
 
 // Helper de correspondance des routes pour le fil d'Ariane (Breadcrumbs)
 const getBreadcrumbs = (path) => {
@@ -99,53 +135,35 @@ const getBreadcrumbs = (path) => {
   if (path.startsWith('/notifications/send')) {
     return { parent: 'Notifications', child: 'Envoyer' };
   }
-  if (path.startsWith('/notifications/history')) {
-    return { parent: 'Notifications', child: 'Historique' };
+  if (path.startsWith('/notifications')) {
+    return { parent: 'Notifications & Alertes', child: 'Centre Push' };
   }
-  if (path.startsWith('/notifications/target')) {
-    return { parent: 'Notifications', child: 'Ciblage' };
+  if (path.startsWith('/audit-logs')) {
+    return { parent: 'Sécurité & Audit', child: 'Journal des activités' };
   }
-  if (path.startsWith('/cms/ads')) {
-    return { parent: 'CMS — Contenu', child: 'Pages publicitaires' };
+  if (path.startsWith('/moderation/reports') || path.startsWith('/reports')) {
+    return { parent: 'Modération', child: 'Signalements de contenu' };
   }
-  if (path.startsWith('/cms/languages')) {
-    return { parent: 'CMS — Contenu', child: 'Langues' };
+  if (path.startsWith('/special-requests')) {
+    return { parent: 'Demandes Spéciales', child: 'Suivi des requêtes' };
   }
-  if (path.startsWith('/cms/locations')) {
-    return { parent: 'CMS — Contenu', child: 'Zones géographiques' };
+  if (path.startsWith('/surveys')) {
+    return { parent: 'Sondages & Enquêtes', child: '' };
   }
-  if (path.startsWith('/cms/offer-cats')) {
-    return { parent: 'CMS — Contenu', child: 'Catégories d\'offres' };
+  if (path.startsWith('/partnerships')) {
+    return { parent: 'Partenariats B2B', child: '' };
   }
-  if (path.startsWith('/cms/event-cats')) {
-    return { parent: 'CMS — Contenu', child: 'Catégories d\'événements' };
+  if (path.startsWith('/cms')) {
+    return { parent: 'CMS — Contenu', child: '' };
   }
-  if (path.startsWith('/cms/quotas')) {
-    return { parent: 'CMS — Contenu', child: 'Règles de quota' };
+  if (path.startsWith('/locations')) {
+    return { parent: 'Données Géographiques', child: '' };
   }
-  if (path.startsWith('/cms/blur')) {
-    return { parent: 'CMS — Contenu', child: 'Champs floutés' };
+  if (path.startsWith('/system/health')) {
+    return { parent: 'Système & Logs', child: 'Santé du système' };
   }
-  if (path.startsWith('/stats/users')) {
-    return { parent: 'Statistiques', child: 'Stats utilisateurs' };
-  }
-  if (path.startsWith('/stats/companies')) {
-    return { parent: 'Statistiques', child: 'Stats entreprises' };
-  }
-  if (path.startsWith('/stats/offers')) {
-    return { parent: 'Statistiques', child: 'Stats offres' };
-  }
-  if (path.startsWith('/stats/applications')) {
-    return { parent: 'Statistiques', child: 'Stats candidatures' };
-  }
-  if (path.startsWith('/stats/events')) {
-    return { parent: 'Statistiques', child: 'Stats événements' };
-  }
-  if (path.startsWith('/stats/revenue')) {
-    return { parent: 'Statistiques', child: 'Stats revenus' };
-  }
-  if (path.startsWith('/stats/exports')) {
-    return { parent: 'Statistiques', child: 'Exports' };
+  if (path.startsWith('/system/settings')) {
+    return { parent: 'Système & Logs', child: 'Paramètres système' };
   }
   if (path.startsWith('/settings/staff')) {
     return { parent: 'Paramètres', child: 'Comptes admin' };
@@ -165,8 +183,23 @@ const getBreadcrumbs = (path) => {
 
 export const Header = () => {
   const { user } = useAuth();
-  const { isSyncing, refreshNow } = useRealtime();
+  const { 
+    isSyncing, 
+    refreshNow, 
+    liveAlerts, 
+    unreadAlertsCount, 
+    desktopPermission, 
+    requestDesktopPermission, 
+    testDesktopNotification,
+    soundEnabled,
+    toggleSound
+  } = useRealtime();
+
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const initials = user
     ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
@@ -177,6 +210,16 @@ export const Header = () => {
     : 'Admin';
 
   const { parent, child } = getBreadcrumbs(location.pathname);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setNotifDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -198,6 +241,10 @@ export const Header = () => {
           .header-container { padding: 0 12px !important; gap: 8px !important; }
           .header-right-actions { gap: 12px !important; }
         }
+        @keyframes pulseAlert {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.85; transform: scale(1.03); }
+        }
       `}</style>
       <header className="header-container" style={{
         height: '64px',
@@ -209,10 +256,9 @@ export const Header = () => {
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
-        zIndex: 10
+        zIndex: 100
       }}>
         
-        {/* Left section: Breadcrumb */}
         <div style={{ display: 'flex', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
           <div className="header-breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
             {child ? (
@@ -227,79 +273,272 @@ export const Header = () => {
           </div>
         </div>
 
-        {/* Right section: Search & Actions */}
         <div className="header-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-          {/* Live sync badge */}
+          
           <button
             onClick={refreshNow}
-            title="Synchronisation temps réel (Cliquer pour forcer l'actualisation)"
+            title="Synchronisation temps réel"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '5px 10px',
-              borderRadius: '20px',
-              background: '#f0fdf4',
-              border: '1px solid #bbf7d0',
-              fontSize: '11.5px',
-              fontWeight: '700',
-              color: '#16a34a',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
+              display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px',
+              borderRadius: '20px', background: '#f0fdf4', border: '1px solid #bbf7d0',
+              fontSize: '11.5px', fontWeight: '700', color: '#16a34a', cursor: 'pointer'
             }}
           >
-            <span style={{
-              width: '7px',
-              height: '7px',
-              borderRadius: '50%',
-              background: isSyncing ? '#eab308' : '#22c55e',
-              boxShadow: isSyncing ? '0 0 8px #eab308' : '0 0 8px #22c55e',
-              display: 'inline-block'
-            }}></span>
-            <span className="hidden sm:inline">
-              {isSyncing ? 'Actualisation...' : 'En direct'}
-            </span>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: isSyncing ? '#eab308' : '#22c55e' }}></span>
+            <span className="hidden sm:inline">{isSyncing ? 'Actualisation...' : 'En direct'}</span>
           </button>
 
-          <div className="header-search" style={{ position: 'relative' }}>
-            <Search size={16} color="var(--gray-medium)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Rechercher..." 
+          {desktopPermission !== 'granted' && (
+            <button
+              onClick={requestDesktopPermission}
+              title="Activer les alertes PC"
               style={{
-                background: 'var(--gray-light)',
-                border: '1px solid var(--gray-border)',
-                borderRadius: '12px',
-                padding: '8px 12px 8px 36px',
-                width: '240px',
-                fontFamily: 'var(--font-inter)',
-                fontSize: '13px'
+                display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px',
+                borderRadius: '20px', background: '#EFF6FF', border: '1px solid #BFDBFE',
+                fontSize: '11.5px', fontWeight: '700', color: '#1D4ED8', cursor: 'pointer',
+                animation: 'pulseAlert 2.5s infinite'
               }}
-            />
+            >
+              <Monitor size={13} />
+              <span className="hidden md:inline">Activer alertes PC</span>
+            </button>
+          )}
+
+          <div style={{ position: 'relative' }} ref={dropdownRef}>
+            <button
+              onClick={() => setNotifDropdownOpen(o => !o)}
+              style={{
+                background: notifDropdownOpen ? '#EFF6FF' : 'transparent',
+                border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '8px'
+              }}
+            >
+              <Bell size={21} color={notifDropdownOpen ? '#1A6FD4' : 'var(--primary-dark)'} />
+              {unreadAlertsCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: '2px', right: '2px', minWidth: '16px', height: '16px',
+                  background: '#EF4444', color: '#FFFFFF', borderRadius: '10px', fontSize: '10px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #FFFFFF'
+                }}>
+                  {unreadAlertsCount > 9 ? '9+' : unreadAlertsCount}
+                </span>
+              )}
+            </button>
+
+            {notifDropdownOpen && (
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: '360px',
+                maxWidth: '90vw',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '14px',
+                boxShadow: '0 20px 30px -10px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.08)',
+                overflow: 'hidden',
+                zIndex: 1000,
+                animation: 'fadeIn 0.15s ease-out'
+              }}>
+                {/* Header Dropdown */}
+                <div style={{
+                  padding: '12px 16px',
+                  backgroundColor: '#F8FAFC',
+                  borderBottom: '1px solid #E2E8F0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: '6px',
+                      backgroundColor: '#EFF6FF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Bell size={15} color="#1A6FD4" />
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>
+                        Alertes en Direct
+                      </h4>
+                      <span style={{ fontSize: '10.5px', color: '#64748B' }}>
+                        Notifications PC & Web
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => toggleSound()}
+                    title={soundEnabled ? 'Désactiver la sonnerie' : 'Activer la sonnerie'}
+                    style={{
+                      background: soundEnabled ? '#ECFDF5' : '#F1F5F9',
+                      border: `1px solid ${soundEnabled ? '#A7F3D0' : '#CBD5E1'}`,
+                      borderRadius: '6px',
+                      padding: '4px 7px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      color: soundEnabled ? '#047857' : '#64748B'
+                    }}
+                  >
+                    {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                  </button>
+                </div>
+
+                {/* Statut Notifications de Bureau (Mac/PC) */}
+                <div style={{
+                  padding: '8px 14px',
+                  backgroundColor: desktopPermission === 'granted' ? '#F0FDF4' : '#FFFBEB',
+                  borderBottom: '1px solid #E2E8F0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  fontSize: '11px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Monitor size={14} color={desktopPermission === 'granted' ? '#16A34A' : '#D97706'} />
+                    <span style={{ fontWeight: '600', color: desktopPermission === 'granted' ? '#166534' : '#B45309' }}>
+                      {desktopPermission === 'granted'
+                        ? 'Notifications PC actives'
+                        : 'Alertes sur écran inactives'}
+                    </span>
+                  </div>
+
+                  {desktopPermission === 'granted' ? (
+                    <button
+                      onClick={testDesktopNotification}
+                      style={{
+                        background: '#FFFFFF',
+                        border: '1px solid #BBF7D0',
+                        color: '#166534',
+                        borderRadius: '4px',
+                        padding: '2px 7px',
+                        fontSize: '10.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔔 Tester
+                    </button>
+                  ) : (
+                    <button
+                      onClick={requestDesktopPermission}
+                      style={{
+                        background: '#1A6FD4',
+                        border: 'none',
+                        color: '#FFFFFF',
+                        borderRadius: '4px',
+                        padding: '3px 8px',
+                        fontSize: '10.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Autoriser
+                    </button>
+                  )}
+                </div>
+
+                {/* Liste des Alertes */}
+                <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                  {liveAlerts.length === 0 ? (
+                    <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: '12px', color: '#94A3B8' }}>
+                      Aucune alerte récente. Vous recevrez une notification sur votre écran dès qu'un événement survient.
+                    </div>
+                  ) : (
+                    liveAlerts.map(alert => (
+                      <div
+                        key={alert.id}
+                        onClick={() => {
+                          setNotifDropdownOpen(false);
+                          if (alert.url) navigate(alert.url);
+                        }}
+                        style={{
+                          padding: '10px 14px',
+                          borderBottom: '1px solid #F1F5F9',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: '10px',
+                          backgroundColor: alert.is_read ? '#FFFFFF' : '#F8FAFC',
+                          transition: 'background 0.15s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#EFF6FF'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = alert.is_read ? '#FFFFFF' : '#F8FAFC'}
+                      >
+                        <div style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          backgroundColor: '#F1F5F9',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                          marginTop: '2px'
+                        }}>
+                          {getAlertIcon(alert.type)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {alert.title}
+                            </span>
+                            <span style={{ fontSize: '10px', color: '#94A3B8', whiteSpace: 'nowrap' }}>
+                              {timeAgo(alert.created_at)}
+                            </span>
+                          </div>
+                          <p style={{ margin: '2px 0 0 0', fontSize: '11.5px', color: '#475569', lineHeight: '1.3' }}>
+                            {alert.message}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Footer Dropdown */}
+                <div style={{
+                  padding: '8px 14px',
+                  backgroundColor: '#F8FAFC',
+                  borderTop: '1px solid #E2E8F0',
+                  textAlign: 'center'
+                }}>
+                  <button
+                    onClick={() => {
+                      setNotifDropdownOpen(false);
+                      navigate('/notifications');
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#1A6FD4',
+                      fontSize: '11.5px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    Accéder au Centre Push & Alertes <ChevronRight size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div style={{ position: 'relative', cursor: 'pointer' }}>
-            <Bell size={22} color="var(--primary-dark)" />
-            <span style={{ position: 'absolute', top: '-2px', right: '-2px', width: '8px', height: '8px', background: 'var(--danger)', borderRadius: '50%' }}></span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-            <div className="header-user-info" style={{ textAlign: 'right', fontFamily: 'var(--font-inter)' }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--black-deep)' }}>
-                {fullName}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--gray-medium)', marginTop: '2px' }}>
-                {user?.role ?? 'Administrateur'}
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="header-user-info" style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '13px', fontWeight: '600' }}>{fullName}</div>
+              <div style={{ fontSize: '11px', color: 'var(--gray-medium)' }}>{user?.role ?? 'Administrateur'}</div>
             </div>
-            <div style={{
-              width: '36px', height: '36px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #1A6FD4, #0052ff)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '13px', fontWeight: '700', color: '#fff',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-              flexShrink: 0
-            }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1A6FD4', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700' }}>
               {initials}
             </div>
           </div>
