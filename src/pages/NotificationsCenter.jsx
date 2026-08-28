@@ -3,12 +3,13 @@ import {
   Bell, Send, Clock, Users, ShieldAlert, Sparkles, 
   MapPin, Globe, CheckCircle2, AlertCircle, RefreshCw, 
   Calendar, Smartphone, Check, X, ChevronRight, ChevronLeft, 
-  Trash2, RotateCcw, Radio, Info, MessageSquare, ArrowRight, Eye
+  Trash2, RotateCcw, Radio, Info, MessageSquare, ArrowRight, Eye,
+  Edit3, Pencil
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 
-// Formatage de la date
+// Formatage de la date pour affichage
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
   try {
@@ -23,6 +24,20 @@ const formatDate = (dateStr) => {
   } catch {
     return dateStr;
   }
+};
+
+// Formatage pour input datetime-local (YYYY-MM-DDTHH:mm)
+const formatToDatetimeLocal = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  const year = d.getFullYear();
+  const month = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const hours = pad(d.getHours());
+  const minutes = pad(d.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 export const NotificationsCenter = () => {
@@ -73,6 +88,21 @@ export const NotificationsCenter = () => {
   const [estimating, setEstimating] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // État de modification d'une notification existante
+  const [editingCampaign, setEditingCampaign] = useState(null);
+
+  // Configuration du Modal de confirmation personnalisé (sans alertes JS natives)
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'primary', // 'primary' | 'danger' | 'warning'
+    confirmText: 'Confirmer',
+    cancelText: 'Annuler',
+    loading: false,
+    onConfirm: null,
+  });
 
   // 1. Charger les données géographiques complètes
   useEffect(() => {
@@ -152,7 +182,7 @@ export const NotificationsCenter = () => {
     return () => clearTimeout(timer);
   }, [form.target_audience, form.country_id, form.region_id, form.prefecture_id, form.commune_id]);
 
-  // 4. Soumission de l'envoi / programmation
+  // 4. Soumission de l'envoi / programmation / mise à jour
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMessage(null);
@@ -187,10 +217,21 @@ export const NotificationsCenter = () => {
         scheduled_at: form.is_scheduled ? form.scheduled_at : null,
       };
 
-      const res = await apiClient.post('/v1/admin/notifications/campaigns', payload);
+      const isUpdatingScheduled = editingCampaign && editingCampaign.status === 'scheduled';
+      let res;
+
+      if (isUpdatingScheduled) {
+        // Mise à jour de la notification programmée existante
+        res = await apiClient.put(`/v1/admin/notifications/campaigns/${editingCampaign.id}`, payload);
+      } else {
+        // Création / Nouvel envoi direct
+        res = await apiClient.post('/v1/admin/notifications/campaigns', payload);
+      }
+
       if (res.data?.success) {
-        setSuccessMessage(res.data.message || 'Opération réussie !');
-        // Réinitialiser formulaire
+        setSuccessMessage(res.data.message || (isUpdatingScheduled ? 'Notification programmée mise à jour avec succès !' : 'Notification enregistrée avec succès !'));
+        // Réinitialiser formulaire et état d'édition
+        setEditingCampaign(null);
         setForm({
           title: '',
           body: '',
@@ -206,12 +247,12 @@ export const NotificationsCenter = () => {
           scheduled_at: '',
         });
         fetchCampaigns();
-        // Basculer vers l'onglet historique après 1.5s
+        // Basculer vers l'onglet historique après 1.2s
         setTimeout(() => {
           setActiveTab('history');
         }, 1200);
       } else {
-        setErrorMessage(res.data?.message || "Une erreur est survenue lors de l'envoi.");
+        setErrorMessage(res.data?.message || "Une erreur est survenue lors de l'opération.");
       }
     } catch (err) {
       setErrorMessage(err.response?.data?.message || "Erreur de communication avec le serveur.");
@@ -220,35 +261,100 @@ export const NotificationsCenter = () => {
     }
   };
 
-  // 5. Annulation d'une notification programmée
-  const handleCancelCampaign = async (id) => {
-    if (!window.confirm("Êtes-vous sûr de vouloir annuler cette notification programmée ?")) {
-      return;
-    }
-    try {
-      const res = await apiClient.post(`/v1/admin/notifications/campaigns/${id}/cancel`);
-      if (res.data?.success) {
-        fetchCampaigns();
-      }
-    } catch (err) {
-      alert("Erreur lors de l'annulation : " + (err.response?.data?.message || err.message));
-    }
+  // 5. Charger une notification dans le formulaire pour édition ou republication
+  const handleEditCampaign = (campaign) => {
+    setEditingCampaign(campaign);
+    setForm({
+      title: campaign.title || '',
+      body: campaign.body || '',
+      target_audience: campaign.target_audience || 'all',
+      country_id: campaign.country_id ? String(campaign.country_id) : '',
+      region_id: campaign.region_id ? String(campaign.region_id) : '',
+      prefecture_id: campaign.prefecture_id ? String(campaign.prefecture_id) : '',
+      commune_id: campaign.commune_id ? String(campaign.commune_id) : '',
+      channel: campaign.channel || 'both',
+      action_url: campaign.action_url || '',
+      image_url: campaign.image_url || '',
+      is_scheduled: campaign.status === 'scheduled',
+      scheduled_at: campaign.scheduled_at ? formatToDatetimeLocal(campaign.scheduled_at) : '',
+    });
+    setActiveTab('compose');
+    setSuccessMessage(null);
+    setErrorMessage(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 6. Renvoyer une notification passée
-  const handleResendCampaign = async (campaign) => {
-    if (!window.confirm(`Renvoyer immédiatement la notification "${campaign.title}" à tous les utilisateurs ciblés ?`)) {
-      return;
-    }
-    try {
-      const res = await apiClient.post(`/v1/admin/notifications/campaigns/${campaign.id}/resend`);
-      if (res.data?.success) {
-        alert(res.data.message || 'Notification renvoyée avec succès.');
-        fetchCampaigns();
+  // 6. Annuler le mode édition
+  const handleCancelEdit = () => {
+    setEditingCampaign(null);
+    setForm({
+      title: '',
+      body: '',
+      target_audience: 'all',
+      country_id: '',
+      region_id: '',
+      prefecture_id: '',
+      commune_id: '',
+      channel: 'both',
+      action_url: '',
+      image_url: '',
+      is_scheduled: false,
+      scheduled_at: '',
+    });
+  };
+
+  // 7. Annulation d'une notification programmée via Modal de confirmation
+  const handleCancelCampaign = (campaign) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Annuler cette programmation ?',
+      message: `La notification "${campaign.title}" ne sera pas diffusée aux utilisateurs ciblés. Cette action est irréversible.`,
+      type: 'danger',
+      confirmText: 'Oui, annuler la programmation',
+      cancelText: 'Conserver',
+      loading: false,
+      onConfirm: async () => {
+        setModalConfig(prev => ({ ...prev, loading: true }));
+        try {
+          const res = await apiClient.post(`/v1/admin/notifications/campaigns/${campaign.id}/cancel`);
+          if (res.data?.success) {
+            setSuccessMessage(`La notification #${campaign.id} a été annulée avec succès.`);
+            fetchCampaigns();
+          }
+        } catch (err) {
+          setErrorMessage("Erreur lors de l'annulation : " + (err.response?.data?.message || err.message));
+        } finally {
+          setModalConfig(prev => ({ ...prev, isOpen: false, loading: false }));
+        }
       }
-    } catch (err) {
-      alert("Erreur lors du renvoi : " + (err.response?.data?.message || err.message));
-    }
+    });
+  };
+
+  // 8. Renvoyer une notification via Modal de confirmation
+  const handleResendCampaign = (campaign) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Renvoyer la notification maintenant ?',
+      message: `Voulez-vous rediffuser immédiatement la notification "${campaign.title}" à tous les utilisateurs concernés ?`,
+      type: 'primary',
+      confirmText: 'Oui, diffuser maintenant',
+      cancelText: 'Annuler',
+      loading: false,
+      onConfirm: async () => {
+        setModalConfig(prev => ({ ...prev, loading: true }));
+        try {
+          const res = await apiClient.post(`/v1/admin/notifications/campaigns/${campaign.id}/resend`);
+          if (res.data?.success) {
+            setSuccessMessage(res.data.message || `Notification #${campaign.id} renvoyée avec succès.`);
+            fetchCampaigns();
+          }
+        } catch (err) {
+          setErrorMessage("Erreur lors du renvoi : " + (err.response?.data?.message || err.message));
+        } finally {
+          setModalConfig(prev => ({ ...prev, isOpen: false, loading: false }));
+        }
+      }
+    });
   };
 
   // Helpers de badges de statut
@@ -460,6 +566,65 @@ export const NotificationsCenter = () => {
             {/* Formulaire de composition */}
             <form onSubmit={handleSubmit} style={{ backgroundColor: '#FFFFFF', padding: '16px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
+              {/* Bannière Mode Édition */}
+              {editingCampaign && (
+                <div style={{
+                  backgroundColor: editingCampaign.status === 'scheduled' ? '#FFFBEB' : '#EFF6FF',
+                  border: `1px solid ${editingCampaign.status === 'scheduled' ? '#FDE68A' : '#BFDBFE'}`,
+                  borderRadius: '8px',
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '6px',
+                      backgroundColor: editingCampaign.status === 'scheduled' ? '#FEF3C7' : '#DBEAFE',
+                      color: editingCampaign.status === 'scheduled' ? '#D97706' : '#1A6FD4',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <Pencil size={16} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12.5px', fontWeight: '800', color: editingCampaign.status === 'scheduled' ? '#92400E' : '#1E40AF' }}>
+                        {editingCampaign.status === 'scheduled'
+                          ? `Modification de la notification programmée #${editingCampaign.id}`
+                          : `Édition & Rediffusion de la notification #${editingCampaign.id}`}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748B' }}>
+                        {editingCampaign.status === 'scheduled'
+                          ? "Vous pouvez ajuster le texte, le ciblage et la date/heure avant son envoi automatique."
+                          : "Vous pouvez modifier le texte ou l'audience puis envoyer cette nouvelle version."}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    style={{
+                      fontSize: '11px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #CBD5E1',
+                      backgroundColor: '#FFFFFF',
+                      color: '#475569',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    ✕ Annuler l'édition
+                  </button>
+                </div>
+              )}
+
               {/* Section 1 : Message */}
               <div>
                 <h3 style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -883,15 +1048,27 @@ export const NotificationsCenter = () => {
                       <RefreshCw size={15} className="animate-spin" />
                       Traitement en cours...
                     </>
+                  ) : editingCampaign?.status === 'scheduled' ? (
+                    form.is_scheduled ? (
+                      <>
+                        <Clock size={16} />
+                        Enregistrer les modifications de la programmation
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Enregistrer et Diffuser Maintenant
+                      </>
+                    )
                   ) : form.is_scheduled ? (
                     <>
                       <Clock size={16} />
-                      Enregistrer la Programmation
+                      {editingCampaign ? 'Programmer cette version' : 'Enregistrer la Programmation'}
                     </>
                   ) : (
                     <>
                       <Send size={16} />
-                      Diffuser la Notification Maintenant
+                      {editingCampaign ? 'Diffuser cette nouvelle version' : 'Diffuser la Notification Maintenant'}
                     </>
                   )}
                 </button>
@@ -1197,9 +1374,36 @@ export const NotificationsCenter = () => {
                             {/* Actions */}
                             <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
+                                
+                                {/* 1. Modifier / Éditer */}
+                                <button
+                                  onClick={() => handleEditCampaign(c)}
+                                  title={isScheduled ? "Modifier cette notification programmée" : "Éditer et renvoyer cette notification"}
+                                  style={{
+                                    padding: '4px 8px',
+                                    backgroundColor: '#F8FAFC',
+                                    color: '#334155',
+                                    border: '1px solid #CBD5E1',
+                                    borderRadius: '5px',
+                                    fontSize: '11px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '3px',
+                                    transition: 'all 0.15s'
+                                  }}
+                                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#EFF6FF'; e.currentTarget.style.color = '#1A6FD4'; }}
+                                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.color = '#334155'; }}
+                                >
+                                  <Pencil size={12} />
+                                  {isScheduled ? 'Modifier' : 'Éditer'}
+                                </button>
+
+                                {/* 2. Annuler (si programmée) */}
                                 {isScheduled && (
                                   <button
-                                    onClick={() => handleCancelCampaign(c.id)}
+                                    onClick={() => handleCancelCampaign(c)}
                                     title="Annuler cette programmation"
                                     style={{
                                       padding: '4px 8px',
@@ -1220,26 +1424,29 @@ export const NotificationsCenter = () => {
                                   </button>
                                 )}
 
-                                <button
-                                  onClick={() => handleResendCampaign(c)}
-                                  title="Renvoyer cette notification"
-                                  style={{
-                                    padding: '4px 8px',
-                                    backgroundColor: '#EFF6FF',
-                                    color: '#1A6FD4',
-                                    border: '1px solid #BFDBFE',
-                                    borderRadius: '5px',
-                                    fontSize: '11px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px'
-                                  }}
-                                >
-                                  <RotateCcw size={12} />
-                                  Renvoyer
-                                </button>
+                                {/* 3. Renvoyer (si passée) */}
+                                {!isScheduled && (
+                                  <button
+                                    onClick={() => handleResendCampaign(c)}
+                                    title="Renvoyer cette notification à l'identique"
+                                    style={{
+                                      padding: '4px 8px',
+                                      backgroundColor: '#EFF6FF',
+                                      color: '#1A6FD4',
+                                      border: '1px solid #BFDBFE',
+                                      borderRadius: '5px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}
+                                  >
+                                    <RotateCcw size={12} />
+                                    Renvoyer
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1307,6 +1514,111 @@ export const NotificationsCenter = () => {
 
             </div>
 
+          </div>
+        )}
+
+        {/* ── Modal de Confirmation Élégant (Sans alert/confirm JS natifs) ── */}
+        {modalConfig.isOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '16px',
+            animation: 'fadeIn 0.15s ease-out'
+          }}>
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '16px',
+              maxWidth: '440px',
+              width: '100%',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #E2E8F0',
+              overflow: 'hidden'
+            }}>
+              <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                  <div style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '10px',
+                    backgroundColor: modalConfig.type === 'danger' ? '#FEE2E2' : '#EFF6FF',
+                    color: modalConfig.type === 'danger' ? '#DC2626' : '#1A6FD4',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    {modalConfig.type === 'danger' ? <AlertCircle size={22} /> : <Send size={20} />}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0F172A', margin: '0 0 6px 0' }}>
+                      {modalConfig.title}
+                    </h3>
+                    <p style={{ fontSize: '12.5px', color: '#475569', margin: 0, lineHeight: 1.5 }}>
+                      {modalConfig.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{
+                backgroundColor: '#F8FAFC',
+                padding: '12px 20px',
+                borderTop: '1px solid #E2E8F0',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '8px'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+                  disabled={modalConfig.loading}
+                  style={{
+                    padding: '8px 14px',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: '#475569',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {modalConfig.cancelText || 'Annuler'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={modalConfig.onConfirm}
+                  disabled={modalConfig.loading}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: modalConfig.type === 'danger' ? '#DC2626' : '#1A6FD4',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    color: '#FFFFFF',
+                    cursor: modalConfig.loading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: modalConfig.type === 'danger' ? '0 2px 4px rgba(220, 38, 38, 0.2)' : '0 2px 4px rgba(26, 111, 212, 0.2)'
+                  }}
+                >
+                  {modalConfig.loading && <RefreshCw size={13} className="animate-spin" />}
+                  {modalConfig.confirmText || 'Confirmer'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
