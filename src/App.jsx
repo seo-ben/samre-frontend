@@ -36,6 +36,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 
 import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
 import { AuditLogsPage } from './pages/AuditLogs'
+import { NotificationsCenter } from './pages/NotificationsCenter'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
@@ -118,9 +119,10 @@ function App() {
       <Route path="/subscriptions/history" element={<Protected><SubscriptionHistoryPage /></Protected>} />
 
       {/* ── Notifications ─────────────────────── */}
-      <Route path="/notifications/send"    element={<Protected><ComingSoon title="Envoyer une notification" /></Protected>} />
-      <Route path="/notifications/history" element={<Protected><ComingSoon title="Historique notifications" /></Protected>} />
-      <Route path="/notifications/target"  element={<Protected><ComingSoon title="Ciblage notifications" /></Protected>} />
+      <Route path="/notifications"         element={<Protected><NotificationsCenter /></Protected>} />
+      <Route path="/notifications/send"    element={<Protected><NotificationsCenter /></Protected>} />
+      <Route path="/notifications/history" element={<Protected><NotificationsCenter /></Protected>} />
+      <Route path="/notifications/target"  element={<Protected><NotificationsCenter /></Protected>} />
 
       {/* ── CMS & Contenu ───────────────────────── */}
       <Route path="/cms/ads"          element={<Protected><AdPages /></Protected>} />

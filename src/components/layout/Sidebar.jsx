@@ -130,9 +130,7 @@ const NAV = [
     children: [
       { label: 'Demandes spéciales',        path: '/special-requests',    icon: Sparkles,    badge: true, badgeKey: 'pending_special_requests_count' },
       { label: 'Modération & Signalements', path: '/moderation/reports',  icon: ShieldAlert, badge: true, badgeKey: 'pending_reports_count' },
-      { label: 'Envoyer notification',      path: '/notifications/send',   icon: Send },
-      { label: 'Historique des envois',      path: '/notifications/history', icon: History },
-      { label: 'Ciblage',                   path: '/notifications/target',  icon: ListFilter },
+      { label: 'Centre Notifications Push', path: '/notifications',       icon: Send },
     ],
   },
   {
