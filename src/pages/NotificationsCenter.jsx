@@ -86,8 +86,21 @@ export const NotificationsCenter = () => {
   const [submitting, setSubmitting] = useState(false);
   const [estimatedAudience, setEstimatedAudience] = useState(null);
   const [estimating, setEstimating] = useState(false);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+
+  // Système de Notifications Toast modernes (succès / erreurs)
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = useCallback((message, type = 'success') => {
+    const id = Date.now() + Math.random().toString(36).substring(2, 9);
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
 
   // État de modification d'une notification existante
   const [editingCampaign, setEditingCampaign] = useState(null);
@@ -185,19 +198,17 @@ export const NotificationsCenter = () => {
   // 4. Soumission de l'envoi / programmation / mise à jour
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage(null);
-    setErrorMessage(null);
 
     if (!form.title.trim()) {
-      setErrorMessage('Veuillez saisir un titre pour la notification.');
+      showToast('Veuillez saisir un titre pour la notification.', 'error');
       return;
     }
     if (!form.body.trim()) {
-      setErrorMessage('Veuillez saisir le contenu du message.');
+      showToast('Veuillez saisir le contenu du message.', 'error');
       return;
     }
     if (form.is_scheduled && !form.scheduled_at) {
-      setErrorMessage("Veuillez sélectionner la date et l'heure de programmation.");
+      showToast("Veuillez sélectionner la date et l'heure de programmation.", 'error');
       return;
     }
 
@@ -229,7 +240,7 @@ export const NotificationsCenter = () => {
       }
 
       if (res.data?.success) {
-        setSuccessMessage(res.data.message || (isUpdatingScheduled ? 'Notification programmée mise à jour avec succès !' : 'Notification enregistrée avec succès !'));
+        showToast(res.data.message || (isUpdatingScheduled ? 'Notification programmée mise à jour avec succès !' : 'Notification enregistrée avec succès !'), 'success');
         // Réinitialiser formulaire et état d'édition
         setEditingCampaign(null);
         setForm({
@@ -252,10 +263,10 @@ export const NotificationsCenter = () => {
           setActiveTab('history');
         }, 1200);
       } else {
-        setErrorMessage(res.data?.message || "Une erreur est survenue lors de l'opération.");
+        showToast(res.data?.message || "Une erreur est survenue lors de l'opération.", 'error');
       }
     } catch (err) {
-      setErrorMessage(err.response?.data?.message || "Erreur de communication avec le serveur.");
+      showToast(err.response?.data?.message || "Erreur de communication avec le serveur.", 'error');
     } finally {
       setSubmitting(false);
     }
@@ -279,8 +290,6 @@ export const NotificationsCenter = () => {
       scheduled_at: campaign.scheduled_at ? formatToDatetimeLocal(campaign.scheduled_at) : '',
     });
     setActiveTab('compose');
-    setSuccessMessage(null);
-    setErrorMessage(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -318,11 +327,11 @@ export const NotificationsCenter = () => {
         try {
           const res = await apiClient.post(`/v1/admin/notifications/campaigns/${campaign.id}/cancel`);
           if (res.data?.success) {
-            setSuccessMessage(`La notification #${campaign.id} a été annulée avec succès.`);
+            showToast(`La notification "${campaign.title}" a été annulée avec succès.`, 'success');
             fetchCampaigns();
           }
         } catch (err) {
-          setErrorMessage("Erreur lors de l'annulation : " + (err.response?.data?.message || err.message));
+          showToast("Erreur lors de l'annulation : " + (err.response?.data?.message || err.message), 'error');
         } finally {
           setModalConfig(prev => ({ ...prev, isOpen: false, loading: false }));
         }
@@ -345,11 +354,11 @@ export const NotificationsCenter = () => {
         try {
           const res = await apiClient.post(`/v1/admin/notifications/campaigns/${campaign.id}/resend`);
           if (res.data?.success) {
-            setSuccessMessage(res.data.message || `Notification #${campaign.id} renvoyée avec succès.`);
+            showToast(res.data.message || `Notification "${campaign.title}" renvoyée avec succès.`, 'success');
             fetchCampaigns();
           }
         } catch (err) {
-          setErrorMessage("Erreur lors du renvoi : " + (err.response?.data?.message || err.message));
+          showToast("Erreur lors du renvoi : " + (err.response?.data?.message || err.message), 'error');
         } finally {
           setModalConfig(prev => ({ ...prev, isOpen: false, loading: false }));
         }
@@ -545,19 +554,70 @@ export const NotificationsCenter = () => {
 
         </div>
 
-        {/* ── Messages d'alerte ── */}
-        {successMessage && (
-          <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', color: '#065F46', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <CheckCircle2 size={16} />
-            {successMessage}
-          </div>
-        )}
-        {errorMessage && (
-          <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', color: '#991B1B', padding: '10px 14px', borderRadius: '8px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertCircle size={16} />
-            {errorMessage}
-          </div>
-        )}
+        {/* ── TOASTS FLOTTANTS MODERNES (SUCCÈS / ERREURS) ── */}
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          zIndex: 999999,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          pointerEvents: 'none',
+          maxWidth: '440px',
+          width: 'calc(100vw - 48px)',
+        }}>
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              style={{
+                pointerEvents: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                borderRadius: '10px',
+                backgroundColor: toast.type === 'success' ? '#ECFDF5' : '#FEF2F2',
+                border: `1px solid ${toast.type === 'success' ? '#A7F3D0' : '#FECACA'}`,
+                color: toast.type === 'success' ? '#065F46' : '#991B1B',
+                boxShadow: '0 12px 30px -4px rgba(0, 0, 0, 0.12), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                {toast.type === 'success' ? (
+                  <CheckCircle2 size={18} color="#059669" />
+                ) : (
+                  <AlertCircle size={18} color="#DC2626" />
+                )}
+              </div>
+              <div style={{ flex: 1, fontSize: '13px', lineHeight: '1.4', fontWeight: '600' }}>
+                {toast.message}
+              </div>
+              <button
+                type="button"
+                onClick={() => removeToast(toast.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  color: toast.type === 'success' ? '#047857' : '#B91C1C',
+                  opacity: 0.7,
+                  transition: 'opacity 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+              >
+                <X size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
 
         {/* ── VUE 1 : COMPOSITEUR DE NOTIFICATION & CIBLAGE ── */}
         {activeTab === 'compose' && (
@@ -595,8 +655,8 @@ export const NotificationsCenter = () => {
                     <div>
                       <div style={{ fontSize: '12.5px', fontWeight: '800', color: editingCampaign.status === 'scheduled' ? '#92400E' : '#1E40AF' }}>
                         {editingCampaign.status === 'scheduled'
-                          ? `Modification de la notification programmée #${editingCampaign.id}`
-                          : `Édition & Rediffusion de la notification #${editingCampaign.id}`}
+                          ? `Modification de la notification programmée : ${editingCampaign.title}`
+                          : `Édition & Rediffusion de la notification : ${editingCampaign.title}`}
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748B' }}>
                         {editingCampaign.status === 'scheduled'
