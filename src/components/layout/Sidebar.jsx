@@ -204,16 +204,28 @@ export const Sidebar = () => {
   const [openSections, setOpenSections] = useState(() => {
     // Ouvrir par défaut la section dont un enfant est actif
     const initial = {};
-    NAV.forEach(item => {
-      if (item.children?.some(c => location.pathname.startsWith(c.path))) {
-        initial[item.id] = true;
-      }
-    });
+    const activeSection = NAV.find(item =>
+      item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'))
+    );
+    if (activeSection) {
+      initial[activeSection.id] = true;
+    }
     return initial;
   });
 
+  // Synchroniser automatiquement l'accordéon lors du changement de page (n'ouvrir que le menu actif)
+  useEffect(() => {
+    const activeSection = NAV.find(item =>
+      item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'))
+    );
+    if (activeSection) {
+      setOpenSections({ [activeSection.id]: true });
+    }
+  }, [location.pathname]);
+
+  // Comportement accordéon exclusif : ouvrir une section ferme automatiquement les autres
   const toggleSection = useCallback((id) => {
-    setOpenSections(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenSections(prev => (prev[id] ? {} : { [id]: true }));
   }, []);
 
   const handleLogout = async () => {
