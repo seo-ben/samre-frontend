@@ -75,6 +75,7 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
 
   const [prefectures, setPrefectures] = useState([]);
   const [communes, setCommunes] = useState([]);
+  const [countries, setCountries] = useState([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
 
   const [formData, setFormData] = useState({
@@ -98,6 +99,7 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
     prefecture_id: initialData?.prefecture_id || '',
     commune_id: initialData?.commune_id || '',
     is_international: initialData?.is_international || false,
+    country_id: initialData?.country_id || '',
     country_name: initialData?.country_name || '',
     city_name: initialData?.city_name || '',
     workplace_type: initialData?.workplace_type || 'on_site',
@@ -133,12 +135,15 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
     
     const fetchLocations = async () => {
       try {
-        const [prefRes, comRes] = await Promise.all([
+        const [prefRes, comRes, countRes] = await Promise.all([
           apiClient.get('/v1/admin/cms/dynamic/prefectures'),
-          apiClient.get('/v1/admin/cms/dynamic/communes')
+          apiClient.get('/v1/admin/cms/dynamic/communes'),
+          apiClient.get('/v1/content/countries?all=1')
         ]);
         setPrefectures(prefRes.data?.data || (Array.isArray(prefRes.data) ? prefRes.data : (Array.isArray(prefRes) ? prefRes : [])));
         setCommunes(comRes.data?.data || (Array.isArray(comRes.data) ? comRes.data : (Array.isArray(comRes) ? comRes : [])));
+        const rawCountries = countRes.data?.data || (Array.isArray(countRes.data) ? countRes.data : []);
+        setCountries(rawCountries);
       } catch (err) {
         console.error('Erreur chargement lieux', err);
       } finally {
@@ -186,11 +191,14 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
       if (!payload.salary_max) delete payload.salary_max;
       if (!payload.deadline_at) delete payload.deadline_at;
       if (payload.is_international) {
+        payload.country_id = formData.country_id || null;
+        payload.country_name = formData.country_name || '';
         delete payload.prefecture_id;
         delete payload.commune_id;
       } else {
         if (!payload.prefecture_id) delete payload.prefecture_id;
         if (!payload.commune_id) delete payload.commune_id;
+        delete payload.country_id;
         delete payload.country_name;
         delete payload.city_name;
       }
@@ -393,13 +401,23 @@ export default function CreateOfferModal({ onClose, onSuccess, categories, initi
               <div style={{ display: 'flex', gap: '16px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
                   <label style={labelStyle}>Pays de destination *</label>
-                  <input 
-                    type="text" 
-                    name="country_name" 
-                    value={formData.country_name} 
-                    onChange={handleChange} 
-                    placeholder="Ex: France, Canada, Sénégal, Côte d'Ivoire..." 
-                    style={inputStyle} 
+                  <SearchableSelect 
+                    name="country_id"
+                    value={formData.country_id}
+                    onChange={(e) => {
+                      const selectedC = countries.find(c => String(c.id) === String(e.target.value));
+                      setFormData(prev => ({
+                        ...prev,
+                        country_id: e.target.value,
+                        country_name: selectedC?.name || selectedC?.translations?.[0]?.name || ''
+                      }));
+                    }}
+                    style={inputStyle}
+                    placeholder="Sélectionnez un pays (250 pays disponibles)"
+                    options={Array.isArray(countries) ? countries.map(c => ({
+                      value: c.id,
+                      label: `${c.name || c.translations?.[0]?.name || c.code} (${c.code})`
+                    })) : []}
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
