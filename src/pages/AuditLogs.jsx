@@ -26,24 +26,59 @@ const formatDate = (dateStr) => {
   }
 };
 
-// Obtenir le label et la couleur selon l'action
+// Obtenir le label clair, convivial et la couleur selon l'action
 const getActionMeta = (action) => {
-  if (!action) return { label: 'Action inconnue', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+  if (!action) return { label: 'Action Système', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+
+  // Notifications Push & Alertes
+  if (action === 'notification.campaign_created' || action.startsWith('notification.created')) {
+    return { label: '📢 Diffusion Notification Push', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+  }
+  if (action === 'notification.campaign_scheduled' || action.startsWith('notification.scheduled')) {
+    return { label: '⏰ Programmation Notification Push', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
+  }
+  if (action === 'notification.campaign_cancelled' || action.startsWith('notification.cancelled')) {
+    return { label: '✕ Annulation Notification', bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' };
+  }
+  if (action === 'notification.campaign_updated' || action.startsWith('notification.updated')) {
+    return { label: '✏️ Modification Notification', bg: '#F0F9FF', color: '#0284C7', border: '#BAE6FD' };
+  }
+  if (action === 'notification.campaign_resent' || action.startsWith('notification.resent')) {
+    return { label: '🔄 Renvoi Notification Push', bg: '#F5F3FF', color: '#6D28D9', border: '#DDD6FE' };
+  }
+  if (action === 'notification.campaign_dispatched' || action.startsWith('notification.dispatched')) {
+    return { label: '🚀 Envoi Automatique Push', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+  }
+  if (action.startsWith('notification.')) {
+    return { label: '🔔 Notification Push', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+  }
 
   // IA
-  if (action.startsWith('ai.cv_enhancement') || action.startsWith('ai.')) {
-    return { label: '✨ Optimisation CV IA', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
+  if (action.startsWith('ai.cv_enhancement') || action.startsWith('ai.cv')) {
+    return { label: '✨ Optimisation de CV par IA', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
+  }
+  if (action.startsWith('ai.cover_letter')) {
+    return { label: '✨ Lettre de Motivation par IA', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
+  }
+  if (action.startsWith('ai.')) {
+    return { label: '✨ Traitement IA', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
   }
 
   // Authentification
-  if (action.startsWith('auth.admin_login') || action.startsWith('auth.login')) {
-    return { label: 'Connexion', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+  if (action.startsWith('auth.admin_login')) {
+    return { label: '🔐 Connexion Administration', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
   }
-  if (action.startsWith('auth.admin_logout') || action.startsWith('auth.logout')) {
-    return { label: 'Déconnexion', bg: '#F8FAFC', color: '#64748B', border: '#E2E8F0' };
+  if (action.startsWith('auth.admin_logout')) {
+    return { label: '🚪 Déconnexion Administration', bg: '#F8FAFC', color: '#64748B', border: '#E2E8F0' };
+  }
+  if (action.startsWith('auth.login')) {
+    return { label: '🔐 Connexion Compte', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+  }
+  if (action.startsWith('auth.logout')) {
+    return { label: '🚪 Déconnexion Compte', bg: '#F8FAFC', color: '#64748B', border: '#E2E8F0' };
   }
   if (action.startsWith('auth.register')) {
-    return { label: 'Inscription', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+    return { label: '👤 Création de Compte', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
   }
 
   // Paiements & Portefeuille
@@ -51,125 +86,196 @@ const getActionMeta = (action) => {
     return { label: '💳 Rechargement Portefeuille', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
   }
   if (action.startsWith('wallet.debit')) {
-    return { label: '💳 Débit Portefeuille', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
+    return { label: '💳 Débit / Paiement Portefeuille', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
   }
-  if (action.startsWith('subscription.purchased')) {
+  if (action.startsWith('subscription.purchased') || action.startsWith('subscription.')) {
     return { label: '⭐ Souscription Abonnement', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
   }
 
   // Offres
   if (action.startsWith('offer.created')) {
-    return { label: 'Offre créée', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' };
+    return { label: '💼 Publication d\'Offre', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' };
   }
   if (action.startsWith('offer.updated')) {
-    return { label: 'Offre modifiée', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' };
+    return { label: '💼 Modification d\'Offre', bg: '#EEF2FF', color: '#4338CA', border: '#C7D2FE' };
   }
   if (action.startsWith('offer.validated')) {
-    return { label: 'Offre validée', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
+    return { label: '✅ Validation d\'Offre', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
   }
   if (action.startsWith('offer.rejected')) {
-    return { label: 'Offre rejetée', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' };
+    return { label: '❌ Rejet d\'Offre', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' };
   }
   if (action.startsWith('offer.deleted')) {
-    return { label: 'Offre supprimée', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
+    return { label: '🗑️ Suppression d\'Offre', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
   }
   if (action.startsWith('offer.status_changed')) {
-    return { label: 'Statut offre modifié', bg: '#FDF4FF', color: '#86198F', border: '#F5D0FE' };
+    return { label: '🔄 Statut d\'Offre Modifié', bg: '#FDF4FF', color: '#86198F', border: '#F5D0FE' };
   }
 
   // Candidatures & Embauches
   if (action.startsWith('application.submitted')) {
-    return { label: 'Candidature déposée', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
+    return { label: '📄 Dépôt de Candidature', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
   }
   if (action.startsWith('application.status_changed') || action.startsWith('admin.application_status_changed')) {
-    return { label: 'Statut candidature mis à jour', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
+    return { label: '📋 Suivi de Candidature', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
   }
   if (action.startsWith('hiring.status_changed')) {
-    return { label: 'Déclaration d\'embauche', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
+    return { label: '🤝 Déclaration d\'Embauche', bg: '#ECFDF5', color: '#065F46', border: '#A7F3D0' };
   }
   if (action.startsWith('hiring.payment_decision')) {
-    return { label: 'Prime d\'embauche', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
+    return { label: '💰 Prime d\'Embauche', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
   }
 
   // Événements
   if (action.startsWith('event.created')) {
-    return { label: 'Événement publié', bg: '#EEF2FF', color: '#4F46E5', border: '#C7D2FE' };
+    return { label: '📅 Création d\'Événement', bg: '#EEF2FF', color: '#4F46E5', border: '#C7D2FE' };
   }
   if (action.startsWith('event.participated')) {
-    return { label: 'Inscription événement', bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
+    return { label: '🎟️ Inscription à un Événement', bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
   }
   if (action.startsWith('event.participation_cancelled')) {
-    return { label: 'Annulation participation', bg: '#F8FAFC', color: '#64748B', border: '#CBD5E1' };
+    return { label: '✕ Désinscription Événement', bg: '#F8FAFC', color: '#64748B', border: '#CBD5E1' };
   }
 
   // Sondages
   if (action.startsWith('survey.voted')) {
-    return { label: '📊 Vote à un sondage', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
+    return { label: '🗳️ Vote à un Sondage', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
   }
   if (action.startsWith('survey.created')) {
-    return { label: '📊 Sondage créé', bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' };
+    return { label: '📊 Création de Sondage', bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' };
   }
 
   // Badges & Vérifications
   if (action.startsWith('badge.approved')) {
-    return { label: '🏅 Badge vérifié accordé', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+    return { label: '🏅 Attribution Badge Vérifié', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
   }
   if (action.startsWith('badge.rejected')) {
-    return { label: 'Badge rejeté', bg: '#FEF2F2', color: '#991B1B', border: '#FCA5A5' };
+    return { label: '❌ Rejet Demande de Badge', bg: '#FEF2F2', color: '#991B1B', border: '#FCA5A5' };
   }
 
   // Signalements & Modération
   if (action.startsWith('report.content_banned')) {
-    return { label: '🛡️ Contenu banni (Signalement)', bg: '#FEF2F2', color: '#991B1B', border: '#F87171' };
+    return { label: '🛡️ Contenu Banni par Modération', bg: '#FEF2F2', color: '#991B1B', border: '#F87171' };
   }
   if (action.startsWith('report.dismissed')) {
-    return { label: 'Signalement classé sans suite', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+    return { label: '🛡️ Signalement Classé sans suite', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
   }
 
   // Partenariats B2B / Troc
   if (action.startsWith('service_exchange.status_changed')) {
-    return { label: 'Troc B2B mis à jour', bg: '#F0F9FF', color: '#0369A1', border: '#BAE6FD' };
+    return { label: '🔄 Statut Troc B2B Modifié', bg: '#F0F9FF', color: '#0369A1', border: '#BAE6FD' };
   }
   if (action.startsWith('service_exchange.deleted')) {
-    return { label: 'Troc B2B supprimé', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
+    return { label: '🗑️ Suppression Troc B2B', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
   }
 
   // Entreprises
   if (action.startsWith('company.viability')) {
-    return { label: 'Viabilité entreprise', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
+    return { label: '🏢 Test Viabilité Entreprise', bg: '#F0FDFA', color: '#0F766E', border: '#99F6E4' };
   }
   if (action.startsWith('company.international')) {
-    return { label: 'Droit international', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
+    return { label: '🌍 Analyse Droit International', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
   }
 
   // Admin & Demandes spéciales
   if (action.startsWith('special_request.status_changed')) {
-    return { label: 'Demande spéciale traitée', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
+    return { label: '⚡ Traitement Demande Spéciale', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
   }
   if (action.startsWith('admin.user_suspended')) {
-    return { label: 'Utilisateur suspendu', bg: '#FEF2F2', color: '#991B1B', border: '#FCA5A5' };
+    return { label: '🚫 Suspension d\'Utilisateur', bg: '#FEF2F2', color: '#991B1B', border: '#FCA5A5' };
   }
   if (action.startsWith('admin.user_reactivated')) {
-    return { label: 'Utilisateur réactivé', bg: '#ECFDF5', color: '#065F46', border: '#6EE7B7' };
+    return { label: '✅ Réactivation d\'Utilisateur', bg: '#ECFDF5', color: '#065F46', border: '#6EE7B7' };
   }
 
-  return { label: action, bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' };
+  // Fallback propre en français sans points ni underscores
+  const cleanLabel = action
+    .replace(/[._]/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase());
+
+  return { label: cleanLabel, bg: '#F1F5F9', color: '#334155', border: '#CBD5E1' };
 };
 
-// Obtenir le badge de rôle utilisateur
+// Obtenir le label clair du rôle utilisateur (sans codes bruts)
 const getRoleBadge = (userType) => {
   switch (userType) {
     case 'admin_staff':
-      return { label: 'Admin Staff', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
+      return { label: 'Équipe Administration', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
     case 'company':
       return { label: 'Entreprise', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
     case 'candidate':
-      return { label: 'Candidat', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+      return { label: 'Secrétaire (Candidat)', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
     case 'visitor':
       return { label: 'Visiteur', bg: '#FFFBEB', color: '#B45309', border: '#FDE68A' };
     default:
-      return { label: userType || 'Système', bg: '#F1F5F9', color: '#475569', border: '#E2E8F0' };
+      return { label: userType ? String(userType).replace(/_/g, ' ') : 'Système Automatique', bg: '#F1F5F9', color: '#475569', border: '#E2E8F0' };
   }
+};
+
+// Obtenir le libellé clair de la cible / ressource (sans identifiants bruts)
+const formatTargetModel = (modelType, modelId, action) => {
+  if (!modelType) {
+    if (action?.startsWith('notification.')) return 'Campagne de notification push';
+    if (action?.startsWith('wallet.')) return 'Portefeuille & Transactions';
+    if (action?.startsWith('subscription.')) return 'Abonnement utilisateur';
+    if (action?.startsWith('ai.')) return 'Module IA';
+    if (action?.startsWith('auth.')) return 'Session & Sécurité';
+    if (action?.startsWith('event.')) return 'Événement & Formation';
+    if (action?.startsWith('survey.')) return 'Sondage d\'opinion';
+    return 'Système global';
+  }
+
+  const clean = modelType.split('\\').pop();
+  switch (clean) {
+    case 'NotificationCampaign':
+      return 'Campagne de notification push';
+    case 'User':
+      return 'Compte utilisateur';
+    case 'JobOffer':
+      return 'Offre d\'emploi';
+    case 'Application':
+      return 'Candidature à une offre';
+    case 'HiringDeclaration':
+      return 'Déclaration d\'embauche';
+    case 'Wallet':
+    case 'WalletTransaction':
+      return 'Portefeuille virtuel';
+    case 'Subscription':
+    case 'SubscriptionPlan':
+      return 'Plan d\'abonnement';
+    case 'Event':
+    case 'EventParticipant':
+      return 'Événement & Formation';
+    case 'Survey':
+    case 'SurveyVote':
+      return 'Sondage d\'opinion';
+    case 'VerificationRequest':
+      return 'Demande de badge vérifié';
+    case 'Report':
+      return 'Signalement & Modération';
+    case 'ServiceExchange':
+      return 'Troc & Partenariat B2B';
+    case 'SpecialRequest':
+      return 'Demande spéciale admin';
+    case 'AiCvEnhancement':
+      return 'CV amélioré par IA';
+    case 'Company':
+      return 'Fiche entreprise';
+    default:
+      return clean.replace(/([A-Z])/g, ' $1').trim();
+  }
+};
+
+// Parser le navigateur / appareil de manière conviviale
+const formatUserAgent = (ua) => {
+  if (!ua) return 'Navigateur Web';
+  if (ua.includes('iPhone') || ua.includes('iPad')) return '📱 iPhone / iPad (iOS)';
+  if (ua.includes('Android')) return '📱 Smartphone Android';
+  if (ua.includes('Dart') || ua.includes('Flutter')) return '📱 Application Mobile SAMRE';
+  if (ua.includes('Macintosh') || ua.includes('Mac OS')) return '💻 Ordinateur (Mac)';
+  if (ua.includes('Windows')) return '💻 Ordinateur (Windows)';
+  if (ua.includes('Linux')) return '💻 Ordinateur (Linux)';
+  return '🌐 Navigateur Web';
 };
 
 export const AuditLogsPage = () => {
@@ -595,7 +701,7 @@ export const AuditLogsPage = () => {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '5px',
-                            padding: '3px 8px',
+                            padding: '4px 9px',
                             borderRadius: '6px',
                             fontSize: '11.5px',
                             fontWeight: '700',
@@ -605,40 +711,24 @@ export const AuditLogsPage = () => {
                           }}>
                             {actionMeta.label}
                           </span>
-                          <span style={{ display: 'block', fontSize: '10px', color: '#94A3B8', marginTop: '2px', fontFamily: 'monospace' }}>
-                            {log.action}
+                        </td>
+
+                        {/* Cible / Ressource */}
+                        <td style={{ padding: '8px 12px', color: '#334155' }}>
+                          <span style={{ fontWeight: '600', fontSize: '11.5px' }}>
+                            {formatTargetModel(log.model_type, log.model_id, log.action)}
                           </span>
                         </td>
 
-                        {/* Cible / Modèle */}
-                        <td style={{ padding: '8px 12px', color: '#475569' }}>
-                          {log.model_type ? (
-                            <div>
-                              <span style={{ fontWeight: '600', color: '#334155' }}>
-                                {log.model_type.split('\\').pop()}
-                              </span>
-                              {log.model_id && (
-                                <span style={{ fontSize: '11px', color: '#64748B', marginLeft: '4px' }}>
-                                  #{log.model_id}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span style={{ color: '#94A3B8', fontStyle: 'italic' }}>—</span>
-                          )}
-                        </td>
-
-                        {/* IP & Navigateur */}
+                        {/* IP & Appareil */}
                         <td style={{ padding: '8px 12px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{ fontSize: '11.5px', color: '#0F172A', fontFamily: 'monospace', fontWeight: '600' }}>
-                              {log.ip_address || '127.0.0.1'}
+                            <span style={{ fontSize: '11px', color: '#0F172A', fontWeight: '600' }}>
+                              {formatUserAgent(log.user_agent)}
                             </span>
-                            {log.user_agent && (
-                              <span style={{ fontSize: '10.5px', color: '#94A3B8', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.user_agent}>
-                                {log.user_agent.includes('Mozilla') ? 'Navigateur Web' : log.user_agent.split('/')[0]}
-                              </span>
-                            )}
+                            <span style={{ fontSize: '10.5px', color: '#94A3B8', fontFamily: 'monospace' }}>
+                              IP : {log.ip_address || '127.0.0.1'}
+                            </span>
                           </div>
                         </td>
 
@@ -661,7 +751,7 @@ export const AuditLogsPage = () => {
                             }}
                           >
                             <Eye size={13} />
-                            Diff
+                            Détails
                           </button>
                         </td>
                       </tr>
@@ -683,7 +773,7 @@ export const AuditLogsPage = () => {
             fontSize: '12px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748B' }}>
-              <span>Affichage de <strong>{meta.from || 0}</strong> à <strong>{meta.to || 0}</strong> sur <strong>{meta.total || 0}</strong> logs</span>
+              <span>Affichage de <strong>{meta.from || 0}</strong> à <strong>{meta.to || 0}</strong> sur <strong>{meta.total || 0}</strong> événements</span>
               <span style={{ color: '#CBD5E1' }}>|</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <span>Par page :</span>
@@ -754,178 +844,230 @@ export const AuditLogsPage = () => {
           </div>
         </div>
 
-        {/* ── Modal d'Inspection des Détails / Diff JSON ── */}
-        {selectedLog && (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15,23,42,0.65)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '16px'
-          }}>
+        {/* ── Modal d'Inspection des Détails / Diff JSON (Sans codes bruts) ── */}
+        {selectedLog && (() => {
+          const mAction = getActionMeta(selectedLog.action);
+          const mRole = getRoleBadge(selectedLog.user?.user_type);
+          const mUser = selectedLog.user?.display_name || selectedLog.user?.email || 'Système Automatique';
+          const mTarget = formatTargetModel(selectedLog.model_type, selectedLog.model_id, selectedLog.action);
+          const mDevice = formatUserAgent(selectedLog.user_agent);
+
+          return (
             <div style={{
-              backgroundColor: '#FFFFFF',
-              borderRadius: '12px',
-              width: '100%',
-              maxWidth: '650px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
-              border: '1px solid #CBD5E1',
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(15,23,42,0.65)',
+              backdropFilter: 'blur(4px)',
               display: 'flex',
-              flexDirection: 'column'
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 9999,
+              padding: '16px',
+              animation: 'fadeIn 0.15s ease-out'
             }}>
-              {/* Header Modal */}
               <div style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid #E2E8F0',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '14px',
+                width: '100%',
+                maxWidth: '650px',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+                border: '1px solid #CBD5E1',
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                backgroundColor: '#F8FAFC'
+                flexDirection: 'column'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ShieldCheck size={18} color="#1A6FD4" />
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0F172A' }}>
-                      Détails de l'événement #{selectedLog.id}
-                    </h3>
-                    <span style={{ fontSize: '11px', color: '#64748B' }}>
-                      Enregistré le {formatDate(selectedLog.created_at)}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedLog(null)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: '4px' }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Contenu Modal */}
-              <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                
-                {/* Meta infos */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Action</span>
-                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', fontFamily: 'monospace', marginTop: '2px' }}>
-                      {selectedLog.action}
+                {/* Header Modal */}
+                <div style={{
+                  padding: '14px 18px',
+                  borderBottom: '1px solid #E2E8F0',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  backgroundColor: '#F8FAFC'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '8px',
+                      backgroundColor: '#EFF6FF',
+                      color: '#1A6FD4',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      <ShieldCheck size={20} />
                     </div>
-                  </div>
-
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Adresse IP</span>
-                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', fontFamily: 'monospace', marginTop: '2px' }}>
-                      {selectedLog.ip_address || '127.0.0.1'}
-                    </div>
-                  </div>
-
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Auteur / Rôle</span>
-                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', marginTop: '2px' }}>
-                      {selectedLog.user?.display_name || selectedLog.user?.email || 'Système'} ({selectedLog.user?.user_type || 'N/A'})
-                    </div>
-                  </div>
-
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Cible / Modèle</span>
-                    <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', marginTop: '2px' }}>
-                      {selectedLog.model_type ? `${selectedLog.model_type.split('\\').pop()} #${selectedLog.model_id}` : 'Non spécifié'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Agent */}
-                {selectedLog.user_agent && (
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                    <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>User-Agent (Navigateur / App)</span>
-                    <div style={{ fontSize: '11px', color: '#334155', fontFamily: 'monospace', marginTop: '2px', wordBreak: 'break-all' }}>
-                      {selectedLog.user_agent}
-                    </div>
-                  </div>
-                )}
-
-                {/* Comparaison Diff (Anciennes vs Nouvelles Valeurs) */}
-                <div style={{ display: 'grid', gridTemplateColumns: selectedLog.old_values ? '1fr 1fr' : '1fr', gap: '8px' }}>
-                  {selectedLog.old_values && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#DC2626' }}>
-                        ⬅️ Anciennes Valeurs :
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '14.5px', fontWeight: '800', color: '#0F172A' }}>
+                        Détails de l'événement
+                      </h3>
+                      <span style={{ fontSize: '11px', color: '#64748B' }}>
+                        Enregistré le {formatDate(selectedLog.created_at)}
                       </span>
-                      <pre style={{
-                        backgroundColor: '#FEF2F2',
-                        border: '1px solid #FECACA',
-                        color: '#991B1B',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        overflowX: 'auto',
-                        maxHeight: '200px',
-                        margin: 0
-                      }}>
-                        {JSON.stringify(selectedLog.old_values, null, 2)}
-                      </pre>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setSelectedLog(null)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748B', padding: '4px' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Contenu Modal */}
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  
+                  {/* Meta infos en 4 cartes claires */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                    
+                    {/* Action */}
+                    <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Action Effectuée
+                      </span>
+                      <div style={{ marginTop: '4px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '3px 8px',
+                          borderRadius: '6px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          backgroundColor: mAction.bg,
+                          color: mAction.color,
+                          border: `1px solid ${mAction.border}`
+                        }}>
+                          {mAction.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Auteur & Rôle */}
+                    <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Auteur de l'action
+                      </span>
+                      <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span>{mUser}</span>
+                        <span style={{
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          fontSize: '10.5px',
+                          fontWeight: '600',
+                          backgroundColor: mRole.bg,
+                          color: mRole.color,
+                          border: `1px solid ${mRole.border}`
+                        }}>
+                          {mRole.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Cible */}
+                    <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Ressource Concernée
+                      </span>
+                      <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#0F172A', marginTop: '4px' }}>
+                        {mTarget}
+                      </div>
+                    </div>
+
+                    {/* Appareil & IP */}
+                    <div style={{ backgroundColor: '#F8FAFC', padding: '10px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                      <span style={{ fontSize: '10px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Appareil & Connexion
+                      </span>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#0F172A', marginTop: '4px' }}>
+                        {mDevice}
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: '#64748B', fontFamily: 'monospace', marginTop: '2px' }}>
+                        IP : {selectedLog.ip_address || '127.0.0.1'}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Comparaison Diff (Anciennes vs Nouvelles Valeurs) */}
+                  <div style={{ display: 'grid', gridTemplateColumns: selectedLog.old_values ? '1fr 1fr' : '1fr', gap: '8px' }}>
+                    {selectedLog.old_values && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#DC2626' }}>
+                          ⬅️ Valeurs Précédentes :
+                        </span>
+                        <pre style={{
+                          backgroundColor: '#FEF2F2',
+                          border: '1px solid #FECACA',
+                          color: '#991B1B',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          overflowX: 'auto',
+                          maxHeight: '200px',
+                          margin: 0
+                        }}>
+                          {JSON.stringify(selectedLog.old_values, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    {selectedLog.new_values && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#059669' }}>
+                          ➡️ Données & Paramètres Enregistrés :
+                        </span>
+                        <pre style={{
+                          backgroundColor: '#ECFDF5',
+                          border: '1px solid #A7F3D0',
+                          color: '#065F46',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          fontSize: '11.5px',
+                          fontFamily: 'monospace',
+                          overflowX: 'auto',
+                          maxHeight: '200px',
+                          margin: 0
+                        }}>
+                          {JSON.stringify(selectedLog.new_values, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+
+                  {!selectedLog.old_values && !selectedLog.new_values && (
+                    <div style={{ padding: '12px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '8px', color: '#64748B', fontSize: '12px' }}>
+                      Aucun paramètre supplémentaire associé à cet événement.
                     </div>
                   )}
 
-                  {selectedLog.new_values && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: '700', color: '#059669' }}>
-                        ➡️ Nouvelles Valeurs / Payload :
-                      </span>
-                      <pre style={{
-                        backgroundColor: '#ECFDF5',
-                        border: '1px solid #A7F3D0',
-                        color: '#065F46',
-                        padding: '8px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontFamily: 'monospace',
-                        overflowX: 'auto',
-                        maxHeight: '200px',
-                        margin: 0
-                      }}>
-                        {JSON.stringify(selectedLog.new_values, null, 2)}
-                      </pre>
-                    </div>
-                  )}
                 </div>
 
-                {!selectedLog.old_values && !selectedLog.new_values && (
-                  <div style={{ padding: '12px', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '8px', color: '#64748B', fontSize: '12px' }}>
-                    Aucun payload supplémentaire associé à cet événement.
-                  </div>
-                )}
-
-              </div>
-
-              {/* Footer Modal */}
-              <div style={{ padding: '10px 16px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', backgroundColor: '#F8FAFC' }}>
-                <button
-                  onClick={() => setSelectedLog(null)}
-                  style={{
-                    padding: '6px 14px',
-                    backgroundColor: '#1A6FD4',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Fermer
-                </button>
+                {/* Footer Modal */}
+                <div style={{ padding: '12px 18px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', backgroundColor: '#F8FAFC' }}>
+                  <button
+                    onClick={() => setSelectedLog(null)}
+                    style={{
+                      padding: '7px 18px',
+                      backgroundColor: '#1A6FD4',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Fermer
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
       </div>
     </MainLayout>
