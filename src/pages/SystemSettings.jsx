@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Edit, Trash2, Search, Settings as SettingsIcon, AlertCircle 
+  Plus, Edit, Trash2, Search, Settings as SettingsIcon, AlertCircle, CheckCircle2 
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 export function SystemSettings() {
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, key: '', loading: false });
   
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -61,28 +64,48 @@ export function SystemSettings() {
     setShowModal(true);
   };
 
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editingSetting) {
         await apiClient.put(`/v1/admin/settings/${editingSetting.id}`, formData);
+        showToast("Paramètre mis à jour avec succès");
       } else {
         await apiClient.post('/v1/admin/settings', formData);
+        showToast("Paramètre créé avec succès");
       }
       setShowModal(false);
       fetchSettings();
     } catch (err) {
-      alert('Erreur lors de la sauvegarde: ' + (err.response?.data?.message || err.message));
+      setError('Erreur lors de la sauvegarde: ' + (err.response?.data?.message || err.message));
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Voulez-vous vraiment supprimer ce paramètre ?')) return;
+  const handleDeleteClick = (setting) => {
+    setDeleteConfirm({
+      isOpen: true,
+      id: setting.id,
+      key: setting.key,
+      loading: false
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    setDeleteConfirm(prev => ({ ...prev, loading: true }));
     try {
-      await apiClient.delete(`/v1/admin/settings/${id}`);
+      await apiClient.delete(`/v1/admin/settings/${deleteConfirm.id}`);
+      showToast("Paramètre supprimé avec succès");
+      setDeleteConfirm({ isOpen: false, id: null, key: '', loading: false });
       fetchSettings();
     } catch (err) {
-      alert('Erreur lors de la suppression');
+      setError('Erreur lors de la suppression: ' + (err.response?.data?.message || err.message));
+      setDeleteConfirm(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -168,8 +191,8 @@ export function SystemSettings() {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button 
-                      onClick={() => handleDelete(setting.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      onClick={() => handleDeleteClick(setting)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Supprimer"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -285,6 +308,40 @@ export function SystemSettings() {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmation de Suppression */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Supprimer le paramètre"
+        message={`Voulez-vous vraiment supprimer le paramètre système « ${deleteConfirm.key} » ?`}
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        isLoading={deleteConfirm.loading}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Global Toast */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          backgroundColor: '#10B981', color: '#FFF',
+          padding: '12px 24px', borderRadius: '8px',
+          fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          animation: 'slideUp 0.3s ease-out', zIndex: 9999
+        }}>
+          <CheckCircle2 size={20} />
+          {toastMessage}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

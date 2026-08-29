@@ -6,6 +6,7 @@ import {
   Calendar, Eye, Award, Check, ChevronLeft, ChevronRight, X, MapPin
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 export const HiringDeclarationsPage = () => {
   const [declarations, setDeclarations] = useState([]);
@@ -31,6 +32,13 @@ export const HiringDeclarationsPage = () => {
   const [selectedDeclaration, setSelectedDeclaration] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [statusConfirm, setStatusConfirm] = useState({ isOpen: false, id: null, status: '', title: '', message: '', type: 'primary', loading: false });
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   const fetchDeclarations = useCallback(async (page = 1) => {
     setLoading(true);
@@ -60,17 +68,36 @@ export const HiringDeclarationsPage = () => {
     fetchDeclarations(1);
   }, [search, statusFilter, originFilter, fetchDeclarations]);
 
-  const handleUpdateStatus = async (declarationId, newStatus) => {
-    setStatusUpdatingId(declarationId);
+  const handleRequestStatusChange = (declarationId, newStatus) => {
+    const isVal = newStatus === 'validated';
+    setStatusConfirm({
+      isOpen: true,
+      id: declarationId,
+      status: newStatus,
+      title: isVal ? "Valider l'embauche" : "Rejeter la déclaration",
+      message: isVal 
+        ? "Voulez-vous vraiment valider cette déclaration d'embauche ? Le profil du candidat sera marqué comme recruté."
+        : "Voulez-vous vraiment rejeter cette déclaration d'embauche ?",
+      type: isVal ? 'success' : 'danger',
+      confirmText: isVal ? 'Valider' : 'Rejeter',
+      loading: false
+    });
+  };
+
+  const handleConfirmStatusUpdate = async () => {
+    if (!statusConfirm.id || !statusConfirm.status) return;
+    setStatusConfirm(prev => ({ ...prev, loading: true }));
     try {
-      await apiClient.put(`/v1/admin/hiring-declarations/${declarationId}/status`, {
-        status: newStatus,
+      await apiClient.put(`/v1/admin/hiring-declarations/${statusConfirm.id}/status`, {
+        status: statusConfirm.status,
       });
+      showToast(statusConfirm.status === 'validated' ? "Déclaration validée avec succès" : "Déclaration rejetée");
+      setStatusConfirm({ isOpen: false, id: null, status: '', title: '', message: '', type: 'primary', loading: false });
+      if (showDetailModal) setShowDetailModal(false);
       fetchDeclarations(pagination.current_page);
     } catch (err) {
-      alert(err.response?.data?.message || 'Erreur lors du changement de statut');
-    } finally {
-      setStatusUpdatingId(null);
+      showToast(err.response?.data?.message || 'Erreur lors du changement de statut');
+      setStatusConfirm(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -331,7 +358,7 @@ export const HiringDeclarationsPage = () => {
                             {/* Validation rapide */}
                             {dec.status !== 'validated' && (
                               <button
-                                onClick={() => handleUpdateStatus(dec.id, 'validated')}
+                                onClick={() => handleRequestStatusChange(dec.id, 'validated')}
                                 disabled={statusUpdatingId === dec.id}
                                 style={{
                                   padding: '4px 8px', borderRadius: '6px',
@@ -474,10 +501,7 @@ export const HiringDeclarationsPage = () => {
               <div style={{ display: 'flex', gap: '8px' }}>
                 {selectedDeclaration.status !== 'validated' && (
                   <button
-                    onClick={() => {
-                      handleUpdateStatus(selectedDeclaration.id, 'validated');
-                      setShowDetailModal(false);
-                    }}
+                    onClick={() => handleRequestStatusChange(selectedDeclaration.id, 'validated')}
                     style={{ padding: '6px 12px', background: '#059669', color: '#fff', borderRadius: '6px', fontSize: '12px', fontWeight: '600', border: 'none', cursor: 'pointer' }}
                   >
                     Valider la déclaration
@@ -485,10 +509,7 @@ export const HiringDeclarationsPage = () => {
                 )}
                 {selectedDeclaration.status !== 'rejected' && (
                   <button
-                    onClick={() => {
-                      handleUpdateStatus(selectedDeclaration.id, 'rejected');
-                      setShowDetailModal(false);
-                    }}
+                    onClick={() => handleRequestStatusChange(selectedDeclaration.id, 'rejected')}
                     style={{ padding: '6px 12px', background: '#e11d48', color: '#fff', borderRadius: '6px', fontSize: '12px', fontWeight: '600', border: 'none', cursor: 'pointer' }}
                   >
                     Rejeter la déclaration
@@ -506,6 +527,40 @@ export const HiringDeclarationsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmation Statut */}
+      <ConfirmModal
+        isOpen={statusConfirm.isOpen}
+        title={statusConfirm.title}
+        message={statusConfirm.message}
+        type={statusConfirm.type}
+        confirmText={statusConfirm.confirmText}
+        cancelText="Annuler"
+        isLoading={statusConfirm.loading}
+        onConfirm={handleConfirmStatusUpdate}
+        onClose={() => setStatusConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
+
+      {/* Global Toast */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          backgroundColor: '#10B981', color: '#FFF',
+          padding: '12px 24px', borderRadius: '8px',
+          fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          animation: 'slideUp 0.3s ease-out', zIndex: 9999
+        }}>
+          <CheckCircle2 size={20} />
+          {toastMessage}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </MainLayout>
   );
 };

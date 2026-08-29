@@ -6,6 +6,7 @@ import {
   Search, Filter, CreditCard, FileText, PauseCircle, Users,
   Crown, Rocket, Building, Tag, Eye, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 const AVAILABLE_FEATURES = [
   // Candidats
@@ -38,6 +39,7 @@ export const SubscriptionPlansPage = () => {
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, name: '', loading: false });
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -116,14 +118,26 @@ export const SubscriptionPlansPage = () => {
     setIsViewModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer ce plan ? (Ceci peut impacter les abonnements existants)")) return;
+  const handleDeleteClick = (plan) => {
+    setDeleteConfirm({
+      isOpen: true,
+      id: plan.id,
+      name: plan.name || plan.slug,
+      loading: false
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    setDeleteConfirm(prev => ({ ...prev, loading: true }));
     try {
-      await apiClient.delete(`/v1/admin/subscription-plans/${id}`);
+      await apiClient.delete(`/v1/admin/subscription-plans/${deleteConfirm.id}`);
       showToast("Plan supprimé avec succès");
+      setDeleteConfirm({ isOpen: false, id: null, name: '', loading: false });
       fetchData();
     } catch (err) {
       setError("Erreur lors de la suppression.");
+      setDeleteConfirm(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -434,7 +448,7 @@ export const SubscriptionPlansPage = () => {
                             <button 
                               className="action-btn"
                               style={{ width: '28px', height: '28px', color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
-                              onClick={() => handleDelete(plan.id)}
+                              onClick={() => handleDeleteClick(plan)}
                             >
                               <Trash2 size={12} />
                             </button>
@@ -828,6 +842,19 @@ export const SubscriptionPlansPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmation de Suppression */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Supprimer le plan d'abonnement"
+        message={`Voulez-vous vraiment supprimer le plan « ${deleteConfirm.name} » ? Ceci peut impacter les abonnements existants.`}
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        isLoading={deleteConfirm.loading}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Global Toast */}
       {toastMessage && (

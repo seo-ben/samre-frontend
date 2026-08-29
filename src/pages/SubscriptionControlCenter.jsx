@@ -114,7 +114,7 @@ export function SubscriptionControlCenterPage() {
       showToast("Nouveaux tarifs de déblocage enregistrés avec succès !");
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la mise à jour des paramètres.");
+      showToast("Erreur lors de la mise à jour des paramètres.");
     } finally {
       setSavingSettings(false);
     }

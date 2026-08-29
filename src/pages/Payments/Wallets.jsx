@@ -62,6 +62,7 @@ export const WalletsPage = () => {
 
   const handleAction = async (e) => {
     e.preventDefault();
+    if (!selectedWallet) return;
     if (!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
     if (!purpose.trim()) return;
 
@@ -75,10 +76,11 @@ export const WalletsPage = () => {
         setShowModal(false);
         setAmount('');
         setPurpose('');
+        showToast(`Opération de ${modalType === 'credit' ? 'crédit' : 'débit'} effectuée avec succès`);
         fetchWallets();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Une erreur est survenue');
+      showToast(err.response?.data?.message || 'Une erreur est survenue');
     } finally {
       setActionLoading(false);
     }
@@ -439,6 +441,26 @@ export const WalletsPage = () => {
           </div>
         )}
 
+      {/* Global Toast */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          backgroundColor: '#10B981', color: '#FFF',
+          padding: '12px 24px', borderRadius: '8px',
+          fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          animation: 'slideUp 0.3s ease-out', zIndex: 9999
+        }}>
+          <CheckCircle2 size={20} />
+          {toastMessage}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
       </div>
     </MainLayout>
   );

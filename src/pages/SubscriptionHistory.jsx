@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
 import { Loader2, AlertCircle, CheckCircle2, X, XCircle, Search, User, CreditCard, Calendar, Filter } from 'lucide-react';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 export const SubscriptionHistoryPage = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -10,6 +11,7 @@ export const SubscriptionHistoryPage = () => {
   
   const [isCanceling, setIsCanceling] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [cancelConfirm, setCancelConfirm] = useState({ isOpen: false, id: null, userName: '', planName: '', loading: false });
 
   // Filtres & Recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,15 +42,29 @@ export const SubscriptionHistoryPage = () => {
     fetchData();
   }, []);
 
-  const handleCancel = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment annuler cet abonnement immédiatement ? Le client perdra ses avantages.")) return;
+  const handleCancelClick = (item) => {
+    const userName = `${item.user?.first_name || item.user?.name || 'Utilisateur'} ${item.user?.last_name || ''}`.trim();
+    setCancelConfirm({
+      isOpen: true,
+      id: item.id,
+      userName,
+      planName: item.plan?.name || item.plan?.key || 'Plan',
+      loading: false
+    });
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelConfirm.id) return;
+    setCancelConfirm(prev => ({ ...prev, loading: true }));
     try {
-      setIsCanceling(id);
-      await apiClient.post(`/v1/admin/user-subscriptions/${id}/cancel`);
+      setIsCanceling(cancelConfirm.id);
+      await apiClient.post(`/v1/admin/user-subscriptions/${cancelConfirm.id}/cancel`);
       showToast("Abonnement annulé avec succès");
+      setCancelConfirm({ isOpen: false, id: null, userName: '', planName: '', loading: false });
       fetchData(); 
     } catch (err) {
       setError("Erreur lors de l'annulation.");
+      setCancelConfirm(prev => ({ ...prev, loading: false }));
     } finally {
       setIsCanceling(null);
     }
@@ -257,7 +273,7 @@ export const SubscriptionHistoryPage = () => {
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
                       {item.status === 'active' ? (
                         <button 
-                          onClick={() => handleCancel(item.id)} 
+                          onClick={() => handleCancelClick(item)} 
                           disabled={isCanceling === item.id}
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center', height: '32px', padding: '0 12px', borderRadius: '6px', border: '1px solid #FECACA', background: '#FEF2F2', color: '#B91C1C', cursor: isCanceling === item.id ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s', fontSize: '12px', fontWeight: '500', opacity: isCanceling === item.id ? 0.6 : 1 }}
                           title="Annuler l'abonnement"
@@ -278,6 +294,19 @@ export const SubscriptionHistoryPage = () => {
           </table>
         </div>
       )}
+
+      {/* Modal de Confirmation d'Annulation */}
+      <ConfirmModal
+        isOpen={cancelConfirm.isOpen}
+        title="Révoquer l'abonnement"
+        message={`Voulez-vous vraiment annuler l'abonnement « ${cancelConfirm.planName} » de ${cancelConfirm.userName} ? Le client perdra immédiatement ses avantages.`}
+        type="danger"
+        confirmText="Révoquer l'abonnement"
+        cancelText="Conserver"
+        isLoading={cancelConfirm.loading}
+        onConfirm={handleConfirmCancel}
+        onClose={() => setCancelConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Global Toast */}
       {toastMessage && (

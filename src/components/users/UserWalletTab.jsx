@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../lib/apiClient';
-import { Landmark, ArrowRight, ArrowLeft, Eye, Clock, X, Lock, Copy, CheckCheck } from 'lucide-react';
+import { Landmark, ArrowRight, ArrowLeft, Eye, Clock, X, Lock, Copy, CheckCheck, CheckCircle2 } from 'lucide-react';
 import { getPurposeBadge, getPaymentProviderBadge } from '../../pages/Payments/FinanceDashboard';
 
 export const UserWalletTab = ({ user, refreshUser }) => {
@@ -9,6 +9,12 @@ export const UserWalletTab = ({ user, refreshUser }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copiedRef, setCopiedRef] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Manual transaction modals
   const [showManualModal, setShowManualModal] = useState(false);
@@ -70,7 +76,7 @@ export const UserWalletTab = ({ user, refreshUser }) => {
     if (!purpose.trim()) return;
 
     if (!user.wallet?.id) {
-      alert("Ce client n'a pas de portefeuille actif.");
+      showToast("Ce client n'a pas de portefeuille actif.");
       return;
     }
 
@@ -88,12 +94,13 @@ export const UserWalletTab = ({ user, refreshUser }) => {
         if (res.data.data?.balance !== undefined) {
           setWalletBalance(res.data.data.balance);
         }
+        showToast(`Portefeuille ${actionType === 'credit' ? 'crédité' : 'débité'} avec succès`);
         refreshUser();
         fetchTransactions();
       }
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || "Une erreur est survenue.");
+      showToast(err.response?.data?.message || "Une erreur est survenue.");
     } finally {
       setActionLoading(false);
     }
@@ -443,6 +450,27 @@ export const UserWalletTab = ({ user, refreshUser }) => {
           </div>
         </div>
       )}
+
+      {/* Global Toast */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          backgroundColor: '#10B981', color: '#FFF',
+          padding: '12px 24px', borderRadius: '8px',
+          fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          animation: 'slideUp 0.3s ease-out', zIndex: 9999
+        }}>
+          <CheckCircle2 size={20} />
+          {toastMessage}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };

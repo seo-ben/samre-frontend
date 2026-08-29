@@ -155,6 +155,12 @@ export const FinanceDashboard = () => {
   const [actionPurpose, setActionPurpose] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Fetch Data
   const fetchData = async () => {
@@ -214,10 +220,11 @@ export const FinanceDashboard = () => {
         setSelectedWallet(null);
         setActionAmount('');
         setActionPurpose('');
+        showToast(`Opération de ${walletActionModal === 'credit' ? 'crédit' : 'débit'} effectuée avec succès`);
         fetchData();
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Une erreur est survenue lors de l\'opération');
+      showToast(err.response?.data?.message || 'Une erreur est survenue lors de l\'opération');
     } finally {
       setActionLoading(false);
     }
@@ -769,6 +776,26 @@ export const FinanceDashboard = () => {
           </div>
         )}
 
+      {/* Global Toast */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed', bottom: '24px', right: '24px',
+          backgroundColor: '#10B981', color: '#FFF',
+          padding: '12px 24px', borderRadius: '8px',
+          fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          animation: 'slideUp 0.3s ease-out', zIndex: 9999
+        }}>
+          <CheckCircle2 size={20} />
+          {toastMessage}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideUp {
+          from { transform: translateY(100%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
       </div>
     </MainLayout>
   );

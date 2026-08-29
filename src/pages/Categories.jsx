@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { MainLayout } from "../components/layout/MainLayout";
 import apiClient from "../lib/apiClient";
 import { Plus, X, Loader2, AlertCircle, Trash2, Edit2, Tag, CheckCircle2, XCircle, ChevronRight, Image as ImageIcon, Wand2, Briefcase, CalendarDays } from "lucide-react";
+import { ConfirmModal } from "../components/ui/ConfirmModal";
 
 export const CategoriesPage = () => {
   // We have two tabs: 'job-categories' and 'event-categories'
@@ -19,6 +20,7 @@ export const CategoriesPage = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, type: '', name: '', loading: false });
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -159,14 +161,27 @@ export const CategoriesPage = () => {
     }
   };
 
-  const handleDelete = async (id, type) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette catégorie ?")) return;
+  const handleDeleteClick = (item, type) => {
+    setDeleteConfirm({
+      isOpen: true,
+      id: item.id,
+      type: type,
+      name: getCategoryName(item, 1),
+      loading: false
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm.id || !deleteConfirm.type) return;
+    setDeleteConfirm(prev => ({ ...prev, loading: true }));
     try {
-      await apiClient.delete(`/v1/admin/cms/dynamic/${type}/${id}`);
+      await apiClient.delete(`/v1/admin/cms/dynamic/${deleteConfirm.type}/${deleteConfirm.id}`);
       showToast("Catégorie supprimée avec succès");
+      setDeleteConfirm({ isOpen: false, id: null, type: '', name: '', loading: false });
       fetchData();
     } catch (err) {
       setError("Erreur lors de la suppression.");
+      setDeleteConfirm(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -323,7 +338,7 @@ export const CategoriesPage = () => {
                       <button onClick={() => handleOpenModal(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4B5563', padding: '6px', marginRight: '8px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#E5E7EB'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                         <Edit2 size={18} />
                       </button>
-                      <button onClick={() => handleDelete(item.id, activeMainTab)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <button onClick={() => handleDeleteClick(item, activeMainTab)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                         <Trash2 size={18} />
                       </button>
                     </td>
@@ -511,6 +526,19 @@ export const CategoriesPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmation de Suppression */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Supprimer la catégorie"
+        message={`Voulez-vous vraiment supprimer la catégorie « ${deleteConfirm.name} » ? Cette action est irréversible.`}
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        isLoading={deleteConfirm.loading}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Global Toast */}
       {toastMessage && (

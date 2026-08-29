@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
 import { Loader2, Edit2, AlertCircle, CheckCircle2, X, EyeOff, Plus, Trash2, Search, Filter, Image, Phone, Mail, FileText, User, Briefcase, MapPin, Award, Navigation, ShieldCheck } from 'lucide-react';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 // Liste exhaustive de TOUS les champs système configurables pour le floutage
 const ALL_SYSTEM_FIELDS = {
@@ -112,6 +113,7 @@ export const BlurFieldsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, label: '', loading: false });
 
   // Filtres & Recherche
   const [searchTerm, setSearchTerm] = useState('');
@@ -204,14 +206,26 @@ export const BlurFieldsPage = () => {
     });
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment supprimer cette règle ?")) return;
+  const handleDeleteClick = (item) => {
+    setDeleteConfirm({
+      isOpen: true,
+      id: item.id,
+      label: item.label || item.field_key,
+      loading: false
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    setDeleteConfirm(prev => ({ ...prev, loading: true }));
     try {
-      await apiClient.delete(`/v1/admin/blur-rules/${id}`);
+      await apiClient.delete(`/v1/admin/blur-rules/${deleteConfirm.id}`);
       showToast("Règle supprimée avec succès");
+      setDeleteConfirm({ isOpen: false, id: null, label: '', loading: false });
       fetchData();
     } catch (err) {
       setError("Erreur lors de la suppression.");
+      setDeleteConfirm(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -471,7 +485,7 @@ export const BlurFieldsPage = () => {
                           <Edit2 size={16} /> 
                         </button>
                         <button 
-                          onClick={() => handleDelete(item.id)} 
+                          onClick={() => handleDeleteClick(item)} 
                           style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s' }}
                           title="Supprimer"
                           onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
@@ -642,6 +656,19 @@ export const BlurFieldsPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Confirmation de Suppression */}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Supprimer la règle de floutage"
+        message={`Voulez-vous vraiment supprimer la règle pour le champ « ${deleteConfirm.label} » ?`}
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        isLoading={deleteConfirm.loading}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Global Toast */}
       {toastMessage && (
