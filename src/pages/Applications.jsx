@@ -31,6 +31,44 @@ const getCandidateName = (candidateProfile) => {
   return candidateProfile.user?.display_name || candidateProfile.user?.name || candidateProfile.user?.phone || 'Candidat';
 };
 
+// Helper pour vérifier si le profil est féminin
+const isFemaleCandidate = (candidateProfile) => {
+  const g = (candidateProfile?.gender || candidateProfile?.sexe || '').toString().toLowerCase();
+  return g === 'female' || g === 'femme' || g === 'f' || g === 'féminin' || g === 'feminin';
+};
+
+// Nettoyage et formatage grammatical sans parenthèses
+const formatGenderedText = (text, isFemale = false) => {
+  if (!text) return '';
+  let str = String(text);
+  if (isFemale) {
+    str = str.replace(/([A-Za-zÀ-ÿ]+)eux\(se\)/gi, '$1euse');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)if\(ve\)/gi, '$1ive');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)el\(le\)/gi, '$1elle');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)te\(sse\)/gi, '$1tesse');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)o\(a\)/gi, '$1a');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)ó\(a\)/gi, '$1á');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)\(e\)/gi, '$1e');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)\(a\)/gi, '$1a');
+    str = str.replace(/\b(u|U)n\(e\)\b/g, '$1ne');
+    str = str.replace(/\bUN\(E\)\b/g, 'UNE');
+    str = str.replace(/\b(l|L)e\/la\b/gi, (m, p1) => p1 === 'L' ? 'La' : 'la');
+  } else {
+    str = str.replace(/([A-Za-zÀ-ÿ]+)eux\(se\)/gi, '$1eux');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)if\(ve\)/gi, '$1if');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)el\(le\)/gi, '$1el');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)te\(sse\)/gi, '$1te');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)o\(a\)/gi, '$1o');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)ó\(a\)/gi, '$1ó');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)\(e\)/gi, '$1');
+    str = str.replace(/([A-Za-zÀ-ÿ]+)\(a\)/gi, '$1');
+    str = str.replace(/\b(u|U)n\(e\)\b/g, '$1n');
+    str = str.replace(/\bUN\(E\)\b/g, 'UN');
+    str = str.replace(/\b(l|L)e\/la\b/gi, (m, p1) => p1 === 'L' ? 'Le' : 'le');
+  }
+  return str;
+};
+
 // Formatage de la date en français
 const formatDate = (dateStr) => {
   if (!dateStr) return '—';
@@ -297,15 +335,15 @@ export const ApplicationsPage = () => {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'submitted':
-        return { label: 'Soumise', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+        return { label: 'Soumise', bg: '#F1F5F9', color: '#334155', border: '#E2E8F0', dot: '#94A3B8' };
       case 'in_progress':
-        return { label: 'En cours / Entretien', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
+        return { label: 'En cours / Entretien', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE', dot: '#3B82F6' };
       case 'accepted':
-        return { label: 'Retenue / Acceptée', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' };
+        return { label: 'Retenue / Acceptée', bg: '#ECFDF5', color: '#047857', border: '#A7F3D0', dot: '#10B981' };
       case 'rejected':
-        return { label: 'Non retenue', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA' };
+        return { label: 'Non retenue', bg: '#FEF2F2', color: '#B91C1C', border: '#FECACA', dot: '#EF4444' };
       default:
-        return { label: 'Soumise', bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+        return { label: 'Soumise', bg: '#F1F5F9', color: '#334155', border: '#E2E8F0', dot: '#94A3B8' };
     }
   };
 
@@ -578,33 +616,48 @@ export const ApplicationsPage = () => {
         {/* ── TABLEAU PRINCIPAL DES CANDIDATURES ── */}
         <div style={{
           backgroundColor: '#FFFFFF',
-          borderRadius: '10px',
+          borderRadius: '14px',
           border: '1px solid #E2E8F0',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
+          boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05)'
         }}>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Candidat(e)
+                <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1.5px solid #E2E8F0' }}>
+                  <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <User size={13} color="#64748B" />
+                      <span>Candidat</span>
+                    </div>
                   </th>
-                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Offre d'Emploi & Entreprise
+                  <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Briefcase size={13} color="#64748B" />
+                      <span>Offre d'Emploi & Entreprise</span>
+                    </div>
                   </th>
-                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Type & Paiement
+                  <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Sparkles size={13} color="#64748B" />
+                      <span>Type & Paiement</span>
+                    </div>
                   </th>
-                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Statut & Entretien
+                  <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CalendarCheck size={13} color="#64748B" />
+                      <span>Statut & Entretien</span>
+                    </div>
                   </th>
-                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                    Date Dépôt
+                  <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Clock size={13} color="#64748B" />
+                      <span>Date Dépôt</span>
+                    </div>
                   </th>
-                  <th style={{ padding: '12px 16px', fontSize: '11.5px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>
+                  <th style={{ padding: '14px 18px', fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'right' }}>
                     Actions
                   </th>
                 </tr>
@@ -612,67 +665,111 @@ export const ApplicationsPage = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
-                      <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 10px auto', color: '#3B82F6' }} />
-                      <div>Chargement des candidatures en cours...</div>
+                    <td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
+                      <RefreshCw size={26} className="animate-spin" style={{ margin: '0 auto 12px auto', color: '#4F46E5' }} />
+                      <div style={{ fontWeight: '600', fontSize: '13.5px' }}>Chargement des candidatures en cours...</div>
                     </td>
                   </tr>
                 ) : applications.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#64748B' }}>
-                      <FileText size={32} color="#CBD5E1" style={{ margin: '0 auto 10px auto' }} />
-                      <div style={{ fontWeight: '700', fontSize: '14px', color: '#334155' }}>Aucune candidature trouvée</div>
-                      <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '4px' }}>Ajustez vos filtres ou effectuez une autre recherche.</div>
+                    <td colSpan={6} style={{ padding: '52px', textAlign: 'center', color: '#64748B' }}>
+                      <FileText size={36} color="#CBD5E1" style={{ margin: '0 auto 12px auto' }} />
+                      <div style={{ fontWeight: '700', fontSize: '15px', color: '#1E293B' }}>Aucune candidature trouvée</div>
+                      <div style={{ fontSize: '12.5px', color: '#94A3B8', marginTop: '4px' }}>Ajustez vos filtres ou effectuez une autre recherche.</div>
                     </td>
                   </tr>
                 ) : (
                   applications.map((app) => {
+                    const isFemale = isFemaleCandidate(app.candidate_profile);
                     const candName = getCandidateName(app.candidate_profile);
-                    const offerTitle = getOfferTitle(app.job_offer);
-                    const compName = app.job_offer?.company?.company_name || 'Entreprise SAMRE';
+                    const rawOfferTitle = getOfferTitle(app.job_offer);
+                    const offerTitle = formatGenderedText(rawOfferTitle, isFemale);
+                    const rawProfession = app.candidate_profile?.profession || app.candidate_profile?.job_title || '';
+                    const cleanProfession = formatGenderedText(rawProfession, isFemale);
+                    const compName = app.job_offer?.company?.company_name || 'SAMRE Global & Partenaires Internationaux';
                     const badge = getStatusBadge(app.status);
                     const appointment = app.latest_appointment || (app.appointments && app.appointments[0]);
                     const isInternational = Boolean(app.job_offer?.is_international || app.job_offer?.country_id);
+                    const avatarUrl = app.candidate_profile?.user?.avatar_url || app.candidate_profile?.photo_url || null;
 
                     return (
                       <tr 
                         key={app.id}
-                        style={{ borderBottom: '1px solid #F1F5F9', transition: 'background-color 0.15s ease' }}
-                        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
-                        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                        style={{ 
+                          borderBottom: '1px solid #F1F5F9', 
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          cursor: 'default'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#F8FAFC';
+                          e.currentTarget.style.boxShadow = 'inset 3px 0 0 #4F46E5';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#FFFFFF';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       >
                         {/* Candidat */}
-                        <td style={{ padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '50%',
-                              background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)',
-                              color: '#FFFFFF',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: '700',
-                              fontSize: '12px',
-                              flexShrink: 0
-                            }}>
-                              {candName.substring(0, 2).toUpperCase()}
-                            </div>
+                        <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            {avatarUrl ? (
+                              <img 
+                                src={avatarUrl} 
+                                alt={candName}
+                                style={{
+                                  width: '40px',
+                                  height: '40px',
+                                  borderRadius: '50%',
+                                  objectFit: 'cover',
+                                  border: '2px solid #EEF2FF',
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                                  flexShrink: 0
+                                }}
+                              />
+                            ) : (
+                              <div style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #4338CA 0%, #6366F1 100%)',
+                                color: '#FFFFFF',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: '800',
+                                fontSize: '13px',
+                                letterSpacing: '0.5px',
+                                boxShadow: '0 2px 8px rgba(79, 70, 229, 0.25)',
+                                flexShrink: 0
+                              }}>
+                                {candName.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
                             <div>
-                              <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                {candName}
+                              <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>{candName}</span>
                                 {app.candidate_profile?.has_badge && (
-                                  <Award size={13} color="#D97706" title="Badge Vérifié" />
+                                  <Award size={14} color="#D97706" title="Badge Vérifié" />
                                 )}
                               </div>
-                              <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
-                                <Phone size={11} />
-                                {app.candidate_profile?.user?.phone || '—'}
+                              <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                                <Phone size={11} color="#94A3B8" />
+                                <span>{app.candidate_profile?.user?.phone || app.candidate_profile?.phone || '—'}</span>
                               </div>
-                              {app.candidate_profile?.profession && (
-                                <div style={{ fontSize: '10.5px', color: '#4F46E5', fontWeight: '600', marginTop: '2px' }}>
-                                  {app.candidate_profile.profession}
+                              {cleanProfession && (
+                                <div style={{ 
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  fontSize: '11px', 
+                                  color: '#4338CA', 
+                                  fontWeight: '700', 
+                                  marginTop: '4px',
+                                  backgroundColor: '#EEF2FF',
+                                  border: '1px solid #E0E7FF',
+                                  borderRadius: '5px',
+                                  padding: '1px 6px'
+                                }}>
+                                  {cleanProfession}
                                 </div>
                               )}
                             </div>
@@ -680,14 +777,18 @@ export const ApplicationsPage = () => {
                         </td>
 
                         {/* Offre & Entreprise */}
-                        <td style={{ padding: '12px 16px' }}>
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
+                          <div style={{ maxWidth: '320px' }}>
+                            <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', lineHeight: 1.35 }}>
                               <span>{offerTitle}</span>
+                            </div>
+                            
+                            {/* Badges de l'offre */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '4px', flexWrap: 'wrap' }}>
                               {isInternational && (
                                 <span style={{
                                   fontSize: '10px',
-                                  padding: '1px 6px',
+                                  padding: '2px 7px',
                                   borderRadius: '4px',
                                   backgroundColor: '#EEF2FF',
                                   color: '#4F46E5',
@@ -704,39 +805,43 @@ export const ApplicationsPage = () => {
                               {app.job_offer?.contract_type && (
                                 <span style={{
                                   fontSize: '10px',
-                                  padding: '1px 6px',
+                                  padding: '2px 6px',
                                   borderRadius: '4px',
                                   backgroundColor: '#F1F5F9',
                                   color: '#475569',
-                                  fontWeight: '600'
+                                  fontWeight: '700',
+                                  textTransform: 'uppercase',
+                                  border: '1px solid #E2E8F0'
                                 }}>
                                   {app.job_offer.contract_type}
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                              <Building2 size={12} />
-                              {compName}
+
+                            <div style={{ fontSize: '11.5px', color: '#64748B', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                              <Building2 size={12} color="#94A3B8" />
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{compName}</span>
                             </div>
                           </div>
                         </td>
 
                         {/* Type & Paiement */}
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
                           {app.is_paid ? (
                             <span style={{
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              backgroundColor: '#FAF5FF',
-                              border: '1px solid #E9D5FF',
-                              color: '#7E22CE',
+                              gap: '5px',
+                              padding: '4px 10px',
+                              borderRadius: '7px',
+                              background: 'linear-gradient(135deg, #FAF5FF 0%, #F3E8FF 100%)',
+                              border: '1px solid #D8B4FE',
+                              color: '#6B21A8',
                               fontSize: '11px',
-                              fontWeight: '700'
+                              fontWeight: '800',
+                              boxShadow: '0 1px 2px rgba(126, 34, 206, 0.08)'
                             }}>
-                              <Sparkles size={11} />
+                              <Sparkles size={12} color="#9333EA" />
                               Payant (1 500 F)
                             </span>
                           ) : (
@@ -744,34 +849,41 @@ export const ApplicationsPage = () => {
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              backgroundColor: '#F8FAFC',
-                              border: '1px solid #E2E8F0',
-                              color: '#64748B',
+                              padding: '4px 9px',
+                              borderRadius: '7px',
+                              backgroundColor: '#F0FDF4',
+                              border: '1px solid #BBF7D0',
+                              color: '#166534',
                               fontSize: '11px',
-                              fontWeight: '600'
+                              fontWeight: '700'
                             }}>
+                              <CheckCircle2 size={12} color="#16A34A" />
                               Quota Gratuit
                             </span>
                           )}
                         </td>
 
                         {/* Statut & Entretien */}
-                        <td style={{ padding: '12px 16px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                        <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-start' }}>
                             <span style={{
                               backgroundColor: badge.bg,
                               color: badge.color,
                               border: `1px solid ${badge.border}`,
-                              padding: '3px 8px',
+                              padding: '3.5px 10px',
                               borderRadius: '999px',
                               fontSize: '11px',
-                              fontWeight: '700',
+                              fontWeight: '800',
                               display: 'inline-flex',
                               alignItems: 'center',
-                              gap: '4px'
+                              gap: '6px'
                             }}>
+                              <span style={{
+                                width: '6px',
+                                height: '6px',
+                                borderRadius: '50%',
+                                backgroundColor: badge.dot || '#64748B'
+                              }} />
                               {badge.label}
                             </span>
 
@@ -779,31 +891,45 @@ export const ApplicationsPage = () => {
                               <div style={{
                                 fontSize: '10.5px',
                                 fontWeight: '700',
-                                color: '#9333EA',
+                                color: '#7E22CE',
                                 backgroundColor: '#FAF5FF',
                                 border: '1px solid #E9D5FF',
-                                borderRadius: '4px',
-                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                padding: '3px 8px',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                marginTop: '2px'
+                                gap: '5px',
+                                boxShadow: '0 1px 2px rgba(147, 51, 234, 0.05)'
                               }}>
-                                <Calendar size={11} />
-                                {formatDateTime(appointment.scheduled_at)}
-                                <span>({appointment.location_type === 'online' ? 'Visio' : appointment.location_type === 'phone' ? 'Tél' : 'Présentiel'})</span>
+                                <Calendar size={11} color="#9333EA" />
+                                <span>{formatDateTime(appointment.scheduled_at)}</span>
+                                <span style={{
+                                  backgroundColor: '#F3E8FF',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  fontSize: '9.5px',
+                                  color: '#6B21A8',
+                                  fontWeight: '800'
+                                }}>
+                                  {appointment.location_type === 'video' || appointment.location_type === 'online' ? 'Visio' : appointment.location_type === 'phone' ? 'Tél' : 'Présentiel'}
+                                </span>
                               </div>
                             )}
                           </div>
                         </td>
 
                         {/* Date de dépôt */}
-                        <td style={{ padding: '12px 16px', fontSize: '12.5px', color: '#475569' }}>
-                          {formatDate(app.created_at)}
+                        <td style={{ padding: '14px 18px', verticalAlign: 'middle' }}>
+                          <div style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155' }}>
+                            {formatDate(app.created_at)}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '1px' }}>
+                            {app.created_at ? new Date(app.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </div>
                         </td>
 
                         {/* Actions */}
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <td style={{ padding: '14px 18px', textAlign: 'right', verticalAlign: 'middle' }}>
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                             
                             {/* Bouton Programmer Entretien */}
@@ -812,20 +938,21 @@ export const ApplicationsPage = () => {
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                padding: '6px 10px',
-                                borderRadius: '6px',
-                                backgroundColor: '#FAF5FF',
-                                border: '1px solid #E9D5FF',
-                                color: '#7E22CE',
+                                gap: '5px',
+                                padding: '7px 11px',
+                                borderRadius: '8px',
+                                backgroundColor: appointment ? '#FAF5FF' : '#7C3AED',
+                                border: appointment ? '1px solid #DDD6FE' : '1px solid #7C3AED',
+                                color: appointment ? '#6D28D9' : '#FFFFFF',
                                 fontSize: '11.5px',
-                                fontWeight: '700',
+                                fontWeight: '800',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
+                                boxShadow: appointment ? 'none' : '0 2px 6px rgba(124, 58, 237, 0.25)'
                               }}
                               title="Programmer ou replanifier un entretien"
                             >
-                              <Calendar size={13} />
+                              <Calendar size={13} color={appointment ? '#7C3AED' : '#FFFFFF'} />
                               <span>{appointment ? 'Replanifier' : 'Programmer'}</span>
                             </button>
 
@@ -836,27 +963,36 @@ export const ApplicationsPage = () => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: '4px',
-                                padding: '6px 8px',
-                                borderRadius: '6px',
-                                backgroundColor: '#F8FAFC',
+                                padding: '7px 9px',
+                                borderRadius: '8px',
+                                backgroundColor: '#FFFFFF',
                                 border: '1px solid #CBD5E1',
                                 color: '#334155',
                                 fontSize: '11.5px',
-                                fontWeight: '600',
+                                fontWeight: '700',
                                 cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#F8FAFC';
+                                e.currentTarget.style.borderColor = '#94A3B8';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#FFFFFF';
+                                e.currentTarget.style.borderColor = '#CBD5E1';
                               }}
                               title="Changer le statut de la candidature"
                             >
                               <span>Statut</span>
-                              <ChevronDown size={12} />
+                              <ChevronDown size={12} color="#64748B" />
                             </button>
 
                             {/* Bouton Voir Détails & CV */}
                             <button
                               onClick={() => openDetailModal(app)}
                               style={{
-                                padding: '6px 8px',
-                                borderRadius: '6px',
+                                padding: '7px 9px',
+                                borderRadius: '8px',
                                 backgroundColor: '#EFF6FF',
                                 border: '1px solid #BFDBFE',
                                 color: '#1D4ED8',
@@ -865,7 +1001,14 @@ export const ApplicationsPage = () => {
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                justifyContent: 'center'
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#DBEAFE';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#EFF6FF';
                               }}
                               title="Consulter le dossier et le CV"
                             >
