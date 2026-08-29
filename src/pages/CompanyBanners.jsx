@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
-import { Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, LayoutTemplate, Smartphone, UploadCloud, Languages } from 'lucide-react';
+import { 
+  Plus, X, Loader2, AlertCircle, Image as ImageIcon, Trash2, Edit2, 
+  LayoutTemplate, Smartphone, UploadCloud, Languages, Search, Users, 
+  Building2, UserCheck, Globe, CheckCircle2, SlidersHorizontal 
+} from 'lucide-react';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 export const CompanyBanners = () => {
   const [banners, setBanners] = useState([]);
@@ -10,11 +15,14 @@ export const CompanyBanners = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [autoTranslateLoading, setAutoTranslateLoading] = useState(false);
   
+  // Tabs & Search Filter
+  const [selectedRoleTab, setSelectedRoleTab] = useState('all'); // all, candidate, company, visitor, global_all
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Modals & Forms
   const [showModal, setShowModal] = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null, title: '', loading: false });
   const [isEditing, setIsEditing] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
 
   // Form State
   const [activeLang, setActiveLang] = useState(1);
@@ -151,6 +159,38 @@ export const CompanyBanners = () => {
     }
   };
 
+  // Filtered Banners by Role & Search
+  const filteredBanners = useMemo(() => {
+    return banners.filter(b => {
+      // Role filtering
+      if (selectedRoleTab === 'candidate' && b.target_role !== 'candidate') return false;
+      if (selectedRoleTab === 'company' && b.target_role !== 'company') return false;
+      if (selectedRoleTab === 'visitor' && b.target_role !== 'visitor') return false;
+      if (selectedRoleTab === 'global_all' && b.target_role !== 'all') return false;
+
+      // Search term
+      if (searchTerm.trim()) {
+        const query = searchTerm.toLowerCase();
+        const transTitle = (b.translations?.[1]?.title || b.title || '').toLowerCase();
+        const transSubtitle = (b.translations?.[1]?.subtitle || b.subtitle || '').toLowerCase();
+        const country = (b.country_code || '').toLowerCase();
+        return transTitle.includes(query) || transSubtitle.includes(query) || country.includes(query);
+      }
+      return true;
+    });
+  }, [banners, selectedRoleTab, searchTerm]);
+
+  // Role Counts for Tabs
+  const roleCounts = useMemo(() => {
+    return {
+      all: banners.length,
+      candidate: banners.filter(b => b.target_role === 'candidate').length,
+      company: banners.filter(b => b.target_role === 'company').length,
+      visitor: banners.filter(b => b.target_role === 'visitor').length,
+      global_all: banners.filter(b => b.target_role === 'all').length,
+    };
+  }, [banners]);
+
   const openAddModal = () => {
     setIsEditing(false);
     setImageFile(null);
@@ -163,13 +203,17 @@ export const CompanyBanners = () => {
       initialTrans[l.id] = { title: '', subtitle: '' };
     });
 
+    const defaultRole = selectedRoleTab === 'all' || selectedRoleTab === 'global_all' 
+      ? 'candidate' 
+      : selectedRoleTab;
+
     setEditForm({
       translations: initialTrans,
       image_url: '',
       action_url: '',
       sort_order: (banners.length > 0 ? banners[banners.length - 1].sort_order + 1 : 1),
       is_active: 1,
-      target_role: 'all',
+      target_role: defaultRole,
       country_code: '',
       region_id: '',
       prefecture_id: '',
@@ -219,23 +263,26 @@ export const CompanyBanners = () => {
   };
 
   const confirmDelete = (banner) => {
-    setDeletingId(banner.id);
-    setShowConfirmDelete(true);
+    const title = banner.translations?.[1]?.title || banner.title || `Bannière #${banner.id}`;
+    setDeleteConfirm({
+      isOpen: true,
+      id: banner.id,
+      title,
+      loading: false
+    });
   };
 
   const executeDelete = async () => {
-    if (!deletingId) return;
-    setActionLoading(true);
+    if (!deleteConfirm.id) return;
+    setDeleteConfirm(prev => ({ ...prev, loading: true }));
     try {
-      await apiClient.delete(`/v1/admin/company-banners/${deletingId}`);
-      await fetchBanners();
-      setShowConfirmDelete(false);
-      setDeletingId(null);
+      await apiClient.delete(`/v1/admin/company-banners/${deleteConfirm.id}`);
+      await fetchData();
+      setDeleteConfirm({ isOpen: false, id: null, title: '', loading: false });
       showToast("Bannière supprimée avec succès.", "success");
     } catch (err) {
       showToast("Erreur lors de la suppression.", "error");
-    } finally {
-      setActionLoading(false);
+      setDeleteConfirm(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -251,7 +298,7 @@ export const CompanyBanners = () => {
       await apiClient.put(`/v1/admin/company-banners/${banner.id}`, payload);
       showToast(`Bannière ${newActiveState ? 'activée' : 'désactivée'}.`);
     } catch (err) {
-      await fetchBanners();
+      await fetchData();
       showToast("Erreur lors de la modification du statut.", "error");
     }
   };
@@ -495,13 +542,13 @@ export const CompanyBanners = () => {
           </div>
         )}
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', animation: 'fadeIn 0.3s ease-out' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', animation: 'fadeIn 0.3s ease-out' }}>
           <div>
             <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '800', fontFamily: 'var(--font-poppins)', color: '#0F1923', letterSpacing: '-0.5px' }}>
-              Bannières Dashboard
+              Contrôle des Sliders & Bannières
             </h2>
             <p style={{ margin: '8px 0 0 0', color: '#64748B', fontSize: '15px' }}>
-              Gérez les sliders dynamiques affichés sur les tableaux de bord (Visiteurs, Entreprises, Candidats).
+              Supervision et ciblage précis des sliders mobiles pour chaque catégorie d'utilisateurs.
             </p>
           </div>
           
@@ -512,32 +559,125 @@ export const CompanyBanners = () => {
             onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
             <Plus size={20} />
-            Nouvelle Bannière
+            Nouveau Slider
           </button>
+        </div>
+
+        {/* Barre d'onglets Rôles et Recherche */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', background: 'white', padding: '12px 16px', borderRadius: '16px', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          {/* Role Tabs */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => setSelectedRoleTab('all')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: '0.2s',
+                background: selectedRoleTab === 'all' ? '#0F172A' : '#F1F5F9',
+                color: selectedRoleTab === 'all' ? 'white' : '#64748B'
+              }}
+            >
+              <LayoutTemplate size={15} />
+              Tous ({roleCounts.all})
+            </button>
+            <button
+              onClick={() => setSelectedRoleTab('candidate')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: '0.2s',
+                background: selectedRoleTab === 'candidate' ? '#EA580C' : '#FFF7ED',
+                color: selectedRoleTab === 'candidate' ? 'white' : '#C2410C'
+              }}
+            >
+              <Users size={15} />
+              Candidats / Secrétaires ({roleCounts.candidate})
+            </button>
+            <button
+              onClick={() => setSelectedRoleTab('company')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: '0.2s',
+                background: selectedRoleTab === 'company' ? '#2563EB' : '#EFF6FF',
+                color: selectedRoleTab === 'company' ? 'white' : '#1D4ED8'
+              }}
+            >
+              <Building2 size={15} />
+              Entreprises ({roleCounts.company})
+            </button>
+            <button
+              onClick={() => setSelectedRoleTab('visitor')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: '0.2s',
+                background: selectedRoleTab === 'visitor' ? '#0284C7' : '#F0F9FF',
+                color: selectedRoleTab === 'visitor' ? 'white' : '#0369A1'
+              }}
+            >
+              <UserCheck size={15} />
+              Visiteurs ({roleCounts.visitor})
+            </button>
+            <button
+              onClick={() => setSelectedRoleTab('global_all')}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600',
+                border: 'none', cursor: 'pointer', transition: '0.2s',
+                background: selectedRoleTab === 'global_all' ? '#16A34A' : '#F0FDF4',
+                color: selectedRoleTab === 'global_all' ? 'white' : '#15803D'
+              }}
+            >
+              <Globe size={15} />
+              Tous les rôles ({roleCounts.global_all})
+            </button>
+          </div>
+
+          {/* Search Box */}
+          <div style={{ position: 'relative', minWidth: '240px' }}>
+            <Search size={16} color="#94A3B8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+            <input
+              type="text"
+              placeholder="Rechercher un slider..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 12px 8px 36px',
+                borderRadius: '10px', border: '1px solid #E2E8F0',
+                fontSize: '13px', outline: 'none', background: '#F8FAFC',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
         </div>
 
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 0' }}>
             <Loader2 size={40} color="#1A6FD4" style={{ animation: 'spin 1s linear infinite' }} />
-            <p style={{ marginTop: '16px', color: '#64748B', fontWeight: '500' }}>Chargement des bannières...</p>
+            <p style={{ marginTop: '16px', color: '#64748B', fontWeight: '500' }}>Chargement des sliders...</p>
           </div>
-        ) : banners.length === 0 ? (
+        ) : filteredBanners.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 20px', background: '#F8FAFC', borderRadius: '16px', border: '2px dashed #E2E8F0', animation: 'fadeIn 0.4s ease-out' }}>
             <LayoutTemplate size={64} color="#CBD5E1" style={{ margin: '0 auto 16px' }} />
-            <h3 style={{ fontSize: '18px', color: '#0F1923', fontWeight: '700', marginBottom: '8px' }}>Aucune bannière active</h3>
-            <p style={{ color: '#64748B', maxWidth: '400px', margin: '0 auto 24px', lineHeight: '1.5' }}>Créez votre première bannière pour animer le tableau de bord des utilisateurs.</p>
+            <h3 style={{ fontSize: '18px', color: '#0F1923', fontWeight: '700', marginBottom: '8px' }}>
+              {searchTerm ? 'Aucun slider correspondant à votre recherche' : 'Aucun slider trouvé pour ce rôle'}
+            </h3>
+            <p style={{ color: '#64748B', maxWidth: '440px', margin: '0 auto 24px', lineHeight: '1.5' }}>
+              Configurez des sliders personnalisés pour afficher des opportunités, guides et annonces à cette audience.
+            </p>
             <button 
               onClick={openAddModal}
               style={{ background: 'white', border: '1.5px solid #E2E8F0', padding: '10px 20px', borderRadius: '10px', fontWeight: '600', color: '#0F1923', cursor: 'pointer', transition: '0.2s' }}
               onMouseOver={(e) => e.currentTarget.style.borderColor = '#1A6FD4'}
               onMouseOut={(e) => e.currentTarget.style.borderColor = '#E2E8F0'}
             >
-              Créer maintenant
+              Créer un slider maintenant
             </button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-            {banners.map((b, index) => {
+            {filteredBanners.map((b, index) => {
               const transTitle = b.translations?.[1]?.title || b.title || 'Sans titre';
               const transSubtitle = b.translations?.[1]?.subtitle || b.subtitle || 'Aucun sous-titre';
 
@@ -554,10 +694,10 @@ export const CompanyBanners = () => {
                       fontWeight: '700',
                       padding: '4px 8px',
                       borderRadius: '12px',
-                      background: b.target_role === 'visitor' ? '#E0F2FE' : b.target_role === 'candidate' ? '#FFEDD5' : b.target_role === 'all' ? '#DCFCE7' : '#F3E8FF',
-                      color: b.target_role === 'visitor' ? '#0369A1' : b.target_role === 'candidate' ? '#C2410C' : b.target_role === 'all' ? '#15803D' : '#6B21A8',
+                      background: b.target_role === 'visitor' ? '#E0F2FE' : b.target_role === 'candidate' ? '#FFEDD5' : b.target_role === 'all' ? '#DCFCE7' : '#EFF6FF',
+                      color: b.target_role === 'visitor' ? '#0369A1' : b.target_role === 'candidate' ? '#C2410C' : b.target_role === 'all' ? '#15803D' : '#1D4ED8',
                     }}>
-                      {b.target_role === 'visitor' ? 'Visiteur' : b.target_role === 'candidate' ? 'Candidat' : b.target_role === 'all' ? 'Tous' : 'Entreprise'}
+                      {b.target_role === 'visitor' ? '👤 Visiteur' : b.target_role === 'candidate' ? '👤 Candidat / Secrétaire' : b.target_role === 'all' ? '🌐 Tous les rôles' : '🏢 Entreprise'}
                     </span>
                     {getGeoBadge(b)}
                   </div>
@@ -1018,36 +1158,17 @@ export const CompanyBanners = () => {
       )}
 
       {/* Modal Confirmation Suppression */}
-      {showConfirmDelete && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 25, 35, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px' }}>
-          <div style={{ background: 'white', width: '100%', maxWidth: '400px', borderRadius: '24px', padding: '32px 24px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', animation: 'fadeIn 0.3s ease-out' }}>
-            
-            <div style={{ width: '64px', height: '64px', background: '#FEF2F2', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <Trash2 size={32} color="#EF4444" />
-            </div>
-            
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '22px', fontWeight: '700', color: '#0F1923' }}>Supprimer la bannière ?</h3>
-            <p style={{ margin: '0 0 28px 0', color: '#64748B', lineHeight: '1.5' }}>Cette action est irréversible. La bannière sera définitivement retirée du tableau de bord des entreprises.</p>
-            
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button 
-                onClick={() => setShowConfirmDelete(false)}
-                disabled={actionLoading}
-                style={{ flex: 1, background: 'white', border: '1.5px solid #E2E8F0', padding: '12px', borderRadius: '12px', fontWeight: '600', color: '#475569', cursor: 'pointer' }}
-              >
-                Annuler
-              </button>
-              <button 
-                onClick={executeDelete}
-                disabled={actionLoading}
-                style={{ flex: 1, background: '#EF4444', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: '600', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                {actionLoading ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : 'Confirmer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        title="Supprimer le slider"
+        message={`Voulez-vous vraiment supprimer définitivement « ${deleteConfirm.title} » ?`}
+        type="danger"
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        isLoading={deleteConfirm.loading}
+        onConfirm={executeDelete}
+        onClose={() => setDeleteConfirm(prev => ({ ...prev, isOpen: false }))}
+      />
     </MainLayout>
   );
 };
