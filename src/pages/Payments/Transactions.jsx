@@ -395,31 +395,41 @@ export const TransactionsPage = () => {
         )}
 
         {/* High-Density Strategic Table */}
-        <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ overflowX: 'auto' }}>
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '10px',
+          border: '1px solid #E2E8F0',
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 210px)',
+          minHeight: '480px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+        }}>
+          <div style={{ flex: '1 1 auto', overflowY: 'auto', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
-              <thead>
-                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', width: '110px' }}>Date</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Utilisateur</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Motif & Opération</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Source</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right', width: '110px' }}>Montant</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '95px' }}>Statut</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '40px' }}></th>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#F8FAFC', boxShadow: '0 1px 0 #E2E8F0' }}>
+                <tr>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', width: '110px', background: '#F8FAFC' }}>Date</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F8FAFC' }}>Utilisateur</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F8FAFC' }}>Motif & Opération</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F8FAFC' }}>Source</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right', width: '110px', background: '#F8FAFC' }}>Montant</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '95px', background: '#F8FAFC' }}>Statut</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '40px', background: '#F8FAFC' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>
-                      <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 6px', color: '#3B82F6' }} />
-                      <p style={{ margin: 0, fontSize: '13px' }}>Chargement des flux...</p>
+                    <td colSpan="7" style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
+                      <RefreshCw size={22} className="animate-spin" style={{ margin: '0 auto 8px', color: '#3B82F6' }} />
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: '500' }}>Chargement des flux...</p>
                     </td>
                   </tr>
                 ) : transactions.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ padding: '36px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>Aucune transaction trouvée</td>
+                    <td colSpan="7" style={{ padding: '48px', textAlign: 'center', color: '#64748B', fontSize: '13px' }}>Aucune transaction trouvée</td>
                   </tr>
                 ) : (
                   transactions.map((tx) => {
@@ -430,7 +440,7 @@ export const TransactionsPage = () => {
                       <tr 
                         key={tx.id} 
                         onClick={() => setSelectedTx(tx)}
-                        style={{ borderBottom: '1px solid #F1F5F9', cursor: 'pointer', height: '38px', transition: 'background 0.1s' }}
+                        style={{ borderBottom: '1px solid #F1F5F9', cursor: 'pointer', height: '40px', transition: 'background 0.1s' }}
                         onMouseOver={(e) => e.currentTarget.style.background = '#F8FAFC'}
                         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                       >
@@ -449,32 +459,26 @@ export const TransactionsPage = () => {
                           </div>
                         </td>
 
-                        {/* PURPOSE & DESCRIPTION */}
+                        {/* PURPOSE & OP */}
                         <td style={{ padding: '6px 12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             {getPurposeBadge(tx.purpose)}
-                            {tx.description && (
-                              <span style={{ color: '#475569', fontSize: '11.5px', maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={tx.description}>
-                                {tx.description}
-                              </span>
-                            )}
+                            <span style={{ fontSize: '12px', color: '#334155', fontWeight: '500', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {tx.description || tx.purpose || 'Opération de solde'}
+                            </span>
                           </div>
                         </td>
 
-                        {/* SOURCE / PROVIDER & REFERENCE */}
+                        {/* SOURCE / REF */}
                         <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                            <div>{getPaymentProviderBadge(tx.payment_provider)}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {getPaymentProviderBadge(tx.payment_provider)}
                             {tx.external_ref ? (
                               <span 
                                 style={{ fontSize: '10.5px', fontFamily: 'monospace', color: '#1E293B', background: '#F1F5F9', padding: '1px 5px', borderRadius: '3px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', border: '1px solid #E2E8F0', display: 'inline-block' }}
                                 title={`Référence externe / Stripe: ${tx.external_ref}`}
                               >
                                 {tx.external_ref}
-                              </span>
-                            ) : tx.reference_type && tx.reference_id ? (
-                              <span style={{ fontSize: '10px', color: '#64748B' }}>
-                                Ref: {tx.reference_type} #{tx.reference_id}
                               </span>
                             ) : null}
                           </div>
@@ -512,29 +516,105 @@ export const TransactionsPage = () => {
           </div>
 
           {/* Compact Pagination Bar */}
-          {totalPages > 1 && (
-            <div style={{ padding: '10px 14px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAFAFA' }}>
+          <div style={{
+            flex: '0 0 auto',
+            padding: '10px 16px',
+            borderTop: '1px solid #E2E8F0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#FAFAFA',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500' }}>
-                Page <strong>{page}</strong> sur <strong>{totalPages}</strong> ({totalCount} au total)
+                Affichage de <strong>{totalCount === 0 ? 0 : (page - 1) * perPage + 1}</strong> à <strong>{Math.min(page * perPage, totalCount)}</strong> sur <strong>{totalCount.toLocaleString('fr-FR')}</strong> flux
               </span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid #CBD5E1', background: 'white', cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px', fontWeight: '600' }}
-                >
-                  <ChevronLeft size={13} /> Précédent
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid #CBD5E1', background: 'white', cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px', fontWeight: '600' }}
-                >
-                  Suivant <ChevronRight size={13} />
-                </button>
-              </div>
+              <span style={{ fontSize: '12px', color: '#94A3B8' }}>•</span>
+              <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>
+                Page {page} / {totalPages}
+              </span>
             </div>
-          )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                disabled={page <= 1 || loading}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  background: 'white',
+                  cursor: (page <= 1 || loading) ? 'not-allowed' : 'pointer',
+                  opacity: (page <= 1 || loading) ? 0.45 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}
+              >
+                <ChevronLeft size={14} /> Précédent
+              </button>
+
+              {/* Quick page pills */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
+                    let pageNum = idx + 1;
+                    if (totalPages > 5 && page > 3) {
+                      pageNum = page - 2 + idx;
+                      if (pageNum > totalPages) pageNum = totalPages - (4 - idx);
+                    }
+                    if (pageNum <= 0) return null;
+                    const isActive = pageNum === page;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '5px',
+                          border: isActive ? '1px solid #3B82F6' : '1px solid #E2E8F0',
+                          background: isActive ? '#3B82F6' : 'white',
+                          color: isActive ? 'white' : '#334155',
+                          fontWeight: isActive ? '700' : '500',
+                          fontSize: '11.5px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button
+                disabled={page >= totalPages || loading}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  background: 'white',
+                  cursor: (page >= totalPages || loading) ? 'not-allowed' : 'pointer',
+                  opacity: (page >= totalPages || loading) ? 0.45 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}
+              >
+                Suivant <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* MODAL: FULL TRANSACTION DETAILS */}

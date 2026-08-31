@@ -205,37 +205,56 @@ export const WalletsPage = () => {
           </div>
         )}
 
-        {/* High-Density Table */}
-        <div style={{ background: '#ffffff', borderRadius: '10px', border: '1px solid #E2E8F0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ overflowX: 'auto' }}>
+        {/* High-Density Strategic Table Card */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '10px',
+          border: '1px solid #E2E8F0',
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 210px)',
+          minHeight: '480px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+        }}>
+          {/* Scrollable Table Area */}
+          <div style={{ flex: '1 1 auto', overflowY: 'auto', overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
-              <thead>
-                <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Utilisateur</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Contact</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Profil</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Solde Disponible</th>
-                  <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '180px' }}>Actions Rapides</th>
+              <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#F8FAFC', boxShadow: '0 1px 0 #E2E8F0' }}>
+                <tr>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F8FAFC' }}>Utilisateur</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F8FAFC' }}>Contact</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#F8FAFC' }}>Profil</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right', background: '#F8FAFC' }}>Solde Disponible</th>
+                  <th style={{ padding: '9px 12px', fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center', width: '190px', background: '#F8FAFC' }}>Actions Rapides</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>
-                      <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 6px', color: '#3B82F6' }} />
-                      <p style={{ margin: 0, fontSize: '13px' }}>Chargement des portefeuilles...</p>
+                    <td colSpan="5" style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
+                      <RefreshCw size={22} className="animate-spin" style={{ margin: '0 auto 8px', color: '#3B82F6' }} />
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: '500' }}>Chargement des portefeuilles...</p>
                     </td>
                   </tr>
                 ) : wallets.length === 0 ? (
                   <tr>
-                    <td colSpan="5" style={{ padding: '36px', textAlign: 'center', color: '#64748B' }}>Aucun portefeuille trouvé</td>
+                    <td colSpan="5" style={{ padding: '48px', textAlign: 'center', color: '#64748B' }}>
+                      <Wallet size={28} style={{ margin: '0 auto 8px', color: '#94A3B8' }} />
+                      <p style={{ margin: 0, fontSize: '13px', fontWeight: '500' }}>Aucun portefeuille trouvé</p>
+                    </td>
                   </tr>
                 ) : (
                   wallets.map((wallet) => {
                     const userName = getUserDisplayName(wallet.user);
                     const userInitials = getInitials(userName);
                     return (
-                      <tr key={wallet.id} style={{ borderBottom: '1px solid #F1F5F9', height: '38px', transition: 'background 0.1s' }} onMouseOver={(e) => e.currentTarget.style.background = '#F8FAFC'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+                      <tr
+                        key={wallet.id}
+                        style={{ borderBottom: '1px solid #F1F5F9', height: '40px', transition: 'background 0.1s' }}
+                        onMouseOver={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
                         {/* User */}
                         <td style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -268,24 +287,24 @@ export const WalletsPage = () => {
 
                         {/* Actions */}
                         <td style={{ padding: '6px 12px', textAlign: 'center' }}>
-                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center' }}>
                             <button
                               onClick={() => openModal(wallet, 'credit')}
-                              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#16A34A', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                              style={{ padding: '4px 9px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#16A34A', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                               title="Créditer le portefeuille"
                             >
                               <Plus size={11} /> Créditer
                             </button>
                             <button
                               onClick={() => openModal(wallet, 'debit')}
-                              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#DC2626', border: 'none', borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                              style={{ padding: '4px 9px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#DC2626', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                               title="Débiter le portefeuille"
                             >
                               <Minus size={11} /> Débiter
                             </button>
                             <button
                               onClick={() => navigate(`/transactions?search=${encodeURIComponent(wallet.user?.email || wallet.user?.phone || '')}`)}
-                              style={{ padding: '3px 6px', fontSize: '11px', fontWeight: '600', color: '#334155', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '4px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                              style={{ padding: '4px 7px', fontSize: '11px', fontWeight: '600', color: '#334155', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
                               title="Voir les transactions de cet utilisateur"
                             >
                               <ExternalLink size={12} />
@@ -300,30 +319,106 @@ export const WalletsPage = () => {
             </table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{ padding: '10px 14px', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAFAFA' }}>
+          {/* Fixed Bottom Pagination Bar */}
+          <div style={{
+            flex: '0 0 auto',
+            padding: '10px 16px',
+            borderTop: '1px solid #E2E8F0',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#FAFAFA',
+            flexWrap: 'wrap',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500' }}>
-                Page <strong>{page}</strong> sur <strong>{totalPages}</strong> ({totalWallets} au total)
+                Affichage de <strong>{totalWallets === 0 ? 0 : (page - 1) * perPage + 1}</strong> à <strong>{Math.min(page * perPage, totalWallets)}</strong> sur <strong>{totalWallets.toLocaleString('fr-FR')}</strong> comptes
               </span>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid #CBD5E1', background: 'white', cursor: page <= 1 ? 'not-allowed' : 'pointer', opacity: page <= 1 ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px', fontWeight: '600' }}
-                >
-                  <ChevronLeft size={13} /> Précédent
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  style={{ padding: '4px 10px', borderRadius: '5px', border: '1px solid #CBD5E1', background: 'white', cursor: page >= totalPages ? 'not-allowed' : 'pointer', opacity: page >= totalPages ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11.5px', fontWeight: '600' }}
-                >
-                  Suivant <ChevronRight size={13} />
-                </button>
-              </div>
+              <span style={{ fontSize: '12px', color: '#94A3B8' }}>•</span>
+              <span style={{ fontSize: '12px', color: '#475569', fontWeight: '600' }}>
+                Page {page} / {totalPages}
+              </span>
             </div>
-          )}
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                disabled={page <= 1 || loading}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  background: 'white',
+                  cursor: (page <= 1 || loading) ? 'not-allowed' : 'pointer',
+                  opacity: (page <= 1 || loading) ? 0.45 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}
+              >
+                <ChevronLeft size={14} /> Précédent
+              </button>
+
+              {/* Quick page pills */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', gap: '3px' }}>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
+                    let pageNum = idx + 1;
+                    if (totalPages > 5 && page > 3) {
+                      pageNum = page - 2 + idx;
+                      if (pageNum > totalPages) pageNum = totalPages - (4 - idx);
+                    }
+                    if (pageNum <= 0) return null;
+                    const isActive = pageNum === page;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '5px',
+                          border: isActive ? '1px solid #3B82F6' : '1px solid #E2E8F0',
+                          background: isActive ? '#3B82F6' : 'white',
+                          color: isActive ? 'white' : '#334155',
+                          fontWeight: isActive ? '700' : '500',
+                          fontSize: '11.5px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <button
+                disabled={page >= totalPages || loading}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #CBD5E1',
+                  background: 'white',
+                  cursor: (page >= totalPages || loading) ? 'not-allowed' : 'pointer',
+                  opacity: (page >= totalPages || loading) ? 0.45 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: '#334155'
+                }}
+              >
+                Suivant <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Modal: Credit/Debit Form */}
