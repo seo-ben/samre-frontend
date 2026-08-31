@@ -26,6 +26,12 @@ export const WalletsPage = () => {
   const [amount, setAmount] = useState('');
   const [purpose, setPurpose] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
