@@ -1612,6 +1612,85 @@ export const UsersPage = () => {
                           : 'Aucun centre d\'intérêt renseigné.'}
                       </p>
                     </div>
+
+                    {/* Section: CV de Demande d'Emploi Visiteur */}
+                    {selectedUser.visitorProfile?.cv_data && (
+                      <div style={{
+                        marginTop: '12px',
+                        padding: '16px',
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <h5 style={{ margin: 0, fontSize: '13px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <FileText size={16} color="#d97706" />
+                            CV & Demande d'Emploi Visiteur
+                          </h5>
+                          <span style={{ fontSize: '10.5px', fontWeight: '700', color: '#16a34a', background: '#dcfce7', padding: '2px 8px', borderRadius: '6px' }}>
+                            Auto-enregistré
+                          </span>
+                        </div>
+
+                        {selectedUser.visitorProfile.cv_data.profession && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Poste / Métier visé :</span>
+                            <p style={{ margin: '2px 0 0', fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>
+                              {selectedUser.visitorProfile.cv_data.profession}
+                            </p>
+                          </div>
+                        )}
+
+                        {selectedUser.visitorProfile.cv_data.bio && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Résumé professionnel :</span>
+                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#334155', lineHeight: '1.45' }}>
+                              {selectedUser.visitorProfile.cv_data.bio}
+                            </p>
+                          </div>
+                        )}
+
+                        {Array.isArray(selectedUser.visitorProfile.cv_data.skills) && selectedUser.visitorProfile.cv_data.skills.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Compétences :</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '4px' }}>
+                              {selectedUser.visitorProfile.cv_data.skills.map((s, i) => (
+                                <span key={i} style={{ background: '#fef3c7', color: '#92400e', fontSize: '11px', fontWeight: '600', padding: '2px 7px', borderRadius: '5px', border: '1px solid #fde68a' }}>
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {Array.isArray(selectedUser.visitorProfile.cv_data.experiences) && selectedUser.visitorProfile.cv_data.experiences.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Expériences ({selectedUser.visitorProfile.cv_data.experiences.length}) :</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
+                              {selectedUser.visitorProfile.cv_data.experiences.map((exp, i) => (
+                                <div key={i} style={{ background: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '11.5px' }}>
+                                  <strong>{exp.title}</strong> chez <span style={{ color: '#475569' }}>{exp.company}</span> ({exp.period})
+                                  {exp.description && <div style={{ color: '#64748b', marginTop: '2px', fontSize: '10.5px' }}>{exp.description}</div>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {Array.isArray(selectedUser.visitorProfile.cv_data.diplomas) && selectedUser.visitorProfile.cv_data.diplomas.length > 0 && (
+                          <div>
+                            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>Formations & Diplômes ({selectedUser.visitorProfile.cv_data.diplomas.length}) :</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginTop: '5px' }}>
+                              {selectedUser.visitorProfile.cv_data.diplomas.map((dip, i) => (
+                                <div key={i} style={{ background: '#ffffff', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', fontSize: '11.5px' }}>
+                                  <strong>{dip.diploma}</strong> — <span style={{ color: '#475569' }}>{dip.school}</span> ({dip.year})
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
 
