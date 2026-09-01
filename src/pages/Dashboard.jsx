@@ -67,40 +67,83 @@ const KpiCard = ({ iconClass, label, value, color, loading }) => (
 // ─── Carte revenu (spéciale) ───────────────────────────────────────────────────
 const RevenueCard = ({ value, loading }) => (
   <div style={{
-    background: 'linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%)',
-    borderRadius: '12px',
-    padding: '24px',
+    background: 'linear-gradient(135deg, #0052ff 0%, #0037a8 100%)',
+    borderRadius: '16px',
+    padding: '24px 28px',
     color: '#ffffff',
-    gridColumn: 'span 2',
+    gridColumn: '1 / -1',
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '20px',
     boxShadow: '0 4px 16px rgba(0,82,255,0.25)',
   }}>
-    <div style={{
-      width: '56px', height: '56px', borderRadius: '14px',
-      background: 'rgba(255,255,255,0.15)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-    }}>
-      <i className="fa-solid fa-arrow-trend-up" style={{ fontSize: '26px', color: '#ffffff' }}></i>
-    </div>
-    <div>
-      <p style={{ margin: 0, fontSize: '13px', opacity: 0.8, fontWeight: '500' }}>
-        Revenus totaux générés
-      </p>
-      {loading ? (
-        <div style={{
-          height: '32px', width: '120px', borderRadius: '6px',
-          background: 'rgba(255,255,255,0.2)',
-          marginTop: '6px',
-        }} />
-      ) : (
-        <p style={{ margin: '6px 0 0', fontSize: '28px', fontWeight: '700', fontFamily: 'var(--font-poppins)' }}>
-          {value !== null && value !== undefined
-            ? `${formatNumber(value)} FCFA`
-            : '—'}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{
+        width: '56px', height: '56px', borderRadius: '14px',
+        background: 'rgba(255,255,255,0.15)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>
+        <i className="fa-solid fa-arrow-trend-up" style={{ fontSize: '26px', color: '#ffffff' }}></i>
+      </div>
+      <div>
+        <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>
+          Revenus totaux générés
         </p>
-      )}
+        {loading ? (
+          <div style={{
+            height: '32px', width: '120px', borderRadius: '6px',
+            background: 'rgba(255,255,255,0.2)',
+            marginTop: '6px',
+          }} />
+        ) : (
+          <p style={{ margin: '6px 0 0', fontSize: '28px', fontWeight: '700', fontFamily: 'var(--font-poppins)' }}>
+            {value !== null && value !== undefined
+              ? `${formatNumber(value)} FCFA`
+              : '—'}
+          </p>
+        )}
+      </div>
+    </div>
+
+    {/* Répartition Mobile Money vs Stripe */}
+    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+      {/* Mobile Money */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.12)',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        border: '1px solid rgba(255, 255, 255, 0.18)',
+        minWidth: '180px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <i className="fa-solid fa-mobile-screen-button" style={{ fontSize: '14px', color: '#6ee7b7' }}></i>
+          <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.95 }}>Reçu par Mobile Money</span>
+        </div>
+        <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-poppins)', color: '#ffffff' }}>
+          {loading ? '...' : `${formatNumber(mobileMoneyValue || 0)} FCFA`}
+        </p>
+        <span style={{ fontSize: '11px', opacity: 0.75 }}>Zayono (T-Money, Flooz, Wave...)</span>
+      </div>
+
+      {/* Stripe */}
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.12)',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        border: '1px solid rgba(255, 255, 255, 0.18)',
+        minWidth: '180px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <i className="fa-solid fa-credit-card" style={{ fontSize: '14px', color: '#c4b5fd' }}></i>
+          <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.95 }}>Reçu par Stripe</span>
+        </div>
+        <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-poppins)', color: '#ffffff' }}>
+          {loading ? '...' : `${formatNumber(stripeValue || 0)} FCFA`}
+        </p>
+        <span style={{ fontSize: '11px', opacity: 0.75 }}>Cartes bancaires</span>
+      </div>
     </div>
   </div>
 );
@@ -355,8 +398,13 @@ export const Dashboard = () => {
         gap: '16px',
         marginBottom: '24px',
       }}>
-        {/* Carte revenus en pleine largeur */}
-        <RevenueCard value={stats?.total_revenue} loading={loading} />
+        {/* Carte revenus avec répartition Mobile Money et Stripe */}
+        <RevenueCard 
+          value={stats?.total_revenue} 
+          mobileMoneyValue={stats?.revenue_mobile_money}
+          stripeValue={stats?.revenue_stripe}
+          loading={loading} 
+        />
 
         {kpis.map(({ key, label, iconClass, color, getValue }) => (
           <KpiCard

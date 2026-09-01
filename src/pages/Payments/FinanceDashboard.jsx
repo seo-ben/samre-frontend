@@ -6,7 +6,8 @@ import {
   Wallet, TrendingUp, Search, 
   ArrowUpRight, ArrowDownRight, CreditCard, Activity,
   AlertTriangle, CheckCircle2, RefreshCw, X, Plus, Minus,
-  ExternalLink, Eye, Layers, Copy, CheckCheck
+  ExternalLink, Eye, Layers, Copy, CheckCheck,
+  Smartphone, Clock, Settings, Send, ShieldCheck, Check
 } from 'lucide-react';
 
 export const getUserDisplayName = (user) => {
@@ -157,19 +158,37 @@ export const FinanceDashboard = () => {
   const [copiedRef, setCopiedRef] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
 
+  // Payout States
+  const [payoutData, setPayoutData] = useState(null);
+  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+  const [payoutSettingsModalOpen, setPayoutSettingsModalOpen] = useState(false);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutPhone, setPayoutPhone] = useState('');
+  const [payoutOperator, setPayoutOperator] = useState('tmoney_tg');
+  const [settingsForm, setSettingsForm] = useState({
+    enabled: true,
+    phone: '',
+    operator: 'tmoney_tg',
+    frequency: 'daily',
+    interval_days: 7,
+    min_threshold: 25000,
+  });
+
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // Fetch Data
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, walletsRes, txRes] = await Promise.all([
+      const [statsRes, walletsRes, txRes, payoutRes] = await Promise.all([
         apiClient.get('/v1/admin/dashboard/finance').catch(() => null),
         apiClient.get('/v1/admin/wallets', { params: { search: walletSearch, per_page: 8 } }).catch(() => null),
-        apiClient.get('/v1/admin/transactions', { params: { search: txSearch, per_page: 8 } }).catch(() => null)
+        apiClient.get('/v1/admin/transactions', { params: { search: txSearch, per_page: 8 } }).catch(() => null),
+        apiClient.get('/v1/admin/payout/settings').catch(() => null),
       ]);
       
       if (statsRes?.data?.status === 'success') {
@@ -184,6 +203,23 @@ export const FinanceDashboard = () => {
       if (txRes?.data?.status === 'success') {
           const tData = txRes.data.data?.data || txRes.data.data;
           setTransactions(Array.isArray(tData) ? tData : []);
+      }
+
+      if (payoutRes?.data?.status === 'success') {
+          const pData = payoutRes.data.data || {};
+          setPayoutData(pData);
+          if (pData.settings) {
+            setSettingsForm({
+              enabled: pData.settings.enabled ?? true,
+              phone: pData.settings.phone || '',
+              operator: pData.settings.operator || 'tmoney_tg',
+              frequency: pData.settings.frequency || 'daily',
+              interval_days: pData.settings.interval_days || 7,
+              min_threshold: pData.settings.min_threshold || 25000,
+            });
+            setPayoutPhone(pData.settings.phone || '');
+            setPayoutOperator(pData.settings.operator || 'tmoney_tg');
+          }
       }
     } catch (err) {
       console.error(err);
@@ -227,6 +263,45 @@ export const FinanceDashboard = () => {
       showToast(err.response?.data?.message || 'Une erreur est survenue lors de l\'opération');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleExecutePayout = async (e) => {
+    e.preventDefault();
+    setPayoutLoading(true);
+    try {
+      const res = await apiClient.post('/v1/admin/payout/execute', {
+        amount: payoutAmount ? Number(payoutAmount) : null,
+        phone: payoutPhone,
+        operator: payoutOperator,
+      });
+      if (res.data.status === 'success') {
+        showToast(res.data.message || 'Virement initié avec succès');
+        setPayoutModalOpen(false);
+        setPayoutAmount('');
+        fetchData();
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Échec du virement');
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
+  const handleSavePayoutSettings = async (e) => {
+    e.preventDefault();
+    setPayoutLoading(true);
+    try {
+      const res = await apiClient.post('/v1/admin/payout/settings', settingsForm);
+      if (res.data.status === 'success') {
+        showToast('Conditions de virement enregistrées');
+        setPayoutSettingsModalOpen(false);
+        fetchData();
+      }
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Erreur lors de l\'enregistrement');
+    } finally {
+      setPayoutLoading(false);
     }
   };
 
@@ -312,55 +387,185 @@ export const FinanceDashboard = () => {
           </div>
         </div>
 
-        {/* Top KPIs - 4 Columns */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '18px' }}>
+        {/* Top KPIs - 5 Columns with Mobile Money vs Stripe separation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '16px' }}>
           
           {/* Revenu Total */}
           <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #1E40AF, #3B82F6)', color: 'white', padding: '16px', position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <div style={{ padding: '5px', borderRadius: '6px', background: 'rgba(255,255,255,0.2)' }}><TrendingUp size={14} color="white" /></div>
-              <span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.9 }}>Revenu Total</span>
+              <span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.9 }}>Revenu Total Global</span>
             </div>
             <div style={{ fontSize: '20px', fontWeight: '800' }}>
               {formatCurrencyNumberOnly(stats?.total_revenue || 0)} <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.85 }}>FCFA</span>
             </div>
+            <div style={{ fontSize: '11px', opacity: 0.75, marginTop: '4px' }}>
+              Toutes méthodes confondues
+            </div>
+          </div>
+
+          {/* Montant Reçu par Mobile Money */}
+          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #065F46, #059669)', color: 'white', padding: '16px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ padding: '5px', borderRadius: '6px', background: 'rgba(255,255,255,0.2)' }}><Smartphone size={14} color="white" /></div>
+              <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.95 }}>Reçu par Mobile Money</span>
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '800' }}>
+              {formatCurrencyNumberOnly(stats?.revenue_mobile_money || 0)} <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.85 }}>FCFA</span>
+            </div>
+            <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '4px' }}>
+              {stats?.count_mobile_money || 0} transaction(s) • Zayono (T-Money, Flooz, Wave...)
+            </div>
+          </div>
+
+          {/* Montant Reçu par Stripe */}
+          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #4338CA, #6366F1)', color: 'white', padding: '16px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ padding: '5px', borderRadius: '6px', background: 'rgba(255,255,255,0.2)' }}><CreditCard size={14} color="white" /></div>
+              <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.95 }}>Reçu par Stripe</span>
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '800' }}>
+              {formatCurrencyNumberOnly(stats?.revenue_stripe || 0)} <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.85 }}>FCFA</span>
+            </div>
+            <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '4px' }}>
+              {stats?.count_stripe || 0} transaction(s) • Cartes bancaires
+            </div>
           </div>
 
           {/* Crédit Distribué */}
-          <div style={{ ...cardStyle, background: 'linear-gradient(135deg, #065F46, #059669)', color: 'white', padding: '16px', position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-              <div style={{ padding: '5px', borderRadius: '6px', background: 'rgba(255,255,255,0.2)' }}><Wallet size={14} color="white" /></div>
-              <span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.9 }}>Crédits Distribués</span>
-            </div>
-            <div style={{ fontSize: '20px', fontWeight: '800' }}>
-              {formatCurrencyNumberOnly(stats?.total_credit_distributed || 0)} <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.85 }}>FCFA</span>
-            </div>
-          </div>
-
-          {/* Taux de Conversion */}
           <div style={{ ...cardStyle, padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <div style={{ padding: '5px', borderRadius: '6px', background: '#EFF6FF' }}><Activity size={14} color="#3B82F6" /></div>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B' }}>Taux de Conversion</span>
+              <div style={{ padding: '5px', borderRadius: '6px', background: '#FEF3C7' }}><Wallet size={14} color="#D97706" /></div>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B' }}>Crédits Distribués</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A' }}>{stats?.conversion_rate || 0}%</div>
-              <div style={{ fontSize: '11px', color: '#64748B' }}>Visiteurs convertis</div>
+            <div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A' }}>
+                {formatCurrencyNumberOnly(stats?.total_credit_distributed || 0)} <span style={{ fontSize: '12px', color: '#64748B' }}>FCFA</span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Solde virtuel en circulation</div>
             </div>
           </div>
 
           {/* Portefeuilles Actifs */}
-          <div style={{ ...cardStyle, padding: '16px' }}>
+          <div style={{ ...cardStyle, padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <div style={{ padding: '5px', borderRadius: '6px', background: '#FFF7ED' }}><CreditCard size={14} color="#EA580C" /></div>
+              <div style={{ padding: '5px', borderRadius: '6px', background: '#EFF6FF' }}><Activity size={14} color="#3B82F6" /></div>
               <span style={{ fontSize: '12px', fontWeight: '600', color: '#64748B' }}>Portefeuilles Actifs</span>
             </div>
-            <div style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A' }}>
-              {new Intl.NumberFormat('fr-FR').format(stats?.users_with_wallet || 0)}
+            <div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A' }}>
+                {new Intl.NumberFormat('fr-FR').format(stats?.users_with_wallet || 0)}
+              </div>
+              <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Taux conv : {stats?.conversion_rate || 0}%</div>
             </div>
-            <div style={{ fontSize: '11px', color: '#64748B' }}>Comptes avec solde</div>
           </div>
 
+        </div>
+
+        {/* Section Virement vers Compte Personnel Admin (Zayono Payouts conditionné par l'admin) */}
+        <div style={{
+          ...cardStyle,
+          background: '#FFFFFF',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          border: '1px solid #E2E8F0',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '12px',
+              background: '#F0FDF4',
+              border: '1px solid #DCFCE7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#16A34A',
+              flexShrink: 0
+            }}>
+              <Smartphone size={24} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#0F172A' }}>
+                  Virement vers compte personnel (Payouts Zayono)
+                </h3>
+                {payoutData?.settings?.enabled ? (
+                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '12px', background: '#DCFCE7', color: '#166534', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <ShieldCheck size={12} /> Automatique activé
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '11px', fontWeight: '600', padding: '2px 8px', borderRadius: '12px', background: '#F1F5F9', color: '#64748B' }}>
+                    Manuel uniquement
+                  </span>
+                )}
+                {payoutData?.settings?.last_executed_at && (
+                  <span style={{ fontSize: '11.5px', color: '#64748B' }}>
+                    • Dernier virement : {formatDateCompact(payoutData.settings.last_executed_at)} ({formatCurrencyNumberOnly(payoutData.settings.last_amount || 0)} F)
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: '5px 0 0', fontSize: '12.5px', color: '#64748B' }}>
+                {payoutData?.settings?.phone ? (
+                  <>
+                    Destination : <strong style={{ color: '#0F172A' }}>{payoutData.settings.phone}</strong> ({payoutData.settings.operator === 'tmoney_tg' ? 'T-Money Togo' : payoutData.settings.operator === 'moov_tg' ? 'Flooz Moov Togo' : payoutData.settings.operator}) • 
+                    Rythme : <strong style={{ color: '#0F172A' }}>{payoutData.settings.frequency === 'daily' ? 'Tous les soirs' : payoutData.settings.frequency === 'weekly' ? 'Chaque semaine' : payoutData.settings.frequency === 'custom_days' ? `Tous les ${payoutData.settings.interval_days} jours` : 'Manuel'}</strong> • 
+                    Seuil déclenchement : <strong style={{ color: '#0F172A' }}>{formatCurrency(payoutData.settings.min_threshold || 25000)}</strong>
+                  </>
+                ) : (
+                  <span style={{ color: '#D97706', fontWeight: '500' }}>
+                    Aucun numéro bénéficiaire configuré. Cliquez sur « Paramétrer » pour enregistrer votre numéro T-Money ou Flooz.
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setPayoutSettingsModalOpen(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px',
+                background: '#FFFFFF',
+                border: '1px solid #CBD5E1',
+                borderRadius: '7px',
+                fontSize: '12.5px',
+                fontWeight: '600',
+                color: '#334155',
+                cursor: 'pointer',
+              }}
+            >
+              <Settings size={14} />
+              Paramétrer le calendrier
+            </button>
+            <button
+              onClick={() => {
+                setPayoutAmount(payoutData?.available_balance ? String(payoutData.available_balance) : '');
+                setPayoutModalOpen(true);
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                border: 'none',
+                borderRadius: '7px',
+                fontSize: '12.5px',
+                fontWeight: '700',
+                color: '#FFFFFF',
+                cursor: 'pointer',
+                boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)',
+              }}
+            >
+              <Send size={14} />
+              Déclencher un virement
+            </button>
+          </div>
         </div>
 
         {/* Middle Section: High-Density Tables */}
@@ -772,6 +977,325 @@ export const FinanceDashboard = () => {
 
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* Modal : Déclencher un Virement vers Compte Personnel */}
+        {payoutModalOpen && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(3px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999, padding: '16px'
+          }}>
+            <div style={{
+              background: '#FFFFFF', borderRadius: '14px', width: '100%', maxWidth: '440px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid #E2E8F0',
+              overflow: 'hidden'
+            }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#DCFCE7', color: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Send size={16} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>Virement vers Compte Personnel</h3>
+                    <p style={{ margin: 0, fontSize: '11.5px', color: '#64748B' }}>Transfert instantané via l'API Zayono</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPayoutModalOpen(false)}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleExecutePayout} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {payoutData?.available_balance > 0 && (
+                  <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500' }}>Solde Mobile Money disponible :</span>
+                    <strong style={{ fontSize: '13px', color: '#0F172A' }}>{formatCurrency(payoutData.available_balance)}</strong>
+                  </div>
+                )}
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Montant à virer (FCFA) *
+                  </label>
+                  <input
+                    type="number"
+                    min="500"
+                    step="100"
+                    required
+                    placeholder="Ex: 25000"
+                    value={payoutAmount}
+                    onChange={(e) => setPayoutAmount(e.target.value)}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '14px', fontWeight: '700',
+                      outline: 'none', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Numéro de réception *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="Ex: +228 90 00 00 00"
+                    value={payoutPhone}
+                    onChange={(e) => setPayoutPhone(e.target.value)}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Opérateur Mobile Money *
+                  </label>
+                  <select
+                    value={payoutOperator}
+                    onChange={(e) => setPayoutOperator(e.target.value)}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box', background: 'white'
+                    }}
+                  >
+                    <option value="tmoney_tg">T-Money (Togocom Togo)</option>
+                    <option value="moov_tg">Flooz (Moov Togo)</option>
+                    <option value="mtn_bj">MTN Bénin</option>
+                    <option value="moov_bj">Moov Bénin</option>
+                    <option value="wave_ci">Wave Côte d'Ivoire</option>
+                    <option value="orange_ci">Orange Côte d'Ivoire</option>
+                    <option value="mtn_ci">MTN Côte d'Ivoire</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setPayoutModalOpen(false)}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: '7px',
+                      background: 'white', border: '1px solid #CBD5E1',
+                      color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer'
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={payoutLoading}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: '7px',
+                      background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                      border: 'none', color: 'white', fontWeight: '700', fontSize: '13px',
+                      cursor: payoutLoading ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    {payoutLoading ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+                    {payoutLoading ? 'Envoi...' : 'Confirmer le virement'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal : Configuration du Calendrier et Conditions de Virement */}
+        {payoutSettingsModalOpen && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(3px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999, padding: '16px'
+          }}>
+            <div style={{
+              background: '#FFFFFF', borderRadius: '14px', width: '100%', maxWidth: '480px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid #E2E8F0',
+              overflow: 'hidden'
+            }}>
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#EFF6FF', color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Settings size={16} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '800', color: '#0F172A' }}>Paramètres du Virement Automatique</h3>
+                    <p style={{ margin: 0, fontSize: '11.5px', color: '#64748B' }}>Contrôlez le rythme et le seuil de versement</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setPayoutSettingsModalOpen(false)}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleSavePayoutSettings} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Toggle Activer */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#0F172A' }}>Virement Automatique</div>
+                    <div style={{ fontSize: '11.5px', color: '#64748B' }}>Exécuter automatiquement selon le calendrier choisi</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={settingsForm.enabled}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, enabled: e.target.checked })}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                </div>
+
+                {/* Fréquence / Calendrier */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Rythme / Condition de temps *
+                  </label>
+                  <select
+                    value={settingsForm.frequency}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, frequency: e.target.value })}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box', background: 'white'
+                    }}
+                  >
+                    <option value="daily">Quotidien (Tous les soirs dès que le seuil est atteint)</option>
+                    <option value="weekly">Hebdomadaire (Chaque fin de semaine)</option>
+                    <option value="custom_days">Intervalle personnalisé (Tous les X jours)</option>
+                    <option value="manual">Manuel uniquement (À la demande via le bouton)</option>
+                  </select>
+                </div>
+
+                {/* Si custom_days : Intervalle en jours */}
+                {settingsForm.frequency === 'custom_days' && (
+                  <div>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                      Nombre de jours entre chaque virement *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="90"
+                      required
+                      value={settingsForm.interval_days}
+                      onChange={(e) => setSettingsForm({ ...settingsForm, interval_days: Number(e.target.value) })}
+                      style={{
+                        width: '100%', padding: '9px 12px', borderRadius: '7px',
+                        border: '1px solid #CBD5E1', fontSize: '13px',
+                        outline: 'none', boxSizing: 'border-box'
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Seuil minimum */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Seuil minimum de déclenchement (FCFA) *
+                  </label>
+                  <input
+                    type="number"
+                    min="1000"
+                    step="1000"
+                    required
+                    value={settingsForm.min_threshold}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, min_threshold: Number(e.target.value) })}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box'
+                    }}
+                  />
+                  <span style={{ fontSize: '11px', color: '#64748B' }}>
+                    Le virement ne s'exécutera que si le total collecté dépasse ce montant.
+                  </span>
+                </div>
+
+                {/* Numéro personnel de réception */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Numéro personnel de réception *
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+228 90 00 00 00"
+                    value={settingsForm.phone}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, phone: e.target.value })}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Opérateur par défaut */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '4px' }}>
+                    Opérateur Mobile Money de réception *
+                  </label>
+                  <select
+                    value={settingsForm.operator}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, operator: e.target.value })}
+                    style={{
+                      width: '100%', padding: '9px 12px', borderRadius: '7px',
+                      border: '1px solid #CBD5E1', fontSize: '13px',
+                      outline: 'none', boxSizing: 'border-box', background: 'white'
+                    }}
+                  >
+                    <option value="tmoney_tg">T-Money (Togocom Togo)</option>
+                    <option value="moov_tg">Flooz (Moov Togo)</option>
+                    <option value="mtn_bj">MTN Bénin</option>
+                    <option value="moov_bj">Moov Bénin</option>
+                    <option value="wave_ci">Wave Côte d'Ivoire</option>
+                    <option value="orange_ci">Orange Côte d'Ivoire</option>
+                    <option value="mtn_ci">MTN Côte d'Ivoire</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setPayoutSettingsModalOpen(false)}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: '7px',
+                      background: 'white', border: '1px solid #CBD5E1',
+                      color: '#475569', fontWeight: '600', fontSize: '13px', cursor: 'pointer'
+                    }}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={payoutLoading}
+                    style={{
+                      flex: 1, padding: '10px', borderRadius: '7px',
+                      background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
+                      border: 'none', color: 'white', fontWeight: '700', fontSize: '13px',
+                      cursor: payoutLoading ? 'not-allowed' : 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    {payoutLoading ? <RefreshCw size={14} className="animate-spin" /> : <Check size={14} />}
+                    {payoutLoading ? 'Enregistrement...' : 'Enregistrer'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
