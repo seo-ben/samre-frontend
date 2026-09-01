@@ -65,7 +65,7 @@ const KpiCard = ({ iconClass, label, value, color, loading }) => (
 );
 
 // ─── Carte revenu (spéciale) ───────────────────────────────────────────────────
-const RevenueCard = ({ value, loading }) => (
+const RevenueCard = ({ value, mobileMoneyValue, stripeValue, loading }) => (
   <div style={{
     background: 'linear-gradient(135deg, #0052ff 0%, #0037a8 100%)',
     borderRadius: '16px',
