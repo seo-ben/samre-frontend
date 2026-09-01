@@ -69,80 +69,78 @@ const RevenueCard = ({ value, mobileMoneyValue, stripeValue, loading }) => (
   <div style={{
     background: 'linear-gradient(135deg, #0052ff 0%, #0037a8 100%)',
     borderRadius: '16px',
-    padding: '24px 28px',
+    padding: '20px 22px',
     color: '#ffffff',
-    gridColumn: '1 / -1',
+    gridColumn: 'span 2',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: '20px',
+    gap: '14px',
     boxShadow: '0 4px 16px rgba(0,82,255,0.25)',
   }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+    {/* Total */}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
       <div style={{
-        width: '56px', height: '56px', borderRadius: '14px',
+        width: '48px', height: '48px', borderRadius: '12px',
         background: 'rgba(255,255,255,0.15)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
       }}>
-        <i className="fa-solid fa-arrow-trend-up" style={{ fontSize: '26px', color: '#ffffff' }}></i>
+        <i className="fa-solid fa-arrow-trend-up" style={{ fontSize: '22px', color: '#ffffff' }}></i>
       </div>
       <div>
-        <p style={{ margin: 0, fontSize: '13px', opacity: 0.85, fontWeight: '500' }}>
+        <p style={{ margin: 0, fontSize: '12px', opacity: 0.85, fontWeight: '500' }}>
           Revenus totaux générés
         </p>
         {loading ? (
           <div style={{
-            height: '32px', width: '120px', borderRadius: '6px',
-            background: 'rgba(255,255,255,0.2)',
-            marginTop: '6px',
+            height: '28px', width: '110px', borderRadius: '6px',
+            background: 'rgba(255,255,255,0.2)', marginTop: '6px',
           }} />
         ) : (
-          <p style={{ margin: '6px 0 0', fontSize: '28px', fontWeight: '700', fontFamily: 'var(--font-poppins)' }}>
-            {value !== null && value !== undefined
-              ? `${formatNumber(value)} FCFA`
-              : '—'}
+          <p style={{ margin: '4px 0 0', fontSize: '26px', fontWeight: '700', fontFamily: 'var(--font-poppins)' }}>
+            {value !== null && value !== undefined ? `${formatNumber(value)} FCFA` : '—'}
           </p>
         )}
       </div>
     </div>
 
-    {/* Répartition Mobile Money vs Stripe */}
-    <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+    {/* Mini-colonnes Mobile Money + Stripe */}
+    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
       {/* Mobile Money */}
       <div style={{
-        background: 'rgba(255, 255, 255, 0.12)',
-        borderRadius: '12px',
-        padding: '12px 18px',
-        border: '1px solid rgba(255, 255, 255, 0.18)',
-        minWidth: '180px',
+        background: 'rgba(255,255,255,0.12)',
+        borderRadius: '10px',
+        padding: '10px 14px',
+        border: '1px solid rgba(255,255,255,0.18)',
+        minWidth: '140px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <i className="fa-solid fa-mobile-screen-button" style={{ fontSize: '14px', color: '#6ee7b7' }}></i>
-          <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.95 }}>Reçu par Mobile Money</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+          <i className="fa-solid fa-mobile-screen-button" style={{ fontSize: '12px', color: '#6ee7b7' }}></i>
+          <span style={{ fontSize: '11px', fontWeight: '600', opacity: 0.9 }}>Mobile Money</span>
         </div>
-        <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-poppins)', color: '#ffffff' }}>
+        <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', fontFamily: 'var(--font-poppins)', color: '#fff' }}>
           {loading ? '...' : `${formatNumber(mobileMoneyValue || 0)} FCFA`}
         </p>
-        <span style={{ fontSize: '11px', opacity: 0.75 }}>Zayono (T-Money, Flooz, Wave...)</span>
+        <span style={{ fontSize: '10px', opacity: 0.65 }}>T-Money · Flooz · Wave</span>
       </div>
 
       {/* Stripe */}
       <div style={{
-        background: 'rgba(255, 255, 255, 0.12)',
-        borderRadius: '12px',
-        padding: '12px 18px',
-        border: '1px solid rgba(255, 255, 255, 0.18)',
-        minWidth: '180px',
+        background: 'rgba(255,255,255,0.12)',
+        borderRadius: '10px',
+        padding: '10px 14px',
+        border: '1px solid rgba(255,255,255,0.18)',
+        minWidth: '140px',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-          <i className="fa-solid fa-credit-card" style={{ fontSize: '14px', color: '#c4b5fd' }}></i>
-          <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.95 }}>Reçu par Stripe</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+          <i className="fa-solid fa-credit-card" style={{ fontSize: '12px', color: '#c4b5fd' }}></i>
+          <span style={{ fontSize: '11px', fontWeight: '600', opacity: 0.9 }}>Stripe</span>
         </div>
-        <p style={{ margin: 0, fontSize: '18px', fontWeight: '700', fontFamily: 'var(--font-poppins)', color: '#ffffff' }}>
+        <p style={{ margin: 0, fontSize: '16px', fontWeight: '700', fontFamily: 'var(--font-poppins)', color: '#fff' }}>
           {loading ? '...' : `${formatNumber(stripeValue || 0)} FCFA`}
         </p>
-        <span style={{ fontSize: '11px', opacity: 0.75 }}>Cartes bancaires</span>
+        <span style={{ fontSize: '10px', opacity: 0.65 }}>Cartes bancaires</span>
       </div>
     </div>
   </div>
@@ -216,17 +214,21 @@ export const Dashboard = () => {
     fetchStats();
   }, [fetchStats]);
 
-  const kpis = [
-    { key: 'users_count',          label: 'Utilisateurs total',     iconClass: 'fa-solid fa-users',        color: '#0052ff', getValue: s => s?.users_count },
-    { key: 'candidates_count',     label: 'Secrétaires',            iconClass: 'fa-solid fa-user-check',   color: '#7c3aed', getValue: s => s?.candidates_count },
-    { key: 'companies_count',      label: 'Entreprises',            iconClass: 'fa-solid fa-landmark',     color: '#059669', getValue: s => s?.companies_count },
-    { key: 'offers_count',         label: 'Offres publiées',        iconClass: 'fa-solid fa-briefcase',    color: '#d97706', getValue: s => s?.offers_count },
-    { key: 'applications_count',   label: 'Candidatures',           iconClass: 'fa-solid fa-file-alt',     color: '#db2777', getValue: s => s?.applications_count },
-    { key: 'events_count',         label: 'Événements',             iconClass: 'fa-solid fa-calendar-days', color: '#0891b2', getValue: s => s?.events_count },
-    { key: 'hired_candidates',     label: 'Embauchés',              iconClass: 'fa-solid fa-user-tie',     color: '#16a34a', getValue: s => s?.hired_candidates },
-    { key: 'scheduled_candidates', label: 'Programmés',             iconClass: 'fa-solid fa-clock',        color: '#6366f1', getValue: s => s?.scheduled_candidates },
-    { key: 'special_req_total',    label: 'Demandes spéciales',     iconClass: 'fa-solid fa-wand-magic-sparkles', color: '#f59e0b', getValue: s => s?.special_requests?.total ?? 0 },
-    { key: 'special_req_pending',  label: 'Demandes en attente',    iconClass: 'fa-solid fa-clock-rotate-left', color: '#ea580c', getValue: s => s?.special_requests?.pending ?? 0 },
+  // Ligne 1 : carte bleue (span-2) + utilisateurs + secrétaires
+  // Lignes 2-3 : 4 cards chacune
+  const kpisTop = [
+    { key: 'users_count',      label: 'Utilisateurs total', iconClass: 'fa-solid fa-users',      color: '#0052ff', getValue: s => s?.users_count },
+    { key: 'candidates_count', label: 'Secrétaires',        iconClass: 'fa-solid fa-user-check', color: '#7c3aed', getValue: s => s?.candidates_count },
+  ];
+  const kpisRest = [
+    { key: 'companies_count',      label: 'Entreprises',         iconClass: 'fa-solid fa-landmark',           color: '#059669', getValue: s => s?.companies_count },
+    { key: 'offers_count',         label: 'Offres publiées',     iconClass: 'fa-solid fa-briefcase',          color: '#d97706', getValue: s => s?.offers_count },
+    { key: 'applications_count',   label: 'Candidatures',        iconClass: 'fa-solid fa-file-alt',           color: '#db2777', getValue: s => s?.applications_count },
+    { key: 'events_count',         label: 'Événements',          iconClass: 'fa-solid fa-calendar-days',      color: '#0891b2', getValue: s => s?.events_count },
+    { key: 'hired_candidates',     label: 'Embauchés',           iconClass: 'fa-solid fa-user-tie',           color: '#16a34a', getValue: s => s?.hired_candidates },
+    { key: 'scheduled_candidates', label: 'Programmés',          iconClass: 'fa-solid fa-clock',              color: '#6366f1', getValue: s => s?.scheduled_candidates },
+    { key: 'special_req_total',    label: 'Demandes spéciales',  iconClass: 'fa-solid fa-wand-magic-sparkles', color: '#f59e0b', getValue: s => s?.special_requests?.total ?? 0 },
+    { key: 'special_req_pending',  label: 'En attente',          iconClass: 'fa-solid fa-clock-rotate-left',  color: '#ea580c', getValue: s => s?.special_requests?.pending ?? 0 },
   ];
 
   return (
@@ -391,22 +393,33 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {/* Grille KPIs */}
+      {/* Grille KPIs — 4 colonnes fixes */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gap: '16px',
         marginBottom: '24px',
       }}>
-        {/* Carte revenus avec répartition Mobile Money et Stripe */}
-        <RevenueCard 
-          value={stats?.total_revenue} 
+        {/* Ligne 1 : Carte revenus (span 2) + Utilisateurs + Secrétaires */}
+        <RevenueCard
+          value={stats?.total_revenue}
           mobileMoneyValue={stats?.revenue_mobile_money}
           stripeValue={stats?.revenue_stripe}
-          loading={loading} 
+          loading={loading}
         />
+        {kpisTop.map(({ key, label, iconClass, color, getValue }) => (
+          <KpiCard
+            key={key}
+            iconClass={iconClass}
+            label={label}
+            value={getValue ? getValue(stats) : stats?.[key]}
+            color={color}
+            loading={loading}
+          />
+        ))}
 
-        {kpis.map(({ key, label, iconClass, color, getValue }) => (
+        {/* Lignes 2-3 : le reste des KPIs (4 par ligne) */}
+        {kpisRest.map(({ key, label, iconClass, color, getValue }) => (
           <KpiCard
             key={key}
             iconClass={iconClass}
