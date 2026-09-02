@@ -4,14 +4,182 @@ import apiClient from '../lib/apiClient';
 import {
   UserCog, Plus, Search, Shield, ShieldCheck, Mail, Phone,
   Lock, CheckCircle2, XCircle, Trash2, Edit, AlertCircle, Loader2,
-  MoreHorizontal, Eye, UserPlus, RefreshCw, AlertTriangle
+  RefreshCw, AlertTriangle, CheckSquare, Square, Layers, ChevronDown, ChevronRight,
+  LayoutDashboard, Users, Building2, Briefcase, CalendarDays, FileText,
+  BadgeCheck, Vote, Handshake, Wallet, Star, Bell, BarChart3, Settings
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+
+// Structure complète des Menus & Sous-menus de l'application Admin SAMRE
+export const ADMIN_NAVIGATION_MODULES = [
+  {
+    id: 'dashboard',
+    label: 'Tableau de Bord',
+    icon: LayoutDashboard,
+    pages: [
+      { label: 'Vue d\'ensemble générale', path: '/dashboard' }
+    ]
+  },
+  {
+    id: 'users',
+    label: 'Utilisateurs & Profils',
+    icon: Users,
+    pages: [
+      { label: 'Gestion des Utilisateurs (Candidats, Visiteurs)', path: '/users' }
+    ]
+  },
+  {
+    id: 'companies',
+    label: 'Entreprises & Viabilité',
+    icon: Building2,
+    pages: [
+      { label: 'Entreprises, Cabinets & Viabilité', path: '/companies' }
+    ]
+  },
+  {
+    id: 'offers',
+    label: 'Offres d\'emploi',
+    icon: Briefcase,
+    pages: [
+      { label: 'Toutes les offres', path: '/offers' },
+      { label: 'Offres en attente', path: '/offers/pending' },
+      { label: 'Offres validées', path: '/offers/approved' },
+      { label: 'Offres expirées', path: '/offers/expired' },
+      { label: 'Offres supprimées', path: '/offers/deleted' }
+    ]
+  },
+  {
+    id: 'events',
+    label: 'Événements & Salons',
+    icon: CalendarDays,
+    pages: [
+      { label: 'Tous les événements', path: '/events' },
+      { label: 'Événements en attente', path: '/events/pending' },
+      { label: 'Événements validés', path: '/events/approved' },
+      { label: 'Événements expirés', path: '/events/expired' },
+      { label: 'Événements supprimés', path: '/events/deleted' },
+      { label: 'Catégories d\'événements', path: '/events/categories' }
+    ]
+  },
+  {
+    id: 'applications',
+    label: 'Candidatures & Embauches',
+    icon: FileText,
+    pages: [
+      { label: 'Toutes les candidatures', path: '/applications' },
+      { label: 'Candidatures par statut', path: '/applications/by-status' },
+      { label: 'Candidatures par offre', path: '/applications/by-offer' },
+      { label: 'Déclarations d\'embauche', path: '/hiring-declarations' }
+    ]
+  },
+  {
+    id: 'badges',
+    label: 'Badges & Vérifications KYC',
+    icon: BadgeCheck,
+    pages: [
+      { label: 'Demandes en attente de badge', path: '/badges/pending' },
+      { label: 'Secrétaires vérifiées', path: '/badges/candidates' },
+      { label: 'Entreprises vérifiées', path: '/badges/companies' }
+    ]
+  },
+  {
+    id: 'surveys',
+    label: 'Sondages & Enquêtes',
+    icon: Vote,
+    pages: [
+      { label: 'Gestion des sondages', path: '/surveys' }
+    ]
+  },
+  {
+    id: 'service-exchanges',
+    label: 'Partenariats B2B (Troc)',
+    icon: Handshake,
+    pages: [
+      { label: 'Bourse d\'échanges inter-entreprises', path: '/service-exchanges' }
+    ]
+  },
+  {
+    id: 'finances',
+    label: 'Finances & Wallets',
+    icon: Wallet,
+    pages: [
+      { label: 'Vue d\'ensemble financière', path: '/finances' },
+      { label: 'Portefeuilles (Wallets)', path: '/wallets' },
+      { label: 'Historique des transactions', path: '/transactions' }
+    ]
+  },
+  {
+    id: 'subscriptions',
+    label: 'Abonnements',
+    icon: Star,
+    pages: [
+      { label: 'Centre de contrôle des abonnements', path: '/subscriptions/control-center' },
+      { label: 'Plans d\'abonnement', path: '/subscriptions/plans' },
+      { label: 'Abonnés actifs', path: '/subscriptions/active' },
+      { label: 'Historique des abonnements', path: '/subscriptions/history' }
+    ]
+  },
+  {
+    id: 'notifications',
+    label: 'Notifications & Alertes',
+    icon: Bell,
+    pages: [
+      { label: 'Demandes spéciales', path: '/special-requests' },
+      { label: 'Modération & Signalements', path: '/moderation/reports' },
+      { label: 'Centre Notifications Push', path: '/notifications' }
+    ]
+  },
+  {
+    id: 'cms',
+    label: 'CMS — Contenu',
+    icon: Layers,
+    pages: [
+      { label: 'Pages publicitaires', path: '/cms/ads' },
+      { label: 'Bannières Dashboard', path: '/cms/company-banners' },
+      { label: 'Pages dynamiques (CGU, etc.)', path: '/cms/pages' },
+      { label: 'Langues', path: '/cms/languages' },
+      { label: 'Traductions App mobile', path: '/cms/translations' },
+      { label: 'Zones géographiques', path: '/cms/locations' },
+      { label: 'Zones suggérées', path: '/cms/suggested-locations' },
+      { label: 'Catégories métiers', path: '/cms/categories' },
+      { label: 'Paramètres & Quotas', path: '/cms/quotas' },
+      { label: 'Champs floutés', path: '/cms/blur' }
+    ]
+  },
+  {
+    id: 'stats',
+    label: 'Statistiques & Analytics',
+    icon: BarChart3,
+    pages: [
+      { label: 'Tableau Analytique', path: '/stats' },
+      { label: 'Rapports & Exports CSV', path: '/stats/exports' }
+    ]
+  },
+  {
+    id: 'audit-logs',
+    label: 'Journal d\'audit & Logs',
+    icon: ShieldCheck,
+    pages: [
+      { label: 'Journal d\'audit de sécurité', path: '/audit-logs' }
+    ]
+  },
+  {
+    id: 'settings',
+    label: 'Paramètres',
+    icon: Settings,
+    pages: [
+      { label: 'Comptes administrateurs & Staff', path: '/settings/staff' },
+      { label: 'Variables système', path: '/settings/system' }
+    ]
+  }
+];
+
+// Liste de toutes les routes disponibles
+const ALL_PAGE_PATHS = ADMIN_NAVIGATION_MODULES.flatMap(m => m.pages.map(p => p.path));
 
 export const StaffManagementPage = () => {
   const [staffList, setStaffList] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [countries, setCountries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -22,10 +190,14 @@ export const StaffManagementPage = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Delete & Suspend confirmation states
+  // Selected routes for permissions
+  const [selectedRoutes, setSelectedRoutes] = useState([]);
+  const [expandedModules, setExpandedModules] = useState({});
+
+  // Confirmation modal state
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
-    type: null, // 'delete', 'suspend', 'reactivate'
+    type: null,
     staff: null,
     loading: false,
   });
@@ -75,6 +247,7 @@ export const StaffManagementPage = () => {
 
   const handleOpenCreateModal = () => {
     setEditingStaff(null);
+    setSelectedRoutes([...ALL_PAGE_PATHS]); // Par défaut, tout est coché
     setFormData({
       first_name: '',
       last_name: '',
@@ -89,6 +262,11 @@ export const StaffManagementPage = () => {
 
   const handleOpenEditModal = (staff) => {
     setEditingStaff(staff);
+    const existingRoutes = Array.isArray(staff.allowed_routes) && staff.allowed_routes.length > 0
+      ? staff.allowed_routes
+      : (staff.role?.name === 'super_admin' ? [...ALL_PAGE_PATHS] : ['/dashboard']);
+    setSelectedRoutes(existingRoutes);
+
     setFormData({
       first_name: staff.first_name || '',
       last_name: staff.last_name || '',
@@ -101,19 +279,58 @@ export const StaffManagementPage = () => {
     setShowModal(true);
   };
 
+  // Toggle all pages
+  const handleSelectAllRoutes = () => {
+    setSelectedRoutes([...ALL_PAGE_PATHS]);
+  };
+
+  const handleDeselectAllRoutes = () => {
+    setSelectedRoutes([]);
+  };
+
+  // Toggle a single page
+  const handleToggleRoute = (path) => {
+    setSelectedRoutes(prev =>
+      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
+    );
+  };
+
+  // Toggle an entire module
+  const handleToggleModule = (mod) => {
+    const modulePaths = mod.pages.map(p => p.path);
+    const allSelected = modulePaths.every(p => selectedRoutes.includes(p));
+
+    if (allSelected) {
+      setSelectedRoutes(prev => prev.filter(p => !modulePaths.includes(p)));
+    } else {
+      setSelectedRoutes(prev => Array.from(new Set([...prev, ...modulePaths])));
+    }
+  };
+
+  const toggleModuleAccordion = (modId) => {
+    setExpandedModules(prev => ({ ...prev, [modId]: !prev[modId] }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSubmitting(true);
       setError('');
 
+      if (selectedRoutes.length === 0) {
+        setError('Veuillez cocher au moins une page accessible pour cet administrateur.');
+        setSubmitting(false);
+        return;
+      }
+
       if (editingStaff) {
         await apiClient.put(`/v1/admin/staff/${editingStaff.id}`, {
           first_name: formData.first_name,
           last_name: formData.last_name,
           role_id: Number(formData.role_id),
+          allowed_routes: selectedRoutes,
         });
-        showSuccess('Compte administrateur mis à jour avec succès.');
+        showSuccess('Compte et autorisations mis à jour avec succès.');
       } else {
         await apiClient.post('/v1/admin/staff', {
           first_name: formData.first_name,
@@ -123,6 +340,7 @@ export const StaffManagementPage = () => {
           country_id: Number(formData.country_id),
           role_id: Number(formData.role_id),
           password: formData.password,
+          allowed_routes: selectedRoutes,
         });
         showSuccess('Nouveau compte administrateur créé avec succès.');
       }
@@ -190,9 +408,9 @@ export const StaffManagementPage = () => {
               <UserCog className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Comptes Administrateurs & Staff</h1>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight">Comptes Administrateurs & Droits d'Accès</h1>
               <p className="text-gray-500 text-sm mt-0.5">
-                Gérez les accès, rôles et permissions de votre équipe d'administration SAMRE
+                Attribuez des autorisations sur-mesure en cochant les menus et sous-menus accessibles
               </p>
             </div>
           </div>
@@ -201,8 +419,8 @@ export const StaffManagementPage = () => {
             onClick={handleOpenCreateModal}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-sm shadow-blue-500/20"
           >
-            <UserPlus size={16} />
-            <span>Ajouter un administrateur</span>
+            <Plus size={16} />
+            <span>Créer un administrateur</span>
           </button>
         </div>
 
@@ -227,7 +445,7 @@ export const StaffManagementPage = () => {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Rechercher par nom, email ou téléphone..."
+                placeholder="Rechercher par nom, prénom, email ou téléphone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition"
@@ -268,7 +486,7 @@ export const StaffManagementPage = () => {
           </div>
         </div>
 
-        {/* ── Staff Table ── */}
+        {/* ── Staff Table (Without IDs) ── */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-16 text-center text-gray-500 flex flex-col items-center gap-3">
@@ -286,10 +504,10 @@ export const StaffManagementPage = () => {
                 <thead>
                   <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
                     <th className="px-6 py-3.5">Administrateur</th>
-                    <th className="px-6 py-3.5">Rôle & Permissions</th>
+                    <th className="px-6 py-3.5">Rôle</th>
+                    <th className="px-6 py-3.5">Pages & Menus Autorisés</th>
                     <th className="px-6 py-3.5">Contact</th>
                     <th className="px-6 py-3.5">Statut</th>
-                    <th className="px-6 py-3.5">Création</th>
                     <th className="px-6 py-3.5 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -298,17 +516,19 @@ export const StaffManagementPage = () => {
                     const fullName = `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Admin';
                     const isSuspended = staff.user?.status === 'suspended';
                     const roleName = staff.role?.name || 'Administrateur';
+                    const hasFullAccess = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
+                    const countPages = hasFullAccess ? ALL_PAGE_PATHS.length : (staff.allowed_routes?.length || 0);
 
                     return (
                       <tr key={staff.id} className="hover:bg-blue-50/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+                            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-sm">
                               {staff.first_name?.[0]?.toUpperCase()}{staff.last_name?.[0]?.toUpperCase()}
                             </div>
                             <div>
                               <div className="font-bold text-gray-900">{fullName}</div>
-                              <div className="text-xs text-gray-400">ID #{staff.id} • User #{staff.user_id}</div>
+                              <div className="text-xs text-gray-500 font-medium">{staff.user?.email || 'N/A'}</div>
                             </div>
                           </div>
                         </td>
@@ -321,15 +541,23 @@ export const StaffManagementPage = () => {
                         </td>
 
                         <td className="px-6 py-4">
-                          <div className="flex flex-col gap-1 text-xs text-gray-600 font-medium">
-                            <div className="flex items-center gap-1.5">
-                              <Mail size={12} className="text-gray-400" />
-                              <span>{staff.user?.email || 'N/A'}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <Phone size={12} className="text-gray-400" />
-                              <span>{staff.user?.phone || 'N/A'}</span>
-                            </div>
+                          {hasFullAccess ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                              <CheckCircle2 size={12} />
+                              <span>Accès Intégral ({ALL_PAGE_PATHS.length} pages)</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                              <Layers size={12} />
+                              <span>{countPages} page{countPages > 1 ? 's' : ''} autorisée{countPages > 1 ? 's' : ''}</span>
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
+                            <Phone size={13} className="text-gray-400" />
+                            <span>{staff.user?.phone || 'N/A'}</span>
                           </div>
                         </td>
 
@@ -347,15 +575,11 @@ export const StaffManagementPage = () => {
                           )}
                         </td>
 
-                        <td className="px-6 py-4 text-xs text-gray-500">
-                          {staff.created_at ? new Date(staff.created_at).toLocaleDateString('fr-FR') : 'N/A'}
-                        </td>
-
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleOpenEditModal(staff)}
-                              title="Modifier les informations"
+                              title="Modifier les autorisations et informations"
                               className="p-1.5 hover:bg-gray-100 text-gray-600 hover:text-blue-600 rounded-lg transition"
                             >
                               <Edit size={16} />
@@ -397,14 +621,15 @@ export const StaffManagementPage = () => {
           )}
         </div>
 
-        {/* ── Modal Création / Modification Staff ── */}
+        {/* ── Modal Création / Modification Staff avec Sélecteur de Menus & Sous-menus ── */}
         {showModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex justify-between items-center mb-5 pb-3 border-b border-gray-100">
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 my-auto flex flex-col max-h-[92vh]">
+              
+              <div className="flex justify-between items-center pb-3 border-b border-gray-100">
                 <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
                   <Shield className="text-blue-600" size={20} />
-                  <span>{editingStaff ? 'Modifier le compte staff' : 'Ajouter un nouvel administrateur'}</span>
+                  <span>{editingStaff ? 'Modifier les accès administrateur' : 'Créer un administrateur & droits d\'accès'}</span>
                 </h2>
                 <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 p-1">
                   ✕
@@ -412,13 +637,15 @@ export const StaffManagementPage = () => {
               </div>
 
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-lg flex items-center gap-2">
+                <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-lg flex items-center gap-2">
                   <AlertCircle size={14} />
                   <span>{error}</span>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+              <form id="staff-form" onSubmit={handleSubmit} className="overflow-y-auto flex-1 py-4 space-y-4 text-sm pr-1">
+                
+                {/* Informations de base */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Prénom *</label>
@@ -451,7 +678,7 @@ export const StaffManagementPage = () => {
                       <input
                         type="email"
                         required
-                        placeholder="admin@samre.tg"
+                        placeholder="collaborateur@samre.tg"
                         value={formData.email}
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium"
@@ -460,7 +687,7 @@ export const StaffManagementPage = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">Téléphone *</label>
+                        <label className="block text-xs font-bold text-gray-700 mb-1">Numéro de téléphone *</label>
                         <input
                           type="text"
                           required
@@ -486,44 +713,144 @@ export const StaffManagementPage = () => {
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Rôle Administrateur *</label>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Rôle Principal</label>
                   <select
                     required
                     value={formData.role_id}
                     onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium bg-white"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium bg-white text-sm"
                   >
                     {roles.map(r => (
                       <option key={r.id} value={r.id}>
-                        {r.name} {r.description ? `— ${r.description}` : ''}
+                        {r.name} {r.description ? `(${r.description})` : ''}
                       </option>
                     ))}
                   </select>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition"
-                  >
-                    Annuler
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-sm"
-                  >
-                    {submitting && <Loader2 size={14} className="animate-spin" />}
-                    <span>{editingStaff ? 'Enregistrer les modifications' : 'Créer l\'administrateur'}</span>
-                  </button>
+                {/* ── SÉLECTEUR DE MENUS & SOUS-MENUS ACCESSIBLES ── */}
+                <div className="pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                        <Layers size={14} className="text-blue-600" />
+                        <span>Pages et Menus Autorisés ({selectedRoutes.length} sur {ALL_PAGE_PATHS.length})</span>
+                      </label>
+                      <p className="text-[11px] text-gray-500">
+                        Cochez les sections auxquelles ce collaborateur aura accès dans sa barre latérale
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllRoutes}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded transition"
+                      >
+                        Tout cocher
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDeselectAllRoutes}
+                        className="text-[11px] font-bold text-gray-500 hover:text-gray-700 bg-gray-100 px-2 py-1 rounded transition"
+                      >
+                        Tout décocher
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 border border-gray-200 rounded-xl p-2.5 max-h-72 overflow-y-auto bg-slate-50/50">
+                    {ADMIN_NAVIGATION_MODULES.map((mod) => {
+                      const modulePaths = mod.pages.map(p => p.path);
+                      const isAllChecked = modulePaths.every(p => selectedRoutes.includes(p));
+                      const isPartiallyChecked = !isAllChecked && modulePaths.some(p => selectedRoutes.includes(p));
+                      const isExpanded = expandedModules[mod.id] ?? true;
+
+                      return (
+                        <div key={mod.id} className="bg-white border border-gray-200/80 rounded-xl overflow-hidden shadow-xs">
+                          {/* Module Header */}
+                          <div className="flex items-center justify-between p-2.5 bg-gray-50/80 hover:bg-gray-100/80 transition cursor-pointer">
+                            <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                              <input
+                                type="checkbox"
+                                checked={isAllChecked}
+                                ref={(el) => {
+                                  if (el) el.indeterminate = isPartiallyChecked;
+                                }}
+                                onChange={() => handleToggleModule(mod)}
+                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              />
+                              <mod.icon size={15} className="text-gray-600" />
+                              <span className="text-xs font-black text-gray-800">{mod.label}</span>
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() => toggleModuleAccordion(mod.id)}
+                              className="text-gray-400 hover:text-gray-600 p-1"
+                            >
+                              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            </button>
+                          </div>
+
+                          {/* Submenus / Pages Checklist */}
+                          {isExpanded && (
+                            <div className="p-2.5 pl-8 space-y-1.5 border-t border-gray-100 bg-white">
+                              {mod.pages.map((page) => {
+                                const isChecked = selectedRoutes.includes(page.path);
+
+                                return (
+                                  <label
+                                    key={page.path}
+                                    className="flex items-center gap-2 cursor-pointer py-1 px-1.5 rounded hover:bg-blue-50/40 transition"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => handleToggleRoute(page.path)}
+                                      className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                    />
+                                    <span className={`text-xs ${isChecked ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
+                                      {page.label}
+                                    </span>
+                                    <code className="text-[10px] text-gray-400 ml-auto font-mono">{page.path}</code>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
+
               </form>
+
+              <div className="flex justify-between items-center pt-3 border-t border-gray-100 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition text-sm"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  form="staff-form"
+                  disabled={submitting}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"
+                >
+                  {submitting && <Loader2 size={14} className="animate-spin" />}
+                  <span>{editingStaff ? 'Enregistrer les autorisations' : 'Créer l\'administrateur'}</span>
+                </button>
+              </div>
+
             </div>
           </div>
         )}
 
-        {/* ── Modal de Confirmation Générique ── */}
+        {/* ── Modal Confirmation ── */}
         <ConfirmModal
           isOpen={confirmModal.isOpen}
           onClose={() => setConfirmModal({ isOpen: false, type: null, staff: null, loading: false })}
@@ -538,14 +865,14 @@ export const StaffManagementPage = () => {
           }
           message={
             confirmModal.type === 'delete'
-              ? 'Cette action supprimera irrévocablement le compte et toutes ses sessions actives.'
+              ? 'Cette action supprimera irrévocablement le compte et toutes ses autorisations.'
               : confirmModal.type === 'suspend'
-              ? 'L\'administrateur ne pourra plus se connecter au tableau de bord jusqu\'à réactivation.'
-              : 'L\'administrateur pourra à nouveau se connecter avec ses identifiants habituels.'
+              ? 'L\'administrateur ne pourra plus accéder à aucune page jusqu\'à sa réactivation.'
+              : 'L\'administrateur pourra à nouveau se connecter et retrouver ses pages autorisées.'
           }
           confirmLabel={
             confirmModal.type === 'delete'
-              ? 'Supprimer le compte'
+              ? 'Supprimer'
               : confirmModal.type === 'suspend'
               ? 'Suspendre'
               : 'Réactiver'

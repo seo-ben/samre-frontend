@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Users, Briefcase, CalendarDays, FileText,
@@ -199,10 +199,36 @@ export const Sidebar = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Filtrer les menus en fonction des routes autorisées du collaborateur
+  const authorizedNav = useMemo(() => {
+    // Si l'utilisateur est super_admin ou n'a pas de restriction explicite
+    if (!user || user.role === 'super_admin' || !user.allowed_routes || user.allowed_routes.includes('*')) {
+      return NAV;
+    }
+
+    const routes = Array.isArray(user.allowed_routes) ? user.allowed_routes : [];
+
+    return NAV.map(item => {
+      // Élément racine direct (sans sous-menus)
+      if (!item.children) {
+        return routes.includes(item.path) ? item : null;
+      }
+      // Élément avec sous-menus : filtrer uniquement les sous-menus autorisés
+      const allowedChildren = item.children.filter(c => routes.includes(c.path));
+      if (allowedChildren.length === 0) return null;
+
+      return {
+        ...item,
+        children: allowedChildren,
+      };
+    }).filter(Boolean);
+  }, [user]);
+
   const [openSections, setOpenSections] = useState(() => {
     // Ouvrir par défaut la section dont un enfant est actif
     const initial = {};
-    const activeSection = NAV.find(item =>
+    const activeSection = authorizedNav.find(item =>
       item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'))
     );
     if (activeSection) {
@@ -213,13 +239,13 @@ export const Sidebar = () => {
 
   // Synchroniser automatiquement l'accordéon lors du changement de page (n'ouvrir que le menu actif)
   useEffect(() => {
-    const activeSection = NAV.find(item =>
+    const activeSection = authorizedNav.find(item =>
       item.children?.some(c => location.pathname === c.path || location.pathname.startsWith(c.path + '/'))
     );
     if (activeSection) {
       setOpenSections({ [activeSection.id]: true });
     }
-  }, [location.pathname]);
+  }, [location.pathname, authorizedNav]);
 
   // Comportement accordéon exclusif : ouvrir une section ferme automatiquement les autres
   const toggleSection = useCallback((id) => {
@@ -304,7 +330,7 @@ export const Sidebar = () => {
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255,255,255,0.1) transparent',
         }}>
-          {NAV.map(item => (
+          {authorizedNav.map(item => (
             <NavSection
               key={item.id}
               item={item}
