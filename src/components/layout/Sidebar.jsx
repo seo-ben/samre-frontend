@@ -7,7 +7,8 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, ShieldCheck, Sparkles, Vote, Trash2, Handshake, Download
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, ShieldCheck, Sparkles, Vote, Trash2, Handshake, Download,
+  Lock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -362,7 +363,7 @@ export const Sidebar = () => {
 
 // ─── Section de navigation (avec ou sans sous-items) ─────────────────────────
 const NavSection = ({ item, collapsed, isOpen, onToggle, currentPath, sidebarStats }) => {
-  const Icon = item.icon;
+  const Icon = item.icon || Settings;
   const hasChildren = !!item.children;
 
   // Vérifie si un enfant est actif
@@ -432,7 +433,7 @@ const NavSection = ({ item, collapsed, isOpen, onToggle, currentPath, sidebarSta
 
 // ─── Sous-item ────────────────────────────────────────────────────────────────
 const SubItem = ({ child, currentPath, sidebarStats }) => {
-  const Icon = child.icon;
+  const Icon = child.icon || Settings;
   const isActive = currentPath === child.path || currentPath.startsWith(child.path + '/');
 
   const hasStats = sidebarStats !== null;
