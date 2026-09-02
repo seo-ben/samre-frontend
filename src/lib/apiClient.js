@@ -27,6 +27,9 @@ apiClient.interceptors.request.use(
 
 const formatUrls = (data, baseUrl) => {
   if (data === null || data === undefined) return data;
+  if (data instanceof Blob || (typeof ArrayBuffer !== 'undefined' && data instanceof ArrayBuffer)) {
+    return data;
+  }
   if (typeof data === 'string') {
     let url = data;
     if (url.startsWith('/storage/')) {
