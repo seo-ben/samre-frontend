@@ -542,12 +542,16 @@ export const Header = () => {
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div 
+            onClick={() => navigate('/settings/profile')}
+            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+            title="Accéder à mon profil administrateur"
+          >
             <div className="header-user-info" style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '13px', fontWeight: '600' }}>{fullName}</div>
               <div style={{ fontSize: '11px', color: 'var(--gray-medium)' }}>{user?.role ?? 'Administrateur'}</div>
             </div>
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1A6FD4', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1A6FD4', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', boxShadow: '0 2px 6px rgba(26, 111, 212, 0.25)' }}>
               {initials}
             </div>
           </div>

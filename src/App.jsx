@@ -38,6 +38,9 @@ import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter
 import { AuditLogsPage } from './pages/AuditLogs'
 import { NotificationsCenter } from './pages/NotificationsCenter'
 import { AnalyticsPage } from './pages/Analytics'
+import { StaffManagementPage } from './pages/StaffManagement'
+import { AdminProfilePage } from './pages/AdminProfile'
+import { AdminPasswordPage } from './pages/AdminPassword'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
@@ -154,8 +157,11 @@ function App() {
       <Route path="/stats/exports"      element={<Protected><AnalyticsPage defaultTab="exports" /></Protected>} />
 
       {/* ── Paramètres ────────────────────────── */}
-      <Route path="/settings/language" element={<Protected><ComingSoon title="Langue du panel" /></Protected>} />
+      <Route path="/settings/staff"    element={<Protected><StaffManagementPage /></Protected>} />
+      <Route path="/settings/profile"  element={<Protected><AdminProfilePage /></Protected>} />
+      <Route path="/settings/password" element={<Protected><AdminPasswordPage /></Protected>} />
       <Route path="/settings/system"   element={<Protected><SystemSettings /></Protected>} />
+      <Route path="/settings/language" element={<Protected><ComingSoon title="Langue du panel" /></Protected>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
