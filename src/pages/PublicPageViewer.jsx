@@ -119,77 +119,90 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
             </div>
           </div>
         ) : (
-          <article className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-12 space-y-8">
+          <article className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-12 relative overflow-hidden">
             
-            {/* Header / Title Banner */}
-            <div className="border-b border-slate-100 pb-6 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider">
-                <Shield size={14} />
-                <span>Document Légal & Conventionnel SAMRE</span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
-                {page.title}
-              </h1>
-
-              {page.excerpt && (
-                <p className="text-sm sm:text-base text-slate-500 font-medium leading-relaxed">
-                  {page.excerpt}
-                </p>
-              )}
-
-              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-400 font-medium">
-                <div className="flex items-center gap-1.5">
-                  <Calendar size={13} className="text-slate-400" />
-                  <span>
-                    Dernière mise à jour : {page.updated_at ? new Date(page.updated_at).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    }) : 'Récente'}
-                  </span>
-                </div>
-
-                <span>•</span>
-
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono font-bold text-[11px]">
-                    Version {page.version || '1.0'}
-                  </span>
-                </div>
-
-                <span>•</span>
-
-                <div>
-                  Applicable à : <strong className="text-slate-700">
-                    {page.target_audience === 'candidates' ? 'Candidats & Secrétaires' : page.target_audience === 'companies' ? 'Établissements de santé' : 'Tous les utilisateurs'}
-                  </strong>
-                </div>
-              </div>
+            {/* Filigrane officiel SAMRE en arrière-plan */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden opacity-[0.04] print:opacity-[0.06]">
+              <img
+                src="/logo-samre.png"
+                alt=""
+                aria-hidden="true"
+                className="w-[500px] max-w-none h-auto object-contain filter grayscale"
+              />
             </div>
 
-            {/* Rendered HTML Content */}
-            <div
-              className="prose prose-slate max-w-none text-slate-700 text-sm sm:text-[15px] leading-relaxed space-y-4
-                [&>h2]:text-lg [&>h2]:font-extrabold [&>h2]:text-slate-900 [&>h2]:mt-8 [&>h2]:mb-3 [&>h2]:pt-4 [&>h2]:border-t [&>h2]:border-slate-100
-                [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-slate-800 [&>h3]:mt-6 [&>h3]:mb-2
-                [&>p]:text-slate-600 [&>p]:leading-relaxed
-                [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-1.5 [&>ul]:text-slate-600
-                [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-1.5 [&>ol]:text-slate-600
-                [&>blockquote]:border-l-4 [&>blockquote]:border-blue-600 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-slate-600
-                [&>code]:bg-slate-100 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-xs [&>code]:font-mono [&>code]:text-blue-700
-              "
-              dangerouslySetInnerHTML={{ __html: page.content }}
-            />
+            {/* Contenu au premier plan */}
+            <div className="relative z-10 space-y-8">
+              {/* Header / Title Banner */}
+              <div className="border-b border-slate-100 pb-6 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-600 uppercase tracking-wider">
+                  <Shield size={14} />
+                  <span>Document Légal & Conventionnel SAMRE</span>
+                </div>
 
-            {/* Document Footer Notice */}
-            <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-              <div className="flex items-center gap-2">
-                <Globe size={14} className="text-blue-600" />
-                <span>Plateforme certifiée • Conformité APDP Togo & OHADA</span>
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-tight">
+                  {page.title}
+                </h1>
+
+                {page.excerpt && (
+                  <p className="text-sm sm:text-base text-slate-500 font-medium leading-relaxed">
+                    {page.excerpt}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap items-center gap-4 pt-2 text-xs text-slate-400 font-medium">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={13} className="text-slate-400" />
+                    <span>
+                      Dernière mise à jour : {page.updated_at ? new Date(page.updated_at).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      }) : 'Récente'}
+                    </span>
+                  </div>
+
+                  <span>•</span>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono font-bold text-[11px]">
+                      Version {page.version || '1.0'}
+                    </span>
+                  </div>
+
+                  <span>•</span>
+
+                  <div>
+                    Applicable à : <strong className="text-slate-700">
+                      {page.target_audience === 'candidates' ? 'Candidats & Secrétaires' : page.target_audience === 'companies' ? 'Établissements de santé' : 'Tous les utilisateurs'}
+                    </strong>
+                  </div>
+                </div>
               </div>
-              <div>
-                Réf : <code>SAMRE-DOC-{page.slug?.toUpperCase()}-v{page.version || '1.0'}</code>
+
+              {/* Rendered HTML Content */}
+              <div
+                className="prose prose-slate max-w-none text-slate-700 text-sm sm:text-[15px] leading-relaxed space-y-4
+                  [&>h2]:text-lg [&>h2]:font-extrabold [&>h2]:text-slate-900 [&>h2]:mt-8 [&>h2]:mb-3 [&>h2]:pt-4 [&>h2]:border-t [&>h2]:border-slate-100
+                  [&>h3]:text-base [&>h3]:font-bold [&>h3]:text-slate-800 [&>h3]:mt-6 [&>h3]:mb-2
+                  [&>p]:text-slate-600 [&>p]:leading-relaxed
+                  [&>ul]:list-disc [&>ul]:pl-5 [&>ul]:space-y-1.5 [&>ul]:text-slate-600
+                  [&>ol]:list-decimal [&>ol]:pl-5 [&>ol]:space-y-1.5 [&>ol]:text-slate-600
+                  [&>blockquote]:border-l-4 [&>blockquote]:border-blue-600 [&>blockquote]:pl-4 [&>blockquote]:italic [&>blockquote]:text-slate-600
+                  [&>code]:bg-slate-100 [&>code]:px-1.5 [&>code]:py-0.5 [&>code]:rounded [&>code]:text-xs [&>code]:font-mono [&>code]:text-blue-700
+                "
+                dangerouslySetInnerHTML={{ __html: page.content }}
+              />
+
+              {/* Document Footer Notice */}
+              <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Globe size={14} className="text-blue-600" />
+                  <span>Plateforme certifiée • Conformité APDP Togo & OHADA</span>
+                </div>
+                <div>
+                  Réf : <code>SAMRE-DOC-{page.slug?.toUpperCase()}-v{page.version || '1.0'}</code>
+                </div>
               </div>
             </div>
 
