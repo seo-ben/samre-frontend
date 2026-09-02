@@ -41,6 +41,8 @@ import { AnalyticsPage } from './pages/Analytics'
 import { StaffManagementPage } from './pages/StaffManagement'
 import { AdminProfilePage } from './pages/AdminProfile'
 import { AdminPasswordPage } from './pages/AdminPassword'
+import { DynamicPagesManagementPage } from './pages/DynamicPagesManagement'
+import { PublicPageViewer } from './pages/PublicPageViewer'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
@@ -50,8 +52,14 @@ const Protected = ({ children }) => (
 function App() {
   return (
     <Routes>
-      {/* Page publique */}
+      {/* ── Pages Publiques Légales & Institutionnelles (Accessibles sans login) ── */}
       <Route path="/" element={<Login />} />
+      <Route path="/p/:slug" element={<PublicPageViewer />} />
+      <Route path="/cgu" element={<PublicPageViewer forcedSlug="cgu" />} />
+      <Route path="/privacy" element={<PublicPageViewer forcedSlug="privacy-policy" />} />
+      <Route path="/politique-de-confidentialite" element={<PublicPageViewer forcedSlug="privacy-policy" />} />
+      <Route path="/mentions-legales" element={<PublicPageViewer forcedSlug="mentions-legales" />} />
+      <Route path="/a-propos" element={<PublicPageViewer forcedSlug="about-us" />} />
 
       {/* ── Dashboard ─────────────────────────── */}
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
@@ -131,7 +139,7 @@ function App() {
       {/* ── CMS & Contenu ───────────────────────── */}
       <Route path="/cms/ads"          element={<Protected><AdPages /></Protected>} />
       <Route path="/cms/company-banners" element={<Protected><CompanyBanners /></Protected>} />
-      <Route path="/cms/pages"        element={<Protected><ComingSoon title="Pages dynamiques" /></Protected>} />
+      <Route path="/cms/pages"        element={<Protected><DynamicPagesManagementPage /></Protected>} />
       <Route path="/cms/languages"    element={<Protected><LanguagesPage /></Protected>} />
       <Route path="/cms/translations" element={<Protected><StaticContentsPage /></Protected>} />
       <Route path="/cms/locations"    element={<Protected><LocationsPage /></Protected>} />

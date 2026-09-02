@@ -170,12 +170,10 @@ const NAV = [
     label: 'Paramètres',
     icon: Settings,
     children: [
-      { label: 'Journal d\'audit', path: '/audit-logs', icon: ShieldCheck },
-      { label: 'Paramètres système', path: '/cms/quotas',     icon: Sliders },
-      { label: 'Comptes admin',    path: '/settings/staff',    icon: UserCog },
-      { label: 'Mon profil',       path: '/settings/profile',  icon: UserCheck },
-      { label: 'Mot de passe',     path: '/settings/password', icon: Settings },
-      { label: 'Langue du panel',  path: '/settings/language', icon: Languages },
+      { label: 'Comptes admin',     path: '/settings/staff',    icon: UserCog },
+      { label: 'Mon profil',        path: '/settings/profile',  icon: UserCheck },
+      { label: 'Mot de passe',      path: '/settings/password', icon: Settings },
+      { label: 'Variables système', path: '/settings/system',   icon: Sliders },
     ],
   },
 ];
