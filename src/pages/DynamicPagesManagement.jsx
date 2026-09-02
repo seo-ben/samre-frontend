@@ -7,8 +7,14 @@ import {
   FileText, Shield, Globe, Users, Clock, ArrowRight, Sparkles
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export const DynamicPagesManagementPage = () => {
+  const { can } = useAuth();
+  const canCreate = can('create', '/cms/pages');
+  const canEdit = can('edit', '/cms/pages');
+  const canDelete = can('delete', '/cms/pages');
+
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -194,13 +200,15 @@ export const DynamicPagesManagementPage = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-sm shadow-blue-500/20"
-          >
-            <Plus size={16} />
-            <span>Créer une nouvelle page</span>
-          </button>
+          {canCreate && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-sm shadow-blue-500/20"
+            >
+              <Plus size={16} />
+              <span>Créer une nouvelle page</span>
+            </button>
+          )}
         </div>
 
         {/* ── Alerts Banner ── */}
@@ -414,15 +422,17 @@ export const DynamicPagesManagementPage = () => {
                               <ExternalLink size={16} />
                             </a>
 
-                            <button
-                              onClick={() => handleOpenEditModal(page)}
-                              title="Modifier le contenu"
-                              className="p-1.5 hover:bg-gray-100 text-gray-600 hover:text-blue-600 rounded-lg transition"
-                            >
-                              <Edit size={16} />
-                            </button>
+                            {canEdit && (
+                              <button
+                                onClick={() => handleOpenEditModal(page)}
+                                title="Modifier le contenu"
+                                className="p-1.5 hover:bg-gray-100 text-gray-600 hover:text-blue-600 rounded-lg transition"
+                              >
+                                <Edit size={16} />
+                              </button>
+                            )}
 
-                            {!isProtected && (
+                            {!isProtected && canDelete && (
                               <button
                                 onClick={() => setDeleteModal({ isOpen: true, page, loading: false })}
                                 title="Supprimer la page"

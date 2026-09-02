@@ -13,6 +13,7 @@ import {
   Folder, FolderOpen, Minus, ListTree
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
 
 // Définition globale des actions possibles
 export const ACTION_DEFINITIONS = {
@@ -228,6 +229,12 @@ ADMIN_MODULES_CONFIG.forEach(mod => {
 });
 
 export const StaffManagementPage = () => {
+  const { can } = useAuth();
+  const canCreate = can('create', '/settings/staff');
+  const canEdit = can('edit', '/settings/staff');
+  const canSuspend = can('suspend', '/settings/staff') || can('edit', '/settings/staff');
+  const canDelete = can('delete', '/settings/staff');
+
   const [staffList, setStaffList] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -673,13 +680,15 @@ export const StaffManagementPage = () => {
             </div>
           </div>
 
-          <button
-            onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-md shadow-blue-500/20 active:scale-98 cursor-pointer"
-          >
-            <Plus size={18} />
-            <span>Créer un administrateur</span>
-          </button>
+          {canCreate && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-md shadow-blue-500/20 active:scale-98 cursor-pointer"
+            >
+              <Plus size={18} />
+              <span>Créer un administrateur</span>
+            </button>
+          )}
         </div>
 
         {/* ── Alertes & Notifications ── */}
@@ -853,39 +862,45 @@ export const StaffManagementPage = () => {
 
                         <td className="px-4 py-2 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => handleOpenEditModal(staff)}
-                              title="Modifier les droits d'accès & informations"
-                              className="p-1.5 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition cursor-pointer"
-                            >
-                              <Edit size={15} />
-                            </button>
-
-                            {isSuspended ? (
+                            {canEdit && (
                               <button
-                                onClick={() => setConfirmModal({ isOpen: true, type: 'reactivate', staff, loading: false })}
-                                title="Réactiver le compte"
-                                className="p-1.5 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition cursor-pointer"
+                                onClick={() => handleOpenEditModal(staff)}
+                                title="Modifier les droits d'accès & informations"
+                                className="p-1.5 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition cursor-pointer"
                               >
-                                <CheckCircle2 size={15} />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => setConfirmModal({ isOpen: true, type: 'suspend', staff, loading: false })}
-                                title="Suspendre les accès"
-                                className="p-1.5 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-lg transition cursor-pointer"
-                              >
-                                <AlertTriangle size={15} />
+                                <Edit size={15} />
                               </button>
                             )}
 
-                            <button
-                              onClick={() => setConfirmModal({ isOpen: true, type: 'delete', staff, loading: false })}
-                              title="Supprimer définitivement"
-                              className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition cursor-pointer"
-                            >
-                              <Trash2 size={15} />
-                            </button>
+                            {canSuspend && (
+                              isSuspended ? (
+                                <button
+                                  onClick={() => setConfirmModal({ isOpen: true, type: 'reactivate', staff, loading: false })}
+                                  title="Réactiver le compte"
+                                  className="p-1.5 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition cursor-pointer"
+                                >
+                                  <CheckCircle2 size={15} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setConfirmModal({ isOpen: true, type: 'suspend', staff, loading: false })}
+                                  title="Suspendre les accès"
+                                  className="p-1.5 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-lg transition cursor-pointer"
+                                >
+                                  <AlertTriangle size={15} />
+                                </button>
+                              )
+                            )}
+
+                            {canDelete && (
+                              <button
+                                onClick={() => setConfirmModal({ isOpen: true, type: 'delete', staff, loading: false })}
+                                title="Supprimer définitivement"
+                                className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition cursor-pointer"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

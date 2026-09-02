@@ -9,8 +9,16 @@ import {
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import CreateEventModal from '../components/events/CreateEventModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export const EventsPage = () => {
+  const { can } = useAuth();
+  const canCreate = can('create', '/events');
+  const canEdit = can('edit', '/events');
+  const canValidate = can('validate', '/events') || can('edit', '/events');
+  const canDelete = can('delete', '/events');
+  const hasAnyAction = canEdit || canValidate || canDelete;
+
   const [events, setEvents] = useState([]);
   const [categories, setCategories] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -248,20 +256,22 @@ export const EventsPage = () => {
               <option value="upcoming">Trier par : Proches à venir (date)</option>
               <option value="oldest">Trier par : Plus anciens</option>
             </select>
-            <button 
-              onClick={() => {
-                setEventToEdit(null);
-                setIsCreateModalOpen(true);
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
-                background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px',
-                fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-              }}
-            >
-              <Plus size={18} />
-              Nouvel événement
-            </button>
+            {canCreate && (
+              <button 
+                onClick={() => {
+                  setEventToEdit(null);
+                  setIsCreateModalOpen(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
+                  background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '8px',
+                  fontSize: '14px', fontWeight: '600', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}
+              >
+                <Plus size={18} />
+                Nouvel événement
+              </button>
+            )}
           </div>
         </div>
 
@@ -369,80 +379,82 @@ export const EventsPage = () => {
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', color: '#94a3b8', position: 'relative' }}>
-                      <MoreVertical 
-                        size={16} 
-                        style={{ cursor: 'pointer' }} 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveMenuId(activeMenuId === ev.id ? null : ev.id);
-                        }}
-                      />
-                      {activeMenuId === ev.id && (
-                        <div style={{
-                          position: 'absolute', top: '24px', right: 0, background: '#fff',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0',
-                          borderRadius: '8px', zIndex: 50, minWidth: '160px', overflow: 'hidden'
-                        }}>
-                          {ev.status === 'pending' && (
-                            <>
+                    {hasAnyAction && (
+                      <div style={{ display: 'flex', gap: '8px', color: '#94a3b8', position: 'relative' }}>
+                        <MoreVertical 
+                          size={16} 
+                          style={{ cursor: 'pointer' }} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuId(activeMenuId === ev.id ? null : ev.id);
+                          }}
+                        />
+                        {activeMenuId === ev.id && (
+                          <div style={{
+                            position: 'absolute', top: '24px', right: 0, background: '#fff',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', border: '1px solid #e2e8f0',
+                            borderRadius: '8px', zIndex: 50, minWidth: '160px', overflow: 'hidden'
+                          }}>
+                            {canValidate && ev.status === 'pending' && (
                               <div onClick={(e) => handleChangeStatus(ev.id, 'published', e)} style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}>✅ Valider</div>
-                            </>
-                          )}
-                          <div 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEventToEdit(ev);
-                              setIsCreateModalOpen(true);
-                              setActiveMenuId(null);
-                            }} 
-                            style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                          >
-                            ✏️ Modifier
+                            )}
+                            {canEdit && (
+                              <div 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEventToEdit(ev);
+                                  setIsCreateModalOpen(true);
+                                  setActiveMenuId(null);
+                                }} 
+                                style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                              >
+                                ✏️ Modifier
+                              </div>
+                            )}
+                            {canValidate && ev.status === 'deleted' && (
+                              <div 
+                                onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
+                                style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                              >
+                                ♻️ Restaurer / Publier
+                              </div>
+                            )}
+                            {canValidate && ev.status !== 'published' && ev.status !== 'deleted' && (
+                              <div 
+                                onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
+                                style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                              >
+                                ▶️ Publier / Valider
+                              </div>
+                            )}
+                            {canValidate && ev.status !== 'paused' && ev.status !== 'deleted' && (
+                              <div 
+                                onClick={(e) => handleChangeStatus(ev.id, 'paused', e)}
+                                style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                              >
+                                ⏸️ Mettre en pause
+                              </div>
+                            )}
+                            {canValidate && ev.status !== 'rejected' && ev.status !== 'deleted' && (
+                              <div 
+                                onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)}
+                                style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                              >
+                                ❌ Rejeter
+                              </div>
+                            )}
+                            {canDelete && ev.status !== 'deleted' && (
+                              <div 
+                                onClick={(e) => handleDelete(ev.id, e)}
+                                style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer' }}
+                              >
+                                🗑️ Supprimer
+                              </div>
+                            )}
                           </div>
-                          {ev.status === 'deleted' && (
-                            <div 
-                              onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                            >
-                              ♻️ Restaurer / Publier
-                            </div>
-                          )}
-                          {ev.status !== 'published' && ev.status !== 'deleted' && (
-                            <div 
-                              onClick={(e) => handleChangeStatus(ev.id, 'published', e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#16a34a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                            >
-                              ▶️ Publier / Valider
-                            </div>
-                          )}
-                          {ev.status !== 'paused' && ev.status !== 'deleted' && (
-                            <div 
-                              onClick={(e) => handleChangeStatus(ev.id, 'paused', e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#0f172a', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                            >
-                              ⏸️ Mettre en pause
-                            </div>
-                          )}
-                          {ev.status !== 'rejected' && ev.status !== 'deleted' && (
-                            <div 
-                              onClick={(e) => handleChangeStatus(ev.id, 'rejected', e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                            >
-                              ❌ Rejeter
-                            </div>
-                          )}
-                          {ev.status !== 'deleted' && (
-                            <div 
-                              onClick={(e) => handleDelete(ev.id, e)}
-                              style={{ padding: '10px 12px', fontSize: '13px', color: '#dc2626', cursor: 'pointer' }}
-                            >
-                              🗑️ Supprimer
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

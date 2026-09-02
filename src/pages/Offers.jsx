@@ -9,8 +9,13 @@ import {
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import CreateOfferModal from '../components/offers/CreateOfferModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export const OffersPage = () => {
+  const { can } = useAuth();
+  const canCreate = can('create', '/offers');
+  const canEdit = can('edit', '/offers');
+
   const [offers, setOffers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [meta, setMeta] = useState(null);
@@ -182,16 +187,18 @@ export const OffersPage = () => {
               <option value="recent">Trier par : Récentes (création)</option>
               <option value="oldest">Trier par : Plus anciennes</option>
             </select>
-            <button 
-              onClick={() => setShowCreateModal(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
-                border: 'none', borderRadius: '8px', background: '#0052ff',
-                fontSize: '14px', fontWeight: '500', color: '#fff', cursor: 'pointer'
-              }}
-            >
-              <Plus size={16} /> Nouvelle offre
-            </button>
+            {canCreate && (
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px',
+                  border: 'none', borderRadius: '8px', background: '#0052ff',
+                  fontSize: '14px', fontWeight: '500', color: '#fff', cursor: 'pointer'
+                }}
+              >
+                <Plus size={16} /> Nouvelle offre
+              </button>
+            )}
           </div>
         </div>
 
@@ -437,14 +444,16 @@ export const OffersPage = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '16px', color: '#64748b' }}>
-                    <button 
-                      onClick={() => {
-                        setEditingOffer(selectedOffer);
-                        setShowCreateModal(true);
-                      }}
-                      style={{ padding: '6px 12px', background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '500' }}>
-                      <Edit3 size={14} /> Modifier
-                    </button>
+                    {canEdit && (
+                      <button 
+                        onClick={() => {
+                          setEditingOffer(selectedOffer);
+                          setShowCreateModal(true);
+                        }}
+                        style={{ padding: '6px 12px', background: '#f8fafc', color: '#334155', border: '1px solid #e2e8f0', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '500' }}>
+                        <Edit3 size={14} /> Modifier
+                      </button>
+                    )}
                   </div>
                 </div>
 

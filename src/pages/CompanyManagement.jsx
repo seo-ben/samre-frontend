@@ -6,8 +6,13 @@ import {
   ChevronLeft, ChevronRight, Filter, Award, Check, SlidersHorizontal
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 
 export function CompanyManagement() {
+  const { can } = useAuth();
+  const canEdit = can('edit', '/companies') || can('validate', '/companies');
+  const canValidate = can('validate', '/companies');
+
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -592,62 +597,111 @@ export function CompanyManagement() {
 
                       {/* Offres Internationales Toggle Button */}
                       <td style={{ padding: '8px 14px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => toggleInternational(comp.id, comp.can_publish_international)}
-                          disabled={actionLoading}
-                          style={{
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '11.5px',
-                            fontWeight: '600',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                            backgroundColor: comp.can_publish_international ? '#F3E8FF' : '#F1F5F9',
-                            color: comp.can_publish_international ? '#7E22CE' : '#64748B',
-                            border: `1px solid ${comp.can_publish_international ? '#D8B4FE' : '#CBD5E1'}`
-                          }}
-                          title={comp.can_publish_international ? "Cliquer pour révoquer l'autorisation internationale" : "Cliquer pour accorder l'autorisation de publication internationale"}
-                        >
-                          <Globe size={12} />
-                          <span>{comp.can_publish_international ? 'Autorisée' : 'Restreinte'}</span>
-                        </button>
+                        {canEdit ? (
+                          <button
+                            onClick={() => toggleInternational(comp.id, comp.can_publish_international)}
+                            disabled={actionLoading}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontSize: '11.5px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              backgroundColor: comp.can_publish_international ? '#F3E8FF' : '#F1F5F9',
+                              color: comp.can_publish_international ? '#7E22CE' : '#64748B',
+                              border: `1px solid ${comp.can_publish_international ? '#D8B4FE' : '#CBD5E1'}`
+                            }}
+                            title={comp.can_publish_international ? "Cliquer pour révoquer l'autorisation internationale" : "Cliquer pour accorder l'autorisation de publication internationale"}
+                          >
+                            <Globe size={12} />
+                            <span>{comp.can_publish_international ? 'Autorisée' : 'Restreinte'}</span>
+                          </button>
+                        ) : (
+                          <span
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontSize: '11.5px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              backgroundColor: comp.can_publish_international ? '#F3E8FF' : '#F1F5F9',
+                              color: comp.can_publish_international ? '#7E22CE' : '#64748B',
+                              border: `1px solid ${comp.can_publish_international ? '#D8B4FE' : '#CBD5E1'}`
+                            }}
+                          >
+                            <Globe size={12} />
+                            <span>{comp.can_publish_international ? 'Autorisée' : 'Restreinte'}</span>
+                          </span>
+                        )}
                       </td>
 
                       {/* Viabilité Toggle Button */}
                       <td style={{ padding: '8px 14px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => toggleViability(comp.id, comp.is_viable)}
-                          disabled={actionLoading}
-                          style={{
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '11.5px',
-                            fontWeight: '600',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s',
-                            backgroundColor: comp.is_viable ? '#DCFCE7' : '#FEF3C7',
-                            color: comp.is_viable ? '#15803D' : '#B45309',
-                            border: `1px solid ${comp.is_viable ? '#86EFAC' : '#FDE68A'}`
-                          }}
-                        >
-                          {comp.is_viable ? (
-                            <>
-                              <CheckCircle2 size={13} style={{ color: '#16A34A' }} />
-                              <span>Viable (Certifié)</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle size={13} style={{ color: '#D97706' }} />
-                              <span>Non Certifié</span>
-                            </>
-                          )}
-                        </button>
+                        {canValidate ? (
+                          <button
+                            onClick={() => toggleViability(comp.id, comp.is_viable)}
+                            disabled={actionLoading}
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontSize: '11.5px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s',
+                              backgroundColor: comp.is_viable ? '#DCFCE7' : '#FEF3C7',
+                              color: comp.is_viable ? '#15803D' : '#B45309',
+                              border: `1px solid ${comp.is_viable ? '#86EFAC' : '#FDE68A'}`
+                            }}
+                          >
+                            {comp.is_viable ? (
+                              <>
+                                <CheckCircle2 size={13} style={{ color: '#16A34A' }} />
+                                <span>Viable (Certifié)</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle size={13} style={{ color: '#D97706' }} />
+                                <span>Non Certifié</span>
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <span
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '8px',
+                              fontSize: '11.5px',
+                              fontWeight: '600',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '5px',
+                              backgroundColor: comp.is_viable ? '#DCFCE7' : '#FEF3C7',
+                              color: comp.is_viable ? '#15803D' : '#B45309',
+                              border: `1px solid ${comp.is_viable ? '#86EFAC' : '#FDE68A'}`
+                            }}
+                          >
+                            {comp.is_viable ? (
+                              <>
+                                <CheckCircle2 size={13} style={{ color: '#16A34A' }} />
+                                <span>Viable (Certifié)</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle size={13} style={{ color: '#D97706' }} />
+                                <span>Non Certifié</span>
+                              </>
+                            )}
+                          </span>
+                        )}
                       </td>
 
                       {/* Action : Voir Détails */}
@@ -983,26 +1037,40 @@ export function CompanyManagement() {
                       Autorise l'entreprise à publier des offres à l'étranger.
                     </span>
                   </div>
-                  <button
-                    onClick={() => toggleInternational(selectedCompany.id, selectedCompany.can_publish_international)}
-                    style={{
-                      padding: '6px 12px',
+                  {canEdit ? (
+                    <button
+                      onClick={() => toggleInternational(selectedCompany.id, selectedCompany.can_publish_international)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        backgroundColor: selectedCompany.can_publish_international ? '#9333EA' : '#CBD5E1',
+                        color: '#ffffff',
+                        border: 'none',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      <Globe size={13} />
+                      {selectedCompany.can_publish_international ? 'Autorisée' : 'Désactivée'}
+                    </button>
+                  ) : (
+                    <span style={{
+                      padding: '4px 10px',
                       borderRadius: '8px',
                       fontSize: '11.5px',
                       fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      backgroundColor: selectedCompany.can_publish_international ? '#9333EA' : '#CBD5E1',
-                      color: '#ffffff',
-                      border: 'none',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    <Globe size={13} />
-                    {selectedCompany.can_publish_international ? 'Autorisée' : 'Désactivée'}
-                  </button>
+                      backgroundColor: selectedCompany.can_publish_international ? '#FAF5FF' : '#F1F5F9',
+                      color: selectedCompany.can_publish_international ? '#9333EA' : '#64748B',
+                      border: '1px solid #E9D5FF'
+                    }}>
+                      {selectedCompany.can_publish_international ? 'Autorisée' : 'Désactivée'}
+                    </span>
+                  )}
                 </div>
 
                 {/* Section Contrôle : Viabilité */}
@@ -1026,26 +1094,40 @@ export function CompanyManagement() {
                         : 'Entreprise en cours d\'examen ou non certifiée.'}
                     </span>
                   </div>
-                  <button
-                    onClick={() => toggleViability(selectedCompany.id, selectedCompany.is_viable)}
-                    style={{
-                      padding: '6px 12px',
+                  {canValidate ? (
+                    <button
+                      onClick={() => toggleViability(selectedCompany.id, selectedCompany.is_viable)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        fontSize: '11.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        backgroundColor: selectedCompany.is_viable ? '#16A34A' : '#D97706',
+                        color: '#ffffff',
+                        border: 'none',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {selectedCompany.is_viable ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
+                      {selectedCompany.is_viable ? 'Viable' : 'Certifier'}
+                    </button>
+                  ) : (
+                    <span style={{
+                      padding: '4px 10px',
                       borderRadius: '8px',
                       fontSize: '11.5px',
                       fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px',
-                      backgroundColor: selectedCompany.is_viable ? '#16A34A' : '#D97706',
-                      color: '#ffffff',
-                      border: 'none',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {selectedCompany.is_viable ? <CheckCircle2 size={13} /> : <AlertCircle size={13} />}
-                    {selectedCompany.is_viable ? 'Viable' : 'Certifier'}
-                  </button>
+                      backgroundColor: selectedCompany.is_viable ? '#DCFCE7' : '#FEF3C7',
+                      color: selectedCompany.is_viable ? '#16A34A' : '#D97706',
+                      border: `1px solid ${selectedCompany.is_viable ? '#86EFAC' : '#FDE68A'}`
+                    }}>
+                      {selectedCompany.is_viable ? 'Viable' : 'Non certifiée'}
+                    </span>
+                  )}
                 </div>
               </div>
 

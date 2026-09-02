@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [logout]);
 
-  // ─── Vérification des droits d'action fins (view, create, edit, delete, export) ───
+  // ─── Vérification des droits d'action fins (view, create, edit, delete, export, suspend, validate) ───
   const can = useCallback((action, pagePath) => {
     if (!user) return false;
     const routes = user.allowed_routes;
@@ -103,10 +103,21 @@ export const AuthProvider = ({ children }) => {
 
     // Si les actions par page sont configurées
     if (actions && typeof actions === 'object' && !Array.isArray(actions)) {
-      const pageActions = actions[path];
+      let pageActions = actions[path];
+      if (!pageActions) {
+        // Fallback sur le préfixe parent (ex: /offers/pending -> chercher /offers)
+        const matchingKey = Object.keys(actions).find(k => path === k || path.startsWith(k + '/'));
+        if (matchingKey) {
+          pageActions = actions[matchingKey];
+        }
+      }
+
       if (Array.isArray(pageActions)) {
         return pageActions.includes(action);
       }
+
+      // Par défaut, autoriser la lecture si la page est accordée
+      return action === 'view';
     }
 
     return true;

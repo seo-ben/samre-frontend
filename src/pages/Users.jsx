@@ -48,7 +48,7 @@ export const UsersPage = () => {
   const [activeTab, setActiveTab] = useState('all'); // all, candidate, company, visitor, pending, suspended
 
   // Modal détails
-  const { user: currentAdmin } = useAuth();
+  const { user: currentAdmin, can } = useAuth();
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -74,9 +74,10 @@ export const UsersPage = () => {
     }
   }, [toast]);
 
-  const canEdit = currentAdmin?.role === 'super_admin' || currentAdmin?.permissions?.includes('users.update');
-  const canSuspend = currentAdmin?.role === 'super_admin' || currentAdmin?.permissions?.includes('users.suspend');
-  const canDelete = currentAdmin?.role === 'super_admin' || currentAdmin?.permissions?.includes('users.delete');
+  const canEdit = can('edit', '/users');
+  const canSuspend = can('suspend', '/users');
+  const canDelete = can('delete', '/users');
+  const canExport = can('export', '/users');
 
   const inputStyle = {
     width: '100%',
@@ -361,7 +362,7 @@ export const UsersPage = () => {
   const getCommuneName = (id) => { const c = communes.find(c => String(c.id) === String(id)); return c ? (c.translations?.[0]?.name || c.name || id) : (id || '—'); };
 
   const startEditing = () => {
-    if (!selectedUser) return;
+    if (!selectedUser || !canEdit) return;
     const usr = selectedUser;
     const form = {
       email: usr.email || '',
@@ -1023,28 +1024,30 @@ export const UsersPage = () => {
                               <Eye size={14} />
                             </button>
 
-                            {user.status === 'suspended' ? (
-                              <button
-                                onClick={() => handleReactivate(user.id)}
-                                title="Activer le compte"
-                                style={{
-                                  padding: '6px 10px', background: '#ecfdf5', border: '1px solid #a7f3d0',
-                                  borderRadius: '6px', cursor: 'pointer', color: '#059669', display: 'flex', alignItems: 'center'
-                                }}
-                              >
-                                <Unlock size={14} />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleSuspend(user.id)}
-                                title="Suspendre le compte"
-                                style={{
-                                  padding: '6px 10px', background: '#fef2f2', border: '1px solid #fecaca',
-                                  borderRadius: '6px', cursor: 'pointer', color: '#dc2626', display: 'flex', alignItems: 'center'
-                                }}
-                              >
-                                <Lock size={14} />
-                              </button>
+                            {canSuspend && (
+                              user.status === 'suspended' ? (
+                                <button
+                                  onClick={() => handleReactivate(user.id)}
+                                  title="Activer le compte"
+                                  style={{
+                                    padding: '6px 10px', background: '#ecfdf5', border: '1px solid #a7f3d0',
+                                    borderRadius: '6px', cursor: 'pointer', color: '#059669', display: 'flex', alignItems: 'center'
+                                  }}
+                                >
+                                  <Unlock size={14} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSuspend(user.id)}
+                                  title="Suspendre le compte"
+                                  style={{
+                                    padding: '6px 10px', background: '#fef2f2', border: '1px solid #fecaca',
+                                    borderRadius: '6px', cursor: 'pointer', color: '#dc2626', display: 'flex', alignItems: 'center'
+                                  }}
+                                >
+                                  <Lock size={14} />
+                                </button>
+                              )
                             )}
                           </div>
                         </td>
