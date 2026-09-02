@@ -542,19 +542,10 @@ export const AnalyticsPage = ({ defaultTab = 'overview' }) => {
                     </h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
                       <span style={{ fontSize: '28px', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.02em' }}>
-                        {kpis?.users?.mau?.toLocaleString('fr-FR') || 0}
+                        {data?.year_summary?.total_users ?? kpis?.users?.total ?? 0}
                       </span>
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        fontSize: '13px',
-                        fontWeight: '800',
-                        color: '#10B981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        padding: '3px 8px',
-                        borderRadius: '6px'
-                      }}>
-                        +{kpis?.users?.growth || 32}% vs période précédente
+                      <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '600' }}>
+                        inscriptions enregistrées en {selectedYear}
                       </span>
                     </div>
                   </div>
@@ -589,9 +580,19 @@ export const AnalyticsPage = ({ defaultTab = 'overview' }) => {
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             const p = payload[0].payload;
+                            if (p.is_future) {
+                              return (
+                                <div style={{ backgroundColor: '#0F172A', color: '#FFF', padding: '10px 14px', borderRadius: '10px', fontSize: '12px' }}>
+                                  <p style={{ fontWeight: '800', margin: '0 0 4px', color: '#94A3B8' }}>{p.month} {selectedYear} (Mois à venir)</p>
+                                  <p style={{ margin: '2px 0', color: '#94A3B8' }}>Période future</p>
+                                </div>
+                              );
+                            }
                             return (
                               <div style={{ backgroundColor: '#0F172A', color: '#FFF', padding: '10px 14px', borderRadius: '10px', fontSize: '12px' }}>
-                                <p style={{ fontWeight: '800', margin: '0 0 4px', color: '#38BDF8' }}>{p.month} {selectedYear}</p>
+                                <p style={{ fontWeight: '800', margin: '0 0 4px', color: '#38BDF8' }}>
+                                  {p.month} {selectedYear} {p.is_current ? '(En cours)' : ''}
+                                </p>
                                 <p style={{ margin: '2px 0' }}>Utilisateurs inscrits : <strong>{p.users}</strong></p>
                                 <p style={{ margin: '2px 0' }}>Offres créées : <strong>{p.offers}</strong></p>
                                 <p style={{ margin: '2px 0' }}>Candidatures : <strong>{p.applications}</strong></p>
@@ -604,10 +605,12 @@ export const AnalyticsPage = ({ defaultTab = 'overview' }) => {
                       />
                       <Bar dataKey="users" radius={[8, 8, 0, 0]}>
                         {trends.map((entry, index) => {
+                          if (entry.is_future) {
+                            return <Cell key={`cell-${index}`} fill="transparent" />;
+                          }
                           let fillStyle = 'url(#cyanGradient)';
                           if (entry.style_type === 'pink_gradient') fillStyle = 'url(#pinkGradient)';
                           else if (entry.style_type === 'striped_blue') fillStyle = 'url(#stripedBlue)';
-                          else if (entry.style_type === 'gray_pattern') fillStyle = 'url(#stripedGray)';
                           return <Cell key={`cell-${index}`} fill={fillStyle} />;
                         })}
                       </Bar>
