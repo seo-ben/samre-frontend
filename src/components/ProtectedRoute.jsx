@@ -71,19 +71,24 @@ const ProtectedRoute = ({ children }) => {
 
   // Vérification des droits d'accès à la page courante
   const routes = user?.allowed_routes;
-  const hasExplicitRestrictions = Array.isArray(routes) && !routes.includes('*');
+  const isSuperAdmin = user?.role === 'super_admin' || routes?.includes('*');
+
+  // Super Admin a accès à tout
+  if (isSuperAdmin) {
+    return children;
+  }
 
   // Pages toujours autorisées pour tout admin connecté (son profil et son mot de passe)
   const defaultAlwaysAllowed = ['/settings/profile', '/settings/password'];
 
-  if (hasExplicitRestrictions && !defaultAlwaysAllowed.includes(location.pathname)) {
-    const isCurrentPathAllowed = routes.some(route =>
+  if (!defaultAlwaysAllowed.includes(location.pathname)) {
+    const isCurrentPathAllowed = Array.isArray(routes) && routes.some(route =>
       location.pathname === route || location.pathname.startsWith(route + '/')
     );
 
     if (!isCurrentPathAllowed) {
       // Rediriger vers la première page autorisée
-      const fallbackRoute = routes[0] || '/settings/profile';
+      const fallbackRoute = (Array.isArray(routes) && routes[0]) || '/dashboard';
       return <Navigate to={fallbackRoute} replace />;
     }
   }

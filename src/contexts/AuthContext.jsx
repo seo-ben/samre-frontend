@@ -92,8 +92,11 @@ export const AuthProvider = ({ children }) => {
     const routes = user.allowed_routes;
     const actions = user.allowed_actions;
 
-    // Si pas de restriction explicite
-    if (!routes || routes.includes('*')) return true;
+    // Super Admin intégral
+    if (user.role === 'super_admin' || routes?.includes('*')) return true;
+
+    // Si pas de routes définies pour un non-super_admin
+    if (!routes || !Array.isArray(routes)) return false;
 
     const path = pagePath || (typeof window !== 'undefined' ? window.location.pathname : '');
 

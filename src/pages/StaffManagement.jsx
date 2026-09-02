@@ -372,7 +372,17 @@ export const ADMIN_MODULES_CONFIG = [
       { path: '/cms/suggested-locations', label: 'Zones suggérées', allowedActions: ['view', 'validate', 'delete'] },
       { path: '/cms/categories', label: 'Catégories métiers', allowedActions: ['view', 'create', 'edit', 'delete'] },
       { path: '/cms/quotas', label: 'Paramètres & Quotas', allowedActions: ['view', 'edit'] },
-      { path: '/cms/blur', label: 'Champs floutés', allowedActions: ['view', 'edit'] }
+      { 
+        path: '/cms/blur', 
+        label: 'Champs floutés', 
+        allowedActions: ['view', 'create', 'edit', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter règles', desc: 'Affichage des champs floutés' },
+          create: { label: 'Ajouter règle', desc: 'Bouton « Ajouter une règle »' },
+          edit: { label: 'Modifier règle', desc: 'Bouton modifier une règle' },
+          delete: { label: 'Supprimer règle', desc: 'Bouton supprimer une règle' }
+        }
+      }
     ]
   },
   {

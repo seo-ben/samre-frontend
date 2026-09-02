@@ -203,23 +203,28 @@ export const Sidebar = () => {
   // Filtrer les menus en fonction des routes autorisées du collaborateur
   const authorizedNav = useMemo(() => {
     const routes = user?.allowed_routes;
-    const hasExplicitRestrictions = Array.isArray(routes) && !routes.includes('*');
+    const isSuperAdmin = user?.role === 'super_admin' || routes?.includes('*');
 
-    // Si aucune restriction explicite n'a été configurée (ou accès '*' complet)
-    if (!user || !hasExplicitRestrictions) {
+    // Super Admin intégral
+    if (isSuperAdmin) {
       return NAV;
     }
 
+    if (!user) {
+      return [];
+    }
+
     const defaultAlwaysAllowed = ['/settings/profile', '/settings/password'];
+    const activeRoutes = Array.isArray(routes) ? routes : [];
 
     return NAV.map(item => {
       // Élément racine direct (sans sous-menus)
       if (!item.children) {
-        return (routes.includes(item.path) || defaultAlwaysAllowed.includes(item.path)) ? item : null;
+        return (activeRoutes.includes(item.path) || defaultAlwaysAllowed.includes(item.path)) ? item : null;
       }
       // Élément avec sous-menus : filtrer uniquement les sous-menus autorisés (+ profil et mot de passe toujours autorisés)
       const allowedChildren = item.children.filter(c =>
-        routes.includes(c.path) || defaultAlwaysAllowed.includes(c.path)
+        activeRoutes.includes(c.path) || defaultAlwaysAllowed.includes(c.path)
       );
       if (allowedChildren.length === 0) return null;
 
