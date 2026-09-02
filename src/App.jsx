@@ -54,11 +54,19 @@ function App() {
       {/* ── Pages Publiques Légales & Institutionnelles (Accessibles sans login) ── */}
       <Route path="/" element={<Login />} />
       <Route path="/p/:slug" element={<PublicPageViewer />} />
+      <Route path="/page/:slug" element={<PublicPageViewer />} />
+      <Route path="/pages/:slug" element={<PublicPageViewer />} />
+      <Route path="/legal/:slug" element={<PublicPageViewer />} />
+      <Route path="/pages" element={<PublicPageViewer forcedSlug="cgu" />} />
       <Route path="/cgu" element={<PublicPageViewer forcedSlug="cgu" />} />
+      <Route path="/conditions" element={<PublicPageViewer forcedSlug="cgu" />} />
+      <Route path="/terms" element={<PublicPageViewer forcedSlug="cgu" />} />
       <Route path="/privacy" element={<PublicPageViewer forcedSlug="privacy-policy" />} />
+      <Route path="/confidentialite" element={<PublicPageViewer forcedSlug="privacy-policy" />} />
       <Route path="/politique-de-confidentialite" element={<PublicPageViewer forcedSlug="privacy-policy" />} />
       <Route path="/mentions-legales" element={<PublicPageViewer forcedSlug="mentions-legales" />} />
       <Route path="/a-propos" element={<PublicPageViewer forcedSlug="about-us" />} />
+      <Route path="/about" element={<PublicPageViewer forcedSlug="about-us" />} />
 
       {/* ── Dashboard ─────────────────────────── */}
       <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />

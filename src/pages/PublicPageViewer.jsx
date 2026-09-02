@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import apiClient from '../lib/apiClient';
+import axios from 'axios';
 import {
   Shield, FileText, Printer, Copy, Check,
   Loader2, AlertCircle, Calendar, Globe, Sparkles, RefreshCw
@@ -23,7 +23,17 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
     try {
       setLoading(true);
       setError('');
-      const res = await apiClient.get(`/v1/pages/${slug}`);
+
+      const apiBase = (typeof window !== 'undefined' && window.location.hostname.includes('revolutech.pro'))
+        ? 'https://samreapi.revolutech.pro/api'
+        : (import.meta.env.VITE_API_URL && import.meta.env.VITE_API_URL !== '/api' ? import.meta.env.VITE_API_URL : '/api');
+
+      const res = await axios.get(`${apiBase}/v1/pages/${slug}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
+        }
+      });
       setPage(res.data?.data || null);
     } catch (err) {
       console.error('Erreur chargement page légale:', err);

@@ -1,8 +1,19 @@
 import axios from 'axios';
 
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('revolutech.pro')) {
+    return 'https://samreapi.revolutech.pro/api';
+  }
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl !== '/api') {
+    return envUrl;
+  }
+  return '/api';
+};
+
 // ─── Instance Axios centralisée ───────────────────────────────────────────────
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api',
+  baseURL: getBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -67,10 +78,16 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalide → nettoyer et rediriger vers login
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
-      if (window.location.pathname !== '/') {
+
+      // Ne jamais rediriger vers le login si le visiteur consulte une page publique légale
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      const isPublicPage = ['/p/', '/page/', '/pages/', '/legal/', '/cgu', '/privacy', '/confidentialite', '/mentions-legales', '/a-propos', '/about', '/terms', '/conditions'].some(
+        prefix => path === prefix || path.startsWith(prefix)
+      );
+
+      if (!isPublicPage && path !== '/') {
         window.location.href = '/';
       }
     }
