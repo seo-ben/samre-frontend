@@ -64,6 +64,49 @@ const getActionMeta = (action) => {
     return { label: '✨ Traitement IA', bg: '#FAF5FF', color: '#7E22CE', border: '#E9D5FF' };
   }
 
+  // Sécurité & Alertes Intrusions
+  if (action === 'auth.account_locked_temporary') {
+    return { label: '🛑 Compte Verrouillé (5 Échecs)', bg: '#FEF2F2', color: '#991B1B', border: '#EF4444' };
+  }
+  if (action === 'auth.otp_failed') {
+    return { label: '⚠️ Échec Code OTP', bg: '#FFFBEB', color: '#B45309', border: '#F59E0B' };
+  }
+  if (action === 'auth.admin_login_failed') {
+    return { label: '🚨 Échec Connexion Admin (Identifiants faux)', bg: '#FEF2F2', color: '#DC2626', border: '#F87171' };
+  }
+  if (action.includes('remoderation_required')) {
+    return { label: '⏳ Contenu Modifié (Re-modération Requise)', bg: '#FFFBEB', color: '#D97706', border: '#FCD34D' };
+  }
+
+  // Candidats & Confidentialité
+  if (action === 'candidate.profile_viewed') {
+    return { label: '👁️ Consultation Profil Candidat', bg: '#F0F9FF', color: '#0284C7', border: '#BAE6FD' };
+  }
+  if (action === 'candidate.profile_unlocked') {
+    return { label: '🔓 Déblocage Profil Candidat', bg: '#ECFDF5', color: '#059669', border: '#A7F3D0' };
+  }
+  if (action === 'candidate.profile_updated') {
+    return { label: '✏️ Profil Candidat Mis à Jour', bg: '#EFF6FF', color: '#2563EB', border: '#BFDBFE' };
+  }
+  if (action === 'candidate.photo_updated') {
+    return { label: '📷 Photo Candidat Modifiée', bg: '#F8FAFC', color: '#475569', border: '#CBD5E1' };
+  }
+  if (action === 'application.viewed_by_company') {
+    return { label: '📋 Candidature Ouverte par Entreprise', bg: '#EFF6FF', color: '#1E40AF', border: '#BFDBFE' };
+  }
+  if (action === 'company.profile_updated') {
+    return { label: '🏢 Profil Entreprise Mis à Jour', bg: '#F0FDFA', color: '#0D9488', border: '#99F6E4' };
+  }
+  if (action === 'company.logo_updated') {
+    return { label: '🖼️ Logo Entreprise Modifié', bg: '#F0FDFA', color: '#0D9488', border: '#99F6E4' };
+  }
+  if (action === 'event.updated') {
+    return { label: '📅 Modification d\'Événement', bg: '#EEF2FF', color: '#4F46E5', border: '#C7D2FE' };
+  }
+  if (action === 'event.deleted') {
+    return { label: '🗑️ Suppression d\'Événement', bg: '#FFF1F2', color: '#BE123C', border: '#FECDD3' };
+  }
+
   // Authentification
   if (action.startsWith('auth.admin_login')) {
     return { label: '🔐 Connexion Administration', bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' };
@@ -503,6 +546,8 @@ export const AuditLogsPage = () => {
             }}
           >
             <option value="all">Toutes les catégories d'actions</option>
+            <option value="security">🛡️ Sécurité & Incidents (Échecs, Verrouillages)</option>
+            <option value="candidates">👤 Candidats & Traçabilité Profils</option>
             <option value="ai">✨ Intelligence Artificielle (Génération CV / IA)</option>
             <option value="wallet">💳 Finances, Wallets & Abonnements</option>
             <option value="auth">🔐 Authentification & Sessions</option>
