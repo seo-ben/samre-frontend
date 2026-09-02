@@ -493,23 +493,50 @@ export const StaffManagementPage = () => {
       setSubmitting(true);
       setError('');
 
-      if (!formData.first_name || !formData.last_name) {
-        setError('Le prénom et le nom sont requis.');
+      if (!formData.first_name?.trim() || !formData.last_name?.trim()) {
+        setError('Le prénom et le nom de famille sont obligatoires.');
         setActiveTab('identity');
         setSubmitting(false);
         return;
       }
 
+      if (!editingStaff) {
+        if (!formData.email?.trim()) {
+          setError("L'adresse email professionnelle est obligatoire.");
+          setActiveTab('identity');
+          setSubmitting(false);
+          return;
+        }
+        if (!formData.phone?.trim()) {
+          setError("Le numéro de téléphone est obligatoire.");
+          setActiveTab('identity');
+          setSubmitting(false);
+          return;
+        }
+        if (!formData.password || formData.password.length < 6) {
+          setError("Le mot de passe doit contenir au moins 6 caractères.");
+          setActiveTab('identity');
+          setSubmitting(false);
+          return;
+        }
+        if (!formData.role_id) {
+          setError("Veuillez sélectionner un rôle de base pour cet administrateur.");
+          setActiveTab('identity');
+          setSubmitting(false);
+          return;
+        }
+      }
+
       if (selectedRoutes.length === 0) {
-        setError('Veuillez autoriser au moins une page d\'accès pour cet administrateur.');
+        setError("Veuillez autoriser au moins une page d'accès pour cet administrateur.");
         setActiveTab('permissions');
         setSubmitting(false);
         return;
       }
 
       const payload = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
         role_id: Number(formData.role_id),
         allowed_routes: selectedRoutes,
         allowed_actions: selectedActions,
@@ -521,9 +548,9 @@ export const StaffManagementPage = () => {
       } else {
         await apiClient.post('/v1/admin/staff', {
           ...payload,
-          email: formData.email,
-          phone: formData.phone,
-          country_id: Number(formData.country_id),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          country_id: formData.country_id ? Number(formData.country_id) : undefined,
           password: formData.password,
         });
         showSuccess('Nouveau collaborateur créé avec ses autorisations configurées.');
@@ -533,7 +560,29 @@ export const StaffManagementPage = () => {
       fetchInitialData();
     } catch (err) {
       console.error('Erreur soumission staff:', err);
-      const msg = err.response?.data?.message || 'Erreur lors de l\'enregistrement.';
+      const resData = err.response?.data;
+      let msg = resData?.message || 'Erreur lors de l\'enregistrement.';
+
+      if (resData?.errors && typeof resData.errors === 'object') {
+        const fieldErrors = Object.entries(resData.errors).map(([field, fieldMsgs]) => {
+          const text = Array.isArray(fieldMsgs) ? fieldMsgs.join(' ') : String(fieldMsgs);
+          if (field === 'email' && text.toLowerCase().includes('taken')) return "Cette adresse email est déjà enregistrée.";
+          if (field === 'phone' && text.toLowerCase().includes('taken')) return "Ce numéro de téléphone est déjà utilisé.";
+          if (field === 'password' && (text.toLowerCase().includes('min') || text.toLowerCase().includes('least'))) return "Le mot de passe doit comporter au moins 6 caractères.";
+          if (field === 'role_id') return "Le rôle sélectionné est invalide.";
+          return text;
+        });
+
+        if (fieldErrors.length > 0) {
+          msg = fieldErrors.join(' • ');
+        }
+
+        const identityFields = ['email', 'phone', 'password', 'first_name', 'last_name', 'role_id'];
+        if (Object.keys(resData.errors).some(k => identityFields.includes(k))) {
+          setActiveTab('identity');
+        }
+      }
+
       setError(msg);
     } finally {
       setSubmitting(false);
