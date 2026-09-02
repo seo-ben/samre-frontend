@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 import { Loader2, Edit2, AlertCircle, CheckCircle2, X, EyeOff, Plus, Trash2, Search, Filter, Image, Phone, Mail, FileText, User, Briefcase, MapPin, Award, Navigation, ShieldCheck } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 
@@ -104,6 +105,7 @@ const getFlatOptions = (profileType) => {
 };
 
 export const BlurFieldsPage = () => {
+  const { can } = useAuth();
   const [rules, setRules] = useState([]);
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -383,22 +385,24 @@ export const BlurFieldsPage = () => {
           </div>
 
           {/* Bouton Nouveau */}
-          <button
-            onClick={() => handleOpenModal()}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              backgroundColor: '#18181B', color: '#FFF',
-              border: 'none', height: '42px', padding: '0 20px', borderRadius: '8px',
-              fontWeight: '500', cursor: 'pointer', transition: '0.2s',
-              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#27272A'}
-            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#18181B'}
-          >
-            <Plus size={18} />
-            Nouvelle Règle
-          </button>
+          {can('create', '/cms/blur') && (
+            <button
+              onClick={() => handleOpenModal()}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                backgroundColor: '#18181B', color: '#FFF',
+                border: 'none', height: '42px', padding: '0 20px', borderRadius: '8px',
+                fontWeight: '500', cursor: 'pointer', transition: '0.2s',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#27272A'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#18181B'}
+            >
+              <Plus size={18} />
+              Nouvelle Règle
+            </button>
+          )}
         </div>
       </div>
 
@@ -475,24 +479,28 @@ export const BlurFieldsPage = () => {
                     </td>
                     <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
-                        <button 
-                          onClick={() => handleOpenModal(item)} 
-                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#09090B', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                          title="Modifier"
-                          onMouseOver={e => e.currentTarget.style.backgroundColor = '#E4E4E7'}
-                          onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <Edit2 size={16} /> 
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteClick(item)} 
-                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s' }}
-                          title="Supprimer"
-                          onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
-                          onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {can('edit', '/cms/blur') && (
+                          <button 
+                            onClick={() => handleOpenModal(item)} 
+                            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#09090B', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                            title="Modifier"
+                            onMouseOver={e => e.currentTarget.style.backgroundColor = '#E4E4E7'}
+                            onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Edit2 size={16} /> 
+                          </button>
+                        )}
+                        {can('delete', '/cms/blur') && (
+                          <button 
+                            onClick={() => handleDeleteClick(item)} 
+                            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', borderRadius: '6px', border: 'none', background: 'transparent', color: '#EF4444', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                            title="Supprimer"
+                            onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
+                            onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
