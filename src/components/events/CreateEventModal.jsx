@@ -6,6 +6,19 @@ export default function CreateEventModal({ onClose, onSuccess, categories, event
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tagInput, setTagInput] = useState('');
+  const [countries, setCountries] = useState([]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const res = await apiClient.get('/v1/content/countries?all=1');
+        setCountries(res.data?.data || (Array.isArray(res.data) ? res.data : []));
+      } catch (err) {
+        console.error('Erreur chargement pays', err);
+      }
+    };
+    fetchCountries();
+  }, []);
 
   const [formData, setFormData] = useState({
     title: eventToEdit?.translations?.find(t => t.language_id === 1)?.title || '',
@@ -14,6 +27,10 @@ export default function CreateEventModal({ onClose, onSuccess, categories, event
     end_date: eventToEdit?.end_date ? eventToEdit.end_date.slice(0, 16) : '',
     description: eventToEdit?.translations?.find(t => t.language_id === 1)?.description || '',
     agenda: eventToEdit?.translations?.find(t => t.language_id === 1)?.agenda || '',
+    is_international: eventToEdit ? !!eventToEdit.is_international : false,
+    country_id: eventToEdit?.country_id || '',
+    country_name: eventToEdit?.country_name || eventToEdit?.country?.name || '',
+    city_name: eventToEdit?.city_name || '',
     is_online: eventToEdit ? !!eventToEdit.is_online : false,
     online_link: eventToEdit?.online_link || '',
     location_name: eventToEdit?.location_name || '',
@@ -73,6 +90,18 @@ export default function CreateEventModal({ onClose, onSuccess, categories, event
 
       if (formData.max_participants) payload.set('max_participants', parseInt(formData.max_participants));
       if (formData.price) payload.set('price', parseFloat(formData.price));
+
+      if (!formData.is_international) {
+        payload.set('is_international', 0);
+        payload.delete('country_id');
+        payload.delete('country_name');
+        payload.delete('city_name');
+      } else {
+        payload.set('is_international', 1);
+        if (formData.country_id) payload.set('country_id', formData.country_id);
+        if (formData.country_name) payload.set('country_name', formData.country_name);
+        if (formData.city_name) payload.set('city_name', formData.city_name);
+      }
 
       if (eventToEdit) {
         payload.append('_method', 'PUT');
@@ -203,13 +232,80 @@ export default function CreateEventModal({ onClose, onSuccess, categories, event
               {/* Lieu et Format */}
               <div style={{ gridColumn: '2 / 3' }}>
                 <h3 style={sectionTitleStyle}>
-                  {formData.is_online ? <Globe size={18}/> : <MapPin size={18}/>} 
-                  Lieu et Format
+                  {formData.is_international ? <Globe size={18} color="#4f46e5" /> : (formData.is_online ? <Globe size={18}/> : <MapPin size={18}/>)} 
+                  Lieu et Portée Géographique
                 </h3>
                 
+                {/* Portée : Local vs International (Réservé Admin) */}
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                  <label style={{ ...labelStyle, marginBottom: '6px', fontSize: '12px', color: '#64748b' }}>
+                    Portée de l'événement (Admin)
+                  </label>
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: !formData.is_international ? '600' : '400', color: !formData.is_international ? '#0052ff' : '#475569' }}>
+                      <input 
+                        type="radio" 
+                        name="is_international_radio" 
+                        checked={!formData.is_international} 
+                        onChange={() => setFormData(prev => ({ ...prev, is_international: false }))} 
+                      />
+                      🇹🇬 Local / National (Togo)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: formData.is_international ? '600' : '400', color: formData.is_international ? '#4f46e5' : '#475569' }}>
+                      <input 
+                        type="radio" 
+                        name="is_international_radio" 
+                        checked={formData.is_international} 
+                        onChange={() => setFormData(prev => ({ ...prev, is_international: true }))} 
+                      />
+                      🌍 International (Étranger)
+                    </label>
+                  </div>
+                </div>
+
+                {formData.is_international && (
+                  <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
+                    <div style={{ marginBottom: '10px' }}>
+                      <label style={{ ...labelStyle, color: '#4338ca' }}>Pays organisateur / Destination *</label>
+                      <select 
+                        name="country_id" 
+                        value={formData.country_id} 
+                        onChange={(e) => {
+                          const selectedC = countries.find(c => String(c.id) === String(e.target.value));
+                          setFormData(prev => ({
+                            ...prev,
+                            country_id: e.target.value,
+                            country_name: selectedC?.name || selectedC?.translations?.[0]?.name || ''
+                          }));
+                        }}
+                        style={inputStyle}
+                        required={formData.is_international}
+                      >
+                        <option value="" style={{ color: '#000', backgroundColor: '#fff' }}>Sélectionnez un pays ({countries.length} disponibles)</option>
+                        {countries.map(c => (
+                          <option key={c.id} value={c.id} style={{ color: '#000', backgroundColor: '#fff' }}>
+                            {c.name || c.translations?.[0]?.name || c.code} ({c.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ ...labelStyle, color: '#4338ca' }}>Ville étrangère / Région</label>
+                      <input 
+                        type="text" 
+                        name="city_name" 
+                        value={formData.city_name} 
+                        onChange={handleChange} 
+                        style={inputStyle} 
+                        placeholder="Ex: Paris, Montréal, Dakar, Abidjan..." 
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input type="checkbox" id="is_online" name="is_online" checked={formData.is_online} onChange={handleChange} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                  <label htmlFor="is_online" style={{ fontSize: '14px', color: '#334155', cursor: 'pointer', fontWeight: '500' }}>Événement en ligne</label>
+                  <label htmlFor="is_online" style={{ fontSize: '14px', color: '#334155', cursor: 'pointer', fontWeight: '500' }}>Événement en ligne (Visioconférence)</label>
                 </div>
 
                 {formData.is_online ? (
@@ -219,8 +315,18 @@ export default function CreateEventModal({ onClose, onSuccess, categories, event
                   </div>
                 ) : (
                   <div style={{ marginBottom: '16px' }}>
-                    <label style={labelStyle}>Nom du lieu / Adresse *</label>
-                    <input required type="text" name="location_name" value={formData.location_name} onChange={handleChange} style={inputStyle} placeholder="Ex: Palais des Congrès, Lomé" />
+                    <label style={labelStyle}>
+                      {formData.is_international ? 'Adresse / Salle précise (optionnel)' : 'Nom du lieu / Adresse *'}
+                    </label>
+                    <input 
+                      required={!formData.is_international && !formData.is_online} 
+                      type="text" 
+                      name="location_name" 
+                      value={formData.location_name} 
+                      onChange={handleChange} 
+                      style={inputStyle} 
+                      placeholder={formData.is_international ? 'Ex : Centre des Congrès, Avenue Montaigne' : 'Ex: Palais des Congrès, Lomé'} 
+                    />
                   </div>
                 )}
 

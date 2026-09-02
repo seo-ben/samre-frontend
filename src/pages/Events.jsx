@@ -347,15 +347,23 @@ export const EventsPage = () => {
                           <span style={{ fontSize: '13px', color: '#475569', fontWeight: '500' }}>{new Date(ev.event_date).toLocaleDateString()}</span>
                         </div>
                         
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <span style={{
                             padding: '2px 8px', borderRadius: '999px', background: '#eef2ff',
                             color: '#4f46e5', fontSize: '11px', fontWeight: '600'
                           }}>
                             {category}
                           </span>
+                          {ev.is_international && (
+                            <span style={{
+                              padding: '2px 8px', borderRadius: '999px', background: '#ecfdf5',
+                              color: '#059669', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                            }}>
+                              🌍 {ev.country_name || 'International'}
+                            </span>
+                          )}
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
-                            {ev.is_online ? <><Map size={12}/> En ligne</> : <><MapPin size={12}/> {ev.location_name || 'Lieu spécifié'}</>}
+                            {ev.is_online ? <><Map size={12}/> En ligne</> : <><MapPin size={12}/> {ev.is_international ? `${ev.city_name ? ev.city_name + ', ' : ''}${ev.country_name || ev.location_name || 'International'}` : (ev.location_name || 'Lieu spécifié')}</>}
                           </span>
                           {renderStatusBadge(ev.status)}
                         </div>
@@ -503,6 +511,14 @@ export const EventsPage = () => {
                         <span style={{ fontSize: '13px', color: '#64748b' }}>
                           Publié le {selectedEvent.created_at ? new Date(selectedEvent.created_at).toLocaleDateString() : '—'}
                         </span>
+                        {selectedEvent.is_international && (
+                          <span style={{
+                            padding: '3px 10px', borderRadius: '999px', background: '#ecfdf5',
+                            color: '#059669', fontSize: '12px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px'
+                          }}>
+                            🌍 International ({selectedEvent.country_name || 'Étranger'})
+                          </span>
+                        )}
                         {renderStatusBadge(selectedEvent.status)}
                       </div>
                     </div>
@@ -541,7 +557,11 @@ export const EventsPage = () => {
                           Lieu
                         </div>
                         <div style={{ color: '#0f172a', fontSize: '14px', fontWeight: '500' }}>
-                          {selectedEvent.is_online ? 'En ligne' : (selectedEvent.location_name || 'Non précisé')}
+                          {selectedEvent.is_online 
+                            ? 'En ligne' 
+                            : (selectedEvent.is_international
+                                ? `${selectedEvent.city_name ? selectedEvent.city_name + ', ' : ''}${selectedEvent.country_name || selectedEvent.location_name || 'International'}`
+                                : (selectedEvent.location_name || 'Non précisé'))}
                         </div>
                       </div>
                       <div>
