@@ -86,13 +86,6 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
               <Printer size={14} />
               <span className="hidden sm:inline">Imprimer</span>
             </button>
-
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition shadow-sm"
-            >
-              <span>Connexion</span>
-            </Link>
           </div>
         </div>
       </header>
