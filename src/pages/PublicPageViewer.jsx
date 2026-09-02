@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import apiClient from '../lib/apiClient';
 import {
-  Shield, FileText, Printer, Copy, Check, ArrowLeft,
-  Loader2, AlertCircle, Calendar, Globe, Sparkles
+  Shield, FileText, Printer, Copy, Check,
+  Loader2, AlertCircle, Calendar, Globe, Sparkles, RefreshCw
 } from 'lucide-react';
 
 export const PublicPageViewer = ({ forcedSlug = null }) => {
@@ -46,26 +46,30 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 selection:bg-blue-600 selection:text-white">
 
-      {/* ── Public Top Navigation Header ── */}
+      {/* ── Public Top Navigation Header (Aucun lien vers le login admin) ── */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm print:hidden">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/20 group-hover:scale-105 transition">
-                S
-              </div>
-              <div>
-                <span className="font-black text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
+          
+          {/* Logo Officiel SAMRE (Non-cliquable pour isoler totalement le portail admin) */}
+          <div className="flex items-center gap-3 select-none">
+            <img
+              src="/logo-samre.png"
+              alt="Logo SAMRE"
+              className="h-10 w-auto object-contain"
+            />
+            <div className="hidden sm:block">
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-lg text-slate-900 tracking-tight">
                   SAMRE
-                  <span className="text-[10px] uppercase font-extrabold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded tracking-wider">
-                    Officiel
-                  </span>
                 </span>
-                <span className="block text-[11px] text-slate-400 font-medium -mt-1">
-                  Santé & Recrutement Togo
+                <span className="text-[10px] uppercase font-extrabold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded tracking-wider">
+                  Officiel
                 </span>
               </div>
-            </Link>
+              <span className="block text-[11px] text-slate-400 font-medium -mt-0.5">
+                Santé & Recrutement Togo
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -105,13 +109,13 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
             <h2 className="text-lg font-black text-slate-900">Document indisponible</h2>
             <p className="text-sm text-slate-500">{error || 'Cette page n\'existe pas.'}</p>
             <div className="pt-2">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition"
+              <button
+                onClick={fetchPage}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition cursor-pointer"
               >
-                <ArrowLeft size={14} />
-                <span>Retour à l'accueil</span>
-              </Link>
+                <RefreshCw size={14} />
+                <span>Actualiser la page</span>
+              </button>
             </div>
           </div>
         ) : (
