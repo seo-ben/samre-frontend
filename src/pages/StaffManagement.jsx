@@ -1,180 +1,229 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
 import {
-  UserCog, Plus, Search, Shield, ShieldCheck, Mail, Phone,
-  Lock, CheckCircle2, XCircle, Trash2, Edit, AlertCircle, Loader2,
-  RefreshCw, AlertTriangle, CheckSquare, Square, Layers, ChevronDown, ChevronRight,
+  UserCog, Plus, Search, Shield, Mail, Phone,
+  CheckCircle2, XCircle, Trash2, Edit, AlertCircle, Loader2,
+  RefreshCw, AlertTriangle, Layers, ChevronRight,
   LayoutDashboard, Users, Building2, Briefcase, CalendarDays, FileText,
-  BadgeCheck, Vote, Handshake, Wallet, Star, Bell, BarChart3, Settings
+  BadgeCheck, Vote, Handshake, Wallet, Star, Bell, BarChart3, Settings,
+  Eye, CheckSquare, Square, ShieldCheck, KeyRound, ArrowRight, ArrowLeft,
+  SlidersHorizontal, Sparkles, Filter, Check, X
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 
-// Structure complète des Menus & Sous-menus de l'application Admin SAMRE
-export const ADMIN_NAVIGATION_MODULES = [
+// Définition globale des actions possibles
+export const ACTION_DEFINITIONS = {
+  view: { label: 'Consulter', desc: 'Lecture et affichage', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  create: { label: 'Créer', desc: 'Ajouter des éléments', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  edit: { label: 'Modifier', desc: 'Éditer et mettre à jour', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+  validate: { label: 'Valider', desc: 'Approuver ou rejeter', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+  suspend: { label: 'Suspendre', desc: 'Bloquer / Débloquer', color: 'bg-orange-50 text-orange-700 border-orange-200' },
+  delete: { label: 'Supprimer', desc: 'Suppression définitive', color: 'bg-red-50 text-red-700 border-red-200' },
+  export: { label: 'Exporter', desc: 'Télécharger CSV/Excel', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  adjust: { label: 'Ajuster solde', desc: 'Créditer ou débiter', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+};
+
+// Structure complète des Modules, Sous-menus et Actions par page
+export const ADMIN_MODULES_CONFIG = [
   {
     id: 'dashboard',
     label: 'Tableau de Bord',
     icon: LayoutDashboard,
+    description: 'KPIs globaux, statistiques en direct et graphiques d\'activité',
     pages: [
-      { label: 'Vue d\'ensemble générale', path: '/dashboard' }
+      {
+        path: '/dashboard',
+        label: 'Vue d\'ensemble générale',
+        allowedActions: ['view', 'export'],
+      }
     ]
   },
   {
     id: 'users',
     label: 'Utilisateurs & Profils',
     icon: Users,
+    description: 'Candidats, Secrétaires, Visiteurs et profils enregistrés',
     pages: [
-      { label: 'Gestion des Utilisateurs (Candidats, Visiteurs)', path: '/users' }
+      {
+        path: '/users',
+        label: 'Gestion des Utilisateurs',
+        allowedActions: ['view', 'edit', 'suspend', 'delete', 'export'],
+      }
     ]
   },
   {
     id: 'companies',
     label: 'Entreprises & Viabilité',
     icon: Building2,
+    description: 'Comptes employeurs, cabinets de recrutement et vérification',
     pages: [
-      { label: 'Entreprises, Cabinets & Viabilité', path: '/companies' }
+      {
+        path: '/companies',
+        label: 'Entreprises & Viabilité',
+        allowedActions: ['view', 'validate', 'edit', 'suspend', 'delete'],
+      }
     ]
   },
   {
     id: 'offers',
     label: 'Offres d\'emploi',
     icon: Briefcase,
+    description: 'Modération, validation et gestion des offres d\'emploi et de stages',
     pages: [
-      { label: 'Toutes les offres', path: '/offers' },
-      { label: 'Offres en attente', path: '/offers/pending' },
-      { label: 'Offres validées', path: '/offers/approved' },
-      { label: 'Offres expirées', path: '/offers/expired' },
-      { label: 'Offres supprimées', path: '/offers/deleted' }
+      { path: '/offers', label: 'Toutes les offres', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/offers/pending', label: 'Offres en attente', allowedActions: ['view', 'validate', 'delete'] },
+      { path: '/offers/approved', label: 'Offres validées', allowedActions: ['view', 'edit', 'delete'] },
+      { path: '/offers/expired', label: 'Offres expirées', allowedActions: ['view', 'edit', 'delete'] },
+      { path: '/offers/deleted', label: 'Offres supprimées', allowedActions: ['view', 'delete'] }
     ]
   },
   {
     id: 'events',
     label: 'Événements & Salons',
     icon: CalendarDays,
+    description: 'Gestion des salons professionnels, billetterie et webinaires',
     pages: [
-      { label: 'Tous les événements', path: '/events' },
-      { label: 'Événements en attente', path: '/events/pending' },
-      { label: 'Événements validés', path: '/events/approved' },
-      { label: 'Événements expirés', path: '/events/expired' },
-      { label: 'Événements supprimés', path: '/events/deleted' },
-      { label: 'Catégories d\'événements', path: '/events/categories' }
+      { path: '/events', label: 'Tous les événements', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/events/pending', label: 'Événements en attente', allowedActions: ['view', 'validate', 'delete'] },
+      { path: '/events/approved', label: 'Événements validés', allowedActions: ['view', 'edit', 'delete'] },
+      { path: '/events/expired', label: 'Événements expirés', allowedActions: ['view', 'delete'] },
+      { path: '/events/deleted', label: 'Événements supprimés', allowedActions: ['view', 'delete'] },
+      { path: '/events/categories', label: 'Catégories d\'événements', allowedActions: ['view', 'create', 'edit', 'delete'] }
     ]
   },
   {
     id: 'applications',
     label: 'Candidatures & Embauches',
     icon: FileText,
+    description: 'Dossiers postulants, suivi des étapes et déclarations d\'embauche',
     pages: [
-      { label: 'Toutes les candidatures', path: '/applications' },
-      { label: 'Candidatures par statut', path: '/applications/by-status' },
-      { label: 'Candidatures par offre', path: '/applications/by-offer' },
-      { label: 'Déclarations d\'embauche', path: '/hiring-declarations' }
+      { path: '/applications', label: 'Toutes les candidatures', allowedActions: ['view', 'export'] },
+      { path: '/applications/by-status', label: 'Candidatures par statut', allowedActions: ['view', 'export'] },
+      { path: '/applications/by-offer', label: 'Candidatures par offre', allowedActions: ['view', 'export'] },
+      { path: '/hiring-declarations', label: 'Déclarations d\'embauche', allowedActions: ['view', 'validate', 'export'] }
     ]
   },
   {
     id: 'badges',
     label: 'Badges & Vérifications KYC',
     icon: BadgeCheck,
+    description: 'Contrôle des pièces d\'identité, diplômes et badges officiels',
     pages: [
-      { label: 'Demandes en attente de badge', path: '/badges/pending' },
-      { label: 'Secrétaires vérifiées', path: '/badges/candidates' },
-      { label: 'Entreprises vérifiées', path: '/badges/companies' }
+      { path: '/badges/pending', label: 'Demandes de badges en attente', allowedActions: ['view', 'validate'] },
+      { path: '/badges/candidates', label: 'Secrétaires vérifiées', allowedActions: ['view', 'validate'] },
+      { path: '/badges/companies', label: 'Entreprises vérifiées', allowedActions: ['view', 'validate'] }
     ]
   },
   {
     id: 'surveys',
     label: 'Sondages & Enquêtes',
     icon: Vote,
+    description: 'Questionnaires, baromètres et enquêtes d\'opinion',
     pages: [
-      { label: 'Gestion des sondages', path: '/surveys' }
+      { path: '/surveys', label: 'Gestion des sondages', allowedActions: ['view', 'create', 'edit', 'delete', 'export'] }
     ]
   },
   {
     id: 'service-exchanges',
     label: 'Partenariats B2B (Troc)',
     icon: Handshake,
+    description: 'Échanges inter-entreprises, prestations et collaborations',
     pages: [
-      { label: 'Bourse d\'échanges inter-entreprises', path: '/service-exchanges' }
+      { path: '/service-exchanges', label: 'Bourse d\'échanges B2B', allowedActions: ['view', 'validate', 'delete'] }
     ]
   },
   {
     id: 'finances',
     label: 'Finances & Wallets',
     icon: Wallet,
+    description: 'Portefeuilles électroniques, transactions et comptabilité',
     pages: [
-      { label: 'Vue d\'ensemble financière', path: '/finances' },
-      { label: 'Portefeuilles (Wallets)', path: '/wallets' },
-      { label: 'Historique des transactions', path: '/transactions' }
+      { path: '/finances', label: 'Vue d\'ensemble financière', allowedActions: ['view', 'export'] },
+      { path: '/wallets', label: 'Portefeuilles (Wallets)', allowedActions: ['view', 'adjust'] },
+      { path: '/transactions', label: 'Historique des transactions', allowedActions: ['view', 'export'] }
     ]
   },
   {
     id: 'subscriptions',
     label: 'Abonnements',
     icon: Star,
+    description: 'Formules d\'adhésion, abonnés actifs et facturation',
     pages: [
-      { label: 'Centre de contrôle des abonnements', path: '/subscriptions/control-center' },
-      { label: 'Plans d\'abonnement', path: '/subscriptions/plans' },
-      { label: 'Abonnés actifs', path: '/subscriptions/active' },
-      { label: 'Historique des abonnements', path: '/subscriptions/history' }
+      { path: '/subscriptions/control-center', label: 'Centre de contrôle', allowedActions: ['view', 'edit'] },
+      { path: '/subscriptions/plans', label: 'Plans d\'abonnement', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/subscriptions/active', label: 'Abonnés actifs', allowedActions: ['view', 'edit'] },
+      { path: '/subscriptions/history', label: 'Historique des abonnements', allowedActions: ['view', 'export'] }
     ]
   },
   {
     id: 'notifications',
-    label: 'Notifications & Alertes',
+    label: 'Notifications & Modération',
     icon: Bell,
+    description: 'Campagnes Push, modération des signalements et demandes spéciales',
     pages: [
-      { label: 'Demandes spéciales', path: '/special-requests' },
-      { label: 'Modération & Signalements', path: '/moderation/reports' },
-      { label: 'Centre Notifications Push', path: '/notifications' }
+      { path: '/special-requests', label: 'Demandes spéciales entreprises', allowedActions: ['view', 'validate'] },
+      { path: '/moderation/reports', label: 'Modération & Signalements', allowedActions: ['view', 'validate', 'delete'] },
+      { path: '/notifications', label: 'Centre Notifications Push', allowedActions: ['view', 'create', 'delete'] }
     ]
   },
   {
     id: 'cms',
     label: 'CMS — Contenu',
     icon: Layers,
+    description: 'Pages dynamiques CGU, publicités, bannières, langues et zones',
     pages: [
-      { label: 'Pages publicitaires', path: '/cms/ads' },
-      { label: 'Bannières Dashboard', path: '/cms/company-banners' },
-      { label: 'Pages dynamiques (CGU, etc.)', path: '/cms/pages' },
-      { label: 'Langues', path: '/cms/languages' },
-      { label: 'Traductions App mobile', path: '/cms/translations' },
-      { label: 'Zones géographiques', path: '/cms/locations' },
-      { label: 'Zones suggérées', path: '/cms/suggested-locations' },
-      { label: 'Catégories métiers', path: '/cms/categories' },
-      { label: 'Paramètres & Quotas', path: '/cms/quotas' },
-      { label: 'Champs floutés', path: '/cms/blur' }
+      { path: '/cms/ads', label: 'Pages publicitaires', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/cms/company-banners', label: 'Bannières Dashboard', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/cms/pages', label: 'Pages dynamiques (CGU, etc.)', allowedActions: ['view', 'create', 'edit'] },
+      { path: '/cms/languages', label: 'Langues supportées', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/cms/translations', label: 'Traductions App mobile', allowedActions: ['view', 'edit'] },
+      { path: '/cms/locations', label: 'Zones géographiques', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/cms/suggested-locations', label: 'Zones suggérées', allowedActions: ['view', 'validate', 'delete'] },
+      { path: '/cms/categories', label: 'Catégories métiers', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      { path: '/cms/quotas', label: 'Paramètres & Quotas', allowedActions: ['view', 'edit'] },
+      { path: '/cms/blur', label: 'Champs floutés', allowedActions: ['view', 'edit'] }
     ]
   },
   {
     id: 'stats',
     label: 'Statistiques & Analytics',
     icon: BarChart3,
+    description: 'Rapports détaillés, exports comptables et métriques RH',
     pages: [
-      { label: 'Tableau Analytique', path: '/stats' },
-      { label: 'Rapports & Exports CSV', path: '/stats/exports' }
+      { path: '/stats', label: 'Tableau Analytique', allowedActions: ['view'] },
+      { path: '/stats/exports', label: 'Rapports & Exports CSV', allowedActions: ['view', 'export'] }
     ]
   },
   {
     id: 'audit-logs',
-    label: 'Journal d\'audit & Logs',
+    label: 'Journal d\'audit & Sécurité',
     icon: ShieldCheck,
+    description: 'Historique des connexions, modifications et actions admin',
     pages: [
-      { label: 'Journal d\'audit de sécurité', path: '/audit-logs' }
+      { path: '/audit-logs', label: 'Journal d\'audit de sécurité', allowedActions: ['view', 'export'] }
     ]
   },
   {
     id: 'settings',
     label: 'Paramètres',
     icon: Settings,
+    description: 'Gestion de l\'équipe d\'administration et permissions',
     pages: [
-      { label: 'Comptes administrateurs & Staff', path: '/settings/staff' }
+      { path: '/settings/staff', label: 'Comptes administrateurs & Droits', allowedActions: ['view', 'create', 'edit', 'delete'] }
     ]
   }
 ];
 
-// Liste de toutes les routes disponibles
-const ALL_PAGE_PATHS = ADMIN_NAVIGATION_MODULES.flatMap(m => m.pages.map(p => p.path));
+// Liste plate de toutes les routes et actions par défaut
+const ALL_ROUTES = ADMIN_MODULES_CONFIG.flatMap(m => m.pages.map(p => p.path));
+
+const ALL_ACTIONS_MAP = {};
+ADMIN_MODULES_CONFIG.forEach(mod => {
+  mod.pages.forEach(p => {
+    ALL_ACTIONS_MAP[p.path] = [...p.allowedActions];
+  });
+});
 
 export const StaffManagementPage = () => {
   const [staffList, setStaffList] = useState([]);
@@ -183,17 +232,24 @@ export const StaffManagementPage = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+
+  // Modal State
   const [showModal, setShowModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'permissions'
+  const [selectedModuleId, setSelectedModuleId] = useState(ADMIN_MODULES_CONFIG[0].id);
+  const [moduleSearch, setModuleSearch] = useState('');
   const [editingStaff, setEditingStaff] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Selected routes for permissions
+  // Permissions state
+  // allowedRoutes: ['/users', '/offers', ...]
   const [selectedRoutes, setSelectedRoutes] = useState([]);
-  const [expandedModules, setExpandedModules] = useState({});
+  // allowedActions: { '/users': ['view', 'edit'], '/offers': ['view', 'validate'] }
+  const [selectedActions, setSelectedActions] = useState({});
 
-  // Confirmation modal state
+  // Confirmation Modal
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     type: null,
@@ -201,7 +257,7 @@ export const StaffManagementPage = () => {
     loading: false,
   });
 
-  // Form State
+  // Identity Form State
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -232,7 +288,7 @@ export const StaffManagementPage = () => {
         setFormData(prev => ({ ...prev, role_id: rolesRes.data.data[0].id }));
       }
     } catch (err) {
-      console.error('Erreur chargement personnel admin:', err);
+      console.error('Erreur chargement staff:', err);
       setError('Impossible de charger la liste du personnel administrateur.');
     } finally {
       setLoading(false);
@@ -246,7 +302,13 @@ export const StaffManagementPage = () => {
 
   const handleOpenCreateModal = () => {
     setEditingStaff(null);
-    setSelectedRoutes([...ALL_PAGE_PATHS]); // Par défaut, tout est coché
+    setActiveTab('identity');
+    setSelectedModuleId(ADMIN_MODULES_CONFIG[0].id);
+    setModuleSearch('');
+    // Par défaut, donner accès complet à tout
+    setSelectedRoutes([...ALL_ROUTES]);
+    setSelectedActions(JSON.parse(JSON.stringify(ALL_ACTIONS_MAP)));
+
     setFormData({
       first_name: '',
       last_name: '',
@@ -261,10 +323,25 @@ export const StaffManagementPage = () => {
 
   const handleOpenEditModal = (staff) => {
     setEditingStaff(staff);
-    const existingRoutes = Array.isArray(staff.allowed_routes) && staff.allowed_routes.length > 0
-      ? staff.allowed_routes
-      : (staff.role?.name === 'super_admin' ? [...ALL_PAGE_PATHS] : ['/dashboard']);
+    setActiveTab('identity');
+    setSelectedModuleId(ADMIN_MODULES_CONFIG[0].id);
+    setModuleSearch('');
+
+    const hasFull = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
+    const existingRoutes = hasFull ? [...ALL_ROUTES] : (Array.isArray(staff.allowed_routes) ? staff.allowed_routes : ['/dashboard']);
     setSelectedRoutes(existingRoutes);
+
+    // Charger les actions ou initialiser
+    if (staff.allowed_actions && typeof staff.allowed_actions === 'object' && !Array.isArray(staff.allowed_actions)) {
+      setSelectedActions(staff.allowed_actions);
+    } else {
+      // Activer les actions disponibles pour chaque route active
+      const acts = {};
+      existingRoutes.forEach(r => {
+        acts[r] = ALL_ACTIONS_MAP[r] ? [...ALL_ACTIONS_MAP[r]] : ['view'];
+      });
+      setSelectedActions(acts);
+    }
 
     setFormData({
       first_name: staff.first_name || '',
@@ -278,83 +355,156 @@ export const StaffManagementPage = () => {
     setShowModal(true);
   };
 
-  // Toggle all pages
-  const handleSelectAllRoutes = () => {
-    setSelectedRoutes([...ALL_PAGE_PATHS]);
+  // ── Presets rapides ──
+  const applyFullAccessPreset = () => {
+    setSelectedRoutes([...ALL_ROUTES]);
+    setSelectedActions(JSON.parse(JSON.stringify(ALL_ACTIONS_MAP)));
   };
 
-  const handleDeselectAllRoutes = () => {
+  const applyReadOnlyPreset = () => {
+    setSelectedRoutes([...ALL_ROUTES]);
+    const readOnlyActions = {};
+    ALL_ROUTES.forEach(r => {
+      readOnlyActions[r] = ['view'];
+    });
+    setSelectedActions(readOnlyActions);
+  };
+
+  const applyModeratorPreset = () => {
+    // Consultation partout + validation/modération
+    setSelectedRoutes([...ALL_ROUTES]);
+    const modActions = {};
+    ADMIN_MODULES_CONFIG.forEach(mod => {
+      mod.pages.forEach(p => {
+        const allowed = p.allowedActions.filter(a => ['view', 'validate', 'edit'].includes(a));
+        modActions[p.path] = allowed.length > 0 ? allowed : ['view'];
+      });
+    });
+    setSelectedActions(modActions);
+  };
+
+  const applyClearAllPreset = () => {
     setSelectedRoutes([]);
+    setSelectedActions({});
   };
 
-  // Toggle a single page
-  const handleToggleRoute = (path) => {
-    setSelectedRoutes(prev =>
-      prev.includes(path) ? prev.filter(p => p !== path) : [...prev, path]
-    );
-  };
-
-  // Toggle an entire module
-  const handleToggleModule = (mod) => {
-    const modulePaths = mod.pages.map(p => p.path);
-    const allSelected = modulePaths.every(p => selectedRoutes.includes(p));
-
-    if (allSelected) {
-      setSelectedRoutes(prev => prev.filter(p => !modulePaths.includes(p)));
+  // ── Toggle Page ──
+  const handleTogglePageRoute = (path) => {
+    if (selectedRoutes.includes(path)) {
+      // Désactiver la page
+      setSelectedRoutes(prev => prev.filter(p => p !== path));
+      setSelectedActions(prev => {
+        const next = { ...prev };
+        delete next[path];
+        return next;
+      });
     } else {
-      setSelectedRoutes(prev => Array.from(new Set([...prev, ...modulePaths])));
+      // Activer la page avec toutes ses actions disponibles par défaut
+      setSelectedRoutes(prev => [...prev, path]);
+      const defaultActions = ALL_ACTIONS_MAP[path] ? [...ALL_ACTIONS_MAP[path]] : ['view'];
+      setSelectedActions(prev => ({ ...prev, [path]: defaultActions }));
     }
   };
 
-  const toggleModuleAccordion = (modId) => {
-    setExpandedModules(prev => ({ ...prev, [modId]: !prev[modId] }));
+  // ── Toggle Action Spécifique pour une Page ──
+  const handleTogglePageAction = (path, actionId) => {
+    const currentActions = selectedActions[path] || [];
+    let updatedActions;
+
+    if (currentActions.includes(actionId)) {
+      // Ne pas permettre de tout retirer : si c'est 'view' et qu'il y a d'autres actions, on retire
+      updatedActions = currentActions.filter(a => a !== actionId);
+    } else {
+      updatedActions = [...currentActions, actionId];
+    }
+
+    setSelectedActions(prev => ({
+      ...prev,
+      [path]: updatedActions,
+    }));
   };
 
+  // ── Toggle Module complet (toutes ses pages) ──
+  const handleToggleModule = (mod) => {
+    const modPaths = mod.pages.map(p => p.path);
+    const allChecked = modPaths.every(p => selectedRoutes.includes(p));
+
+    if (allChecked) {
+      // Tout retirer pour ce module
+      setSelectedRoutes(prev => prev.filter(p => !modPaths.includes(p)));
+      setSelectedActions(prev => {
+        const next = { ...prev };
+        modPaths.forEach(p => delete next[p]);
+        return next;
+      });
+    } else {
+      // Tout activer pour ce module avec actions complètes
+      setSelectedRoutes(prev => Array.from(new Set([...prev, ...modPaths])));
+      setSelectedActions(prev => {
+        const next = { ...prev };
+        mod.pages.forEach(p => {
+          next[p.path] = [...p.allowedActions];
+        });
+        return next;
+      });
+    }
+  };
+
+  // ── Soumission du Formulaire ──
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSubmitting(true);
       setError('');
 
-      if (selectedRoutes.length === 0) {
-        setError('Veuillez cocher au moins une page accessible pour cet administrateur.');
+      if (!formData.first_name || !formData.last_name) {
+        setError('Le prénom et le nom sont requis.');
+        setActiveTab('identity');
         setSubmitting(false);
         return;
       }
 
+      if (selectedRoutes.length === 0) {
+        setError('Veuillez autoriser au moins une page d\'accès pour cet administrateur.');
+        setActiveTab('permissions');
+        setSubmitting(false);
+        return;
+      }
+
+      const payload = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        role_id: Number(formData.role_id),
+        allowed_routes: selectedRoutes,
+        allowed_actions: selectedActions,
+      };
+
       if (editingStaff) {
-        await apiClient.put(`/v1/admin/staff/${editingStaff.id}`, {
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          role_id: Number(formData.role_id),
-          allowed_routes: selectedRoutes,
-        });
-        showSuccess('Compte et autorisations mis à jour avec succès.');
+        await apiClient.put(`/v1/admin/staff/${editingStaff.id}`, payload);
+        showSuccess('Compte et matrice des droits mis à jour avec succès.');
       } else {
         await apiClient.post('/v1/admin/staff', {
-          first_name: formData.first_name,
-          last_name: formData.last_name,
+          ...payload,
           email: formData.email,
           phone: formData.phone,
           country_id: Number(formData.country_id),
-          role_id: Number(formData.role_id),
           password: formData.password,
-          allowed_routes: selectedRoutes,
         });
-        showSuccess('Nouveau compte administrateur créé avec succès.');
+        showSuccess('Nouveau collaborateur créé avec ses autorisations configurées.');
       }
 
       setShowModal(false);
       fetchInitialData();
     } catch (err) {
       console.error('Erreur soumission staff:', err);
-      const msg = err.response?.data?.message || 'Erreur lors de l\'enregistrement du compte staff.';
+      const msg = err.response?.data?.message || 'Erreur lors de l\'enregistrement.';
       setError(msg);
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ── Confirmation Actions (Suspend, Delete, Reactivate) ──
   const handleConfirmAction = async () => {
     const { type, staff } = confirmModal;
     if (!staff) return;
@@ -377,12 +527,31 @@ export const StaffManagementPage = () => {
       fetchInitialData();
     } catch (err) {
       console.error('Erreur action staff:', err);
-      alert(err.response?.data?.message || 'Une erreur est survenue lors de l\'opération.');
+      alert(err.response?.data?.message || 'Une erreur est survenue.');
       setConfirmModal(prev => ({ ...prev, loading: false }));
     }
   };
 
-  // Filtered staff list
+  // Module sélectionné pour l'onglet Permissions
+  const activeModule = ADMIN_MODULES_CONFIG.find(m => m.id === selectedModuleId) || ADMIN_MODULES_CONFIG[0];
+
+  // Modules filtrés par recherche
+  const filteredModules = useMemo(() => {
+    if (!moduleSearch.trim()) return ADMIN_MODULES_CONFIG;
+    const q = moduleSearch.toLowerCase();
+    return ADMIN_MODULES_CONFIG.filter(m =>
+      m.label.toLowerCase().includes(q) ||
+      m.description.toLowerCase().includes(q) ||
+      m.pages.some(p => p.label.toLowerCase().includes(q) || p.path.toLowerCase().includes(q))
+    );
+  }, [moduleSearch]);
+
+  // Total des actions accordées
+  const totalActiveActionsCount = useMemo(() => {
+    return Object.values(selectedActions).reduce((acc, acts) => acc + (acts?.length || 0), 0);
+  }, [selectedActions]);
+
+  // Filtrage du tableau principal
   const filteredStaff = staffList.filter(s => {
     const fullName = `${s.first_name || ''} ${s.last_name || ''}`.toLowerCase();
     const email = (s.user?.email || '').toLowerCase();
@@ -400,45 +569,45 @@ export const StaffManagementPage = () => {
     <MainLayout>
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ── Top Header Bar ── */}
+        {/* ── En-tête Supérieur ── */}
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+            <div className="p-2.5 bg-blue-100 text-blue-600 rounded-2xl shadow-xs">
               <UserCog className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-2xl font-black text-gray-900 tracking-tight">Comptes Administrateurs & Droits d'Accès</h1>
               <p className="text-gray-500 text-sm mt-0.5">
-                Attribuez des autorisations sur-mesure en cochant les menus et sous-menus accessibles
+                Attribuez des autorisations sur-mesure : pages accessibles et actions spécifiques autorisées
               </p>
             </div>
           </div>
 
           <button
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-sm shadow-blue-500/20"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-md shadow-blue-500/20 active:scale-98"
           >
-            <Plus size={16} />
+            <Plus size={18} />
             <span>Créer un administrateur</span>
           </button>
         </div>
 
-        {/* ── Alerts Banner ── */}
+        {/* ── Alertes & Notifications ── */}
         {successMsg && (
-          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center gap-2">
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 size={18} className="text-emerald-600" />
             <span>{successMsg}</span>
           </div>
         )}
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm font-semibold flex items-center gap-2">
+        {error && !showModal && (
+          <div className="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm font-semibold flex items-center gap-2 animate-in fade-in">
             <AlertCircle size={18} className="text-red-600" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* ── Filters & Search ── */}
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        {/* ── Barre de Filtres & Recherche ── */}
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-1 min-w-[280px]">
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -447,7 +616,7 @@ export const StaffManagementPage = () => {
                 placeholder="Rechercher par nom, prénom, email ou téléphone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition"
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:border-blue-500 transition"
               />
             </div>
           </div>
@@ -456,7 +625,7 @@ export const StaffManagementPage = () => {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none bg-white text-gray-700 font-medium cursor-pointer"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none bg-white text-gray-700 font-medium cursor-pointer"
             >
               <option value="all">Tous les rôles</option>
               {roles.map(r => (
@@ -467,7 +636,7 @@ export const StaffManagementPage = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none bg-white text-gray-700 font-medium cursor-pointer"
+              className="px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none bg-white text-gray-700 font-medium cursor-pointer"
             >
               <option value="all">Tous les statuts</option>
               <option value="active">Actif</option>
@@ -478,15 +647,15 @@ export const StaffManagementPage = () => {
               onClick={fetchInitialData}
               disabled={loading}
               title="Rafraîchir"
-              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition"
+              className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
           </div>
         </div>
 
-        {/* ── Staff Table (Without IDs) ── */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* ── Tableau du Personnel (Aucun ID technique affiché) ── */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-16 text-center text-gray-500 flex flex-col items-center gap-3">
               <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -502,12 +671,12 @@ export const StaffManagementPage = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-3.5">Administrateur</th>
-                    <th className="px-6 py-3.5">Rôle</th>
-                    <th className="px-6 py-3.5">Pages & Menus Autorisés</th>
-                    <th className="px-6 py-3.5">Contact</th>
-                    <th className="px-6 py-3.5">Statut</th>
-                    <th className="px-6 py-3.5 text-right">Actions</th>
+                    <th className="px-6 py-4">Administrateur</th>
+                    <th className="px-6 py-4">Rôle</th>
+                    <th className="px-6 py-4">Pages & Actions Autorisées</th>
+                    <th className="px-6 py-4">Contact</th>
+                    <th className="px-6 py-4">Statut</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
@@ -516,13 +685,21 @@ export const StaffManagementPage = () => {
                     const isSuspended = staff.user?.status === 'suspended';
                     const roleName = staff.role?.name || 'Administrateur';
                     const hasFullAccess = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
-                    const countPages = hasFullAccess ? ALL_PAGE_PATHS.length : (staff.allowed_routes?.length || 0);
+                    const countPages = hasFullAccess ? ALL_ROUTES.length : (staff.allowed_routes?.length || 0);
+
+                    // Calcul du nombre d'actions autorisées
+                    let countActions = 0;
+                    if (hasFullAccess) {
+                      countActions = Object.values(ALL_ACTIONS_MAP).reduce((acc, acts) => acc + acts.length, 0);
+                    } else if (staff.allowed_actions && typeof staff.allowed_actions === 'object') {
+                      countActions = Object.values(staff.allowed_actions).reduce((acc, acts) => acc + (acts?.length || 0), 0);
+                    }
 
                     return (
-                      <tr key={staff.id} className="hover:bg-blue-50/30 transition-colors">
+                      <tr key={staff.id} className="hover:bg-blue-50/20 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-sm">
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-sm">
                               {staff.first_name?.[0]?.toUpperCase()}{staff.last_name?.[0]?.toUpperCase()}
                             </div>
                             <div>
@@ -533,7 +710,7 @@ export const StaffManagementPage = () => {
                         </td>
 
                         <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
                             <Shield size={12} />
                             <span>{roleName}</span>
                           </span>
@@ -541,15 +718,23 @@ export const StaffManagementPage = () => {
 
                         <td className="px-6 py-4">
                           {hasFullAccess ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                              <CheckCircle2 size={12} />
-                              <span>Accès Intégral ({ALL_PAGE_PATHS.length} pages)</span>
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                <CheckCircle2 size={12} />
+                                <span>Accès Intégral ({ALL_ROUTES.length} pages)</span>
+                              </span>
+                              <span className="text-[11px] font-semibold text-gray-400">Toutes actions</span>
+                            </div>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
-                              <Layers size={12} />
-                              <span>{countPages} page{countPages > 1 ? 's' : ''} autorisée{countPages > 1 ? 's' : ''}</span>
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                                <Layers size={12} />
+                                <span>{countPages} page{countPages > 1 ? 's' : ''}</span>
+                              </span>
+                              <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                                {countActions} action{countActions > 1 ? 's' : ''}
+                              </span>
+                            </div>
                           )}
                         </td>
 
@@ -562,12 +747,12 @@ export const StaffManagementPage = () => {
 
                         <td className="px-6 py-4">
                           {isSuspended ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
                               <XCircle size={12} />
                               <span>Suspendu</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
                               <CheckCircle2 size={12} />
                               <span>Actif</span>
                             </span>
@@ -575,11 +760,11 @@ export const StaffManagementPage = () => {
                         </td>
 
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleOpenEditModal(staff)}
-                              title="Modifier les autorisations et informations"
-                              className="p-1.5 hover:bg-gray-100 text-gray-600 hover:text-blue-600 rounded-lg transition"
+                              title="Modifier les droits d'accès & informations"
+                              className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-xl transition"
                             >
                               <Edit size={16} />
                             </button>
@@ -588,7 +773,7 @@ export const StaffManagementPage = () => {
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, type: 'reactivate', staff, loading: false })}
                                 title="Réactiver le compte"
-                                className="p-1.5 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition"
+                                className="p-2 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-xl transition"
                               >
                                 <CheckCircle2 size={16} />
                               </button>
@@ -596,7 +781,7 @@ export const StaffManagementPage = () => {
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, type: 'suspend', staff, loading: false })}
                                 title="Suspendre les accès"
-                                className="p-1.5 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-lg transition"
+                                className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-xl transition"
                               >
                                 <AlertTriangle size={16} />
                               </button>
@@ -605,7 +790,7 @@ export const StaffManagementPage = () => {
                             <button
                               onClick={() => setConfirmModal({ isOpen: true, type: 'delete', staff, loading: false })}
                               title="Supprimer définitivement"
-                              className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition"
+                              className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-xl transition"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -620,236 +805,505 @@ export const StaffManagementPage = () => {
           )}
         </div>
 
-        {/* ── Modal Création / Modification Staff avec Sélecteur de Menus & Sous-menus ── */}
+        {/* ══════════════════════════════════════════════════════════════════════════ */}
+        {/* ── NOUVELLE ARCHITECTURE DU MODAL LARGE (2 ONGLETS & ACTIONS PAR PAGE) ── */}
+        {/* ══════════════════════════════════════════════════════════════════════════ */}
         {showModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-            <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 my-auto flex flex-col max-h-[92vh]">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
+            <div className="bg-white rounded-3xl max-w-5xl w-full h-[90vh] shadow-2xl border border-gray-100 flex flex-col animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
               
-              <div className="flex justify-between items-center pb-3 border-b border-gray-100">
-                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                  <Shield className="text-blue-600" size={20} />
-                  <span>{editingStaff ? 'Modifier les accès administrateur' : 'Créer un administrateur & droits d\'accès'}</span>
-                </h2>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 p-1">
-                  ✕
+              {/* ── En-tête du Modal avec Navigation par Onglets ── */}
+              <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-4 bg-gray-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+                    <ShieldCheck size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-gray-900 leading-tight">
+                      {editingStaff ? 'Configuration des Droits Administrateur' : 'Créer un Administrateur & Définir ses Droits'}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {editingStaff ? `Modification des autorisations pour ${editingStaff.first_name} ${editingStaff.last_name}` : 'Créez le compte et cochez précisément les pages et actions autorisées'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Onglets de navigation */}
+                <div className="flex items-center bg-gray-200/70 p-1 rounded-2xl gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('identity')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                      activeTab === 'identity'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <UserCog size={15} className={activeTab === 'identity' ? 'text-blue-600' : 'text-gray-500'} />
+                    <span>1. Profil & Identifiant</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('permissions')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                      activeTab === 'permissions'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <SlidersHorizontal size={15} className={activeTab === 'permissions' ? 'text-blue-600' : 'text-gray-500'} />
+                    <span>2. Pages & Actions ({selectedRoutes.length} pages, {totalActiveActionsCount} actions)</span>
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition"
+                >
+                  <X size={18} />
                 </button>
               </div>
 
+              {/* ── Message d'erreur dans le Modal ── */}
               {error && (
-                <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-lg flex items-center gap-2">
-                  <AlertCircle size={14} />
+                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                  <AlertCircle size={15} />
                   <span>{error}</span>
                 </div>
               )}
 
-              <form id="staff-form" onSubmit={handleSubmit} className="overflow-y-auto flex-1 py-4 space-y-4 text-sm pr-1">
+              {/* ── Corps du Modal (Contenu des 2 Onglets) ── */}
+              <div className="flex-1 overflow-hidden p-6">
                 
-                {/* Informations de base */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Prénom *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Jean"
-                      value={formData.first_name}
-                      onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Nom *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Dupont"
-                      value={formData.last_name}
-                      onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium"
-                    />
-                  </div>
-                </div>
+                {/* ───────────────────────────────────────────────────────────── */}
+                {/* ── ONGLET 1 : INFORMATIONS DE BASE & RÔLE ─────────────────── */}
+                {/* ───────────────────────────────────────────────────────────── */}
+                {activeTab === 'identity' && (
+                  <div className="max-w-3xl mx-auto h-full overflow-y-auto space-y-6 pr-2">
+                    
+                    {/* Carte d'identité */}
+                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+                      <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                        <UserCog size={16} className="text-blue-600" />
+                        <span>Identité du Collaborateur</span>
+                      </h3>
 
-                {!editingStaff && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 mb-1">Email professionnel *</label>
-                      <input
-                        type="email"
-                        required
-                        placeholder="collaborateur@samre.tg"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium"
-                      />
-                    </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1.5">Prénom *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Ex: Jean"
+                            value={formData.first_name}
+                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                          />
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">Numéro de téléphone *</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="+228 90 00 00 00"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium"
-                        />
+                        <div>
+                          <label className="block text-xs font-bold text-gray-700 mb-1.5">Nom de famille *</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="Ex: Dupont"
+                            value={formData.last_name}
+                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                            className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 mb-1">Mot de passe temporaire *</label>
-                        <input
-                          type="password"
-                          required
-                          placeholder="••••••••"
-                          value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
 
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Rôle Principal</label>
-                  <select
-                    required
-                    value={formData.role_id}
-                    onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg outline-none focus:border-blue-500 font-medium bg-white text-sm"
-                  >
-                    {roles.map(r => (
-                      <option key={r.id} value={r.id}>
-                        {r.name} {r.description ? `(${r.description})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* ── SÉLECTEUR DE MENUS & SOUS-MENUS ACCESSIBLES ── */}
-                <div className="pt-3 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                        <Layers size={14} className="text-blue-600" />
-                        <span>Pages et Menus Autorisés ({selectedRoutes.length} sur {ALL_PAGE_PATHS.length})</span>
-                      </label>
-                      <p className="text-[11px] text-gray-500">
-                        Cochez les sections auxquelles ce collaborateur aura accès dans sa barre latérale
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleSelectAllRoutes}
-                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded transition"
-                      >
-                        Tout cocher
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleDeselectAllRoutes}
-                        className="text-[11px] font-bold text-gray-500 hover:text-gray-700 bg-gray-100 px-2 py-1 rounded transition"
-                      >
-                        Tout décocher
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 border border-gray-200 rounded-xl p-2.5 max-h-72 overflow-y-auto bg-slate-50/50">
-                    {ADMIN_NAVIGATION_MODULES.map((mod) => {
-                      const modulePaths = mod.pages.map(p => p.path);
-                      const isAllChecked = modulePaths.every(p => selectedRoutes.includes(p));
-                      const isPartiallyChecked = !isAllChecked && modulePaths.some(p => selectedRoutes.includes(p));
-                      const isExpanded = expandedModules[mod.id] ?? true;
-
-                      return (
-                        <div key={mod.id} className="bg-white border border-gray-200/80 rounded-xl overflow-hidden shadow-xs">
-                          {/* Module Header */}
-                          <div className="flex items-center justify-between p-2.5 bg-gray-50/80 hover:bg-gray-100/80 transition cursor-pointer">
-                            <label className="flex items-center gap-2.5 cursor-pointer flex-1">
+                      {!editingStaff && (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                            <div>
+                              <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                                <Mail size={13} className="text-gray-400" />
+                                <span>Email professionnel (Identifiant de connexion) *</span>
+                              </label>
                               <input
-                                type="checkbox"
-                                checked={isAllChecked}
-                                ref={(el) => {
-                                  if (el) el.indeterminate = isPartiallyChecked;
-                                }}
-                                onChange={() => handleToggleModule(mod)}
-                                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                type="email"
+                                required
+                                placeholder="collaborateur@samre.tg"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                               />
-                              <mod.icon size={15} className="text-gray-600" />
-                              <span className="text-xs font-black text-gray-800">{mod.label}</span>
-                            </label>
+                            </div>
 
-                            <button
-                              type="button"
-                              onClick={() => toggleModuleAccordion(mod.id)}
-                              className="text-gray-400 hover:text-gray-600 p-1"
-                            >
-                              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                            </button>
+                            <div>
+                              <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                                <Phone size={13} className="text-gray-400" />
+                                <span>Numéro de téléphone vérifié *</span>
+                              </label>
+                              <input
+                                type="text"
+                                required
+                                placeholder="+228 90 00 00 00"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                              />
+                            </div>
                           </div>
 
-                          {/* Submenus / Pages Checklist */}
-                          {isExpanded && (
-                            <div className="p-2.5 pl-8 space-y-1.5 border-t border-gray-100 bg-white">
-                              {mod.pages.map((page) => {
-                                const isChecked = selectedRoutes.includes(page.path);
+                          <div className="pt-2">
+                            <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
+                              <KeyRound size={13} className="text-gray-400" />
+                              <span>Mot de passe provisoire (au moins 6 caractères) *</span>
+                            </label>
+                            <input
+                              type="password"
+                              required
+                              placeholder="••••••••••••"
+                              value={formData.password}
+                              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                              className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                            />
+                            <p className="text-[11px] text-gray-400 mt-1">
+                              Le collaborateur pourra modifier son mot de passe à tout moment depuis son profil.
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
 
-                                return (
-                                  <label
-                                    key={page.path}
-                                    className="flex items-center gap-2 cursor-pointer py-1 px-1.5 rounded hover:bg-blue-50/40 transition"
-                                  >
+                    {/* Carte Rôle Principal */}
+                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-3">
+                      <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
+                        <Shield size={16} className="text-indigo-600" />
+                        <span>Rôle Hiérarchique de Base</span>
+                      </h3>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {roles.map(r => {
+                          const isSelected = String(formData.role_id) === String(r.id);
+
+                          return (
+                            <div
+                              key={r.id}
+                              onClick={() => setFormData({ ...formData, role_id: r.id })}
+                              className={`p-4 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3 ${
+                                isSelected
+                                  ? 'bg-blue-50/50 border-blue-600 shadow-xs'
+                                  : 'bg-white border-gray-200 hover:border-gray-300'
+                              }`}
+                            >
+                              <div className={`w-5 h-5 rounded-full border-2 mt-0.5 flex items-center justify-center ${
+                                isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'
+                              }`}>
+                                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                              </div>
+                              <div>
+                                <div className="font-bold text-gray-900 text-sm capitalize">{r.name}</div>
+                                <div className="text-xs text-gray-500 mt-0.5">{r.description || 'Rôle standard pour l\'administration.'}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Bouton d'avancement vers l'Étape 2 */}
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('permissions')}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition flex items-center gap-2 shadow-md shadow-blue-500/20"
+                      >
+                        <span>Étape suivante : Configurer les Pages & Actions</span>
+                        <ArrowRight size={16} />
+                      </button>
+                    </div>
+
+                  </div>
+                )}
+
+                {/* ───────────────────────────────────────────────────────────── */}
+                {/* ── ONGLET 2 : MATRICE DES PAGES & ACTIONS PAR PAGE ────────── */}
+                {/* ───────────────────────────────────────────────────────────── */}
+                {activeTab === 'permissions' && (
+                  <div className="h-full flex flex-col space-y-4">
+                    
+                    {/* Barre de Présélections Rapides */}
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={16} className="text-blue-600" />
+                        <span className="text-xs font-extrabold text-gray-800">Modèles rapides :</span>
+                        <button
+                          type="button"
+                          onClick={applyFullAccessPreset}
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition"
+                        >
+                          👑 Tout autoriser (Accès Total)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={applyReadOnlyPreset}
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition"
+                        >
+                          👁️ Lecture Seule (Consultation uniquement)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={applyModeratorPreset}
+                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition"
+                        >
+                          ⚖️ Modérateur (Lecture + Validation)
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={applyClearAllPreset}
+                        className="px-2.5 py-1 text-xs font-bold rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition"
+                      >
+                        Réinitialiser
+                      </button>
+                    </div>
+
+                    {/* Disposition Split (Gauche: Modules / Droite: Pages & Actions) */}
+                    <div className="flex-1 flex gap-4 min-h-0">
+                      
+                      {/* Panneau Gauche : Liste des Modules */}
+                      <div className="w-80 flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
+                        {/* Recherche de module */}
+                        <div className="p-3 border-b border-gray-100 bg-gray-50/50">
+                          <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <input
+                              type="text"
+                              placeholder="Filtrer les modules..."
+                              value={moduleSearch}
+                              onChange={(e) => setModuleSearch(e.target.value)}
+                              className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Liste scrollable des modules */}
+                        <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+                          {filteredModules.map(mod => {
+                            const isSelected = mod.id === selectedModuleId;
+                            const modPaths = mod.pages.map(p => p.path);
+                            const activePagesCount = modPaths.filter(p => selectedRoutes.includes(p)).length;
+                            const isAllActive = activePagesCount === modPaths.length;
+                            const isPartiallyActive = activePagesCount > 0 && !isAllActive;
+
+                            return (
+                              <div
+                                key={mod.id}
+                                onClick={() => setSelectedModuleId(mod.id)}
+                                className={`p-3.5 flex items-center justify-between cursor-pointer transition ${
+                                  isSelected
+                                    ? 'bg-blue-50/70 border-l-4 border-blue-600'
+                                    : 'hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className={`p-1.5 rounded-xl ${
+                                    isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    <mod.icon size={16} />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-xs font-bold text-gray-900 truncate">{mod.label}</div>
+                                    <div className="text-[11px] text-gray-400">
+                                      {activePagesCount}/{modPaths.length} page{modPaths.length > 1 ? 's' : ''}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                  {activePagesCount > 0 ? (
+                                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center">
+                                      {activePagesCount}
+                                    </span>
+                                  ) : (
+                                    <span className="w-2 h-2 rounded-full bg-gray-300" />
+                                  )}
+                                  <ChevronRight size={14} className="text-gray-400" />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Panneau Droit : Détails des Pages et Actions du Module Sélectionné */}
+                      <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
+                        
+                        {/* En-tête du module actif */}
+                        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
+                              <activeModule.icon size={20} />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-black text-gray-900">{activeModule.label}</h4>
+                              <p className="text-xs text-gray-500">{activeModule.description}</p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleToggleModule(activeModule)}
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-blue-600 transition shadow-2xs"
+                          >
+                            {activeModule.pages.every(p => selectedRoutes.includes(p.path))
+                              ? 'Tout désactiver ce module'
+                              : 'Tout activer ce module'}
+                          </button>
+                        </div>
+
+                        {/* Liste des Pages & Actions */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+                          {activeModule.pages.map(page => {
+                            const isRouteActive = selectedRoutes.includes(page.path);
+                            const currentActions = selectedActions[page.path] || [];
+
+                            return (
+                              <div
+                                key={page.path}
+                                className={`p-4 rounded-2xl border transition ${
+                                  isRouteActive
+                                    ? 'bg-white border-blue-200 shadow-xs'
+                                    : 'bg-gray-50/60 border-gray-200/80 opacity-75'
+                                }`}
+                              >
+                                {/* Ligne Principale de la Page */}
+                                <div className="flex items-center justify-between gap-3">
+                                  <label className="flex items-center gap-3 cursor-pointer flex-1">
                                     <input
                                       type="checkbox"
-                                      checked={isChecked}
-                                      onChange={() => handleToggleRoute(page.path)}
-                                      className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                                      checked={isRouteActive}
+                                      onChange={() => handleTogglePageRoute(page.path)}
+                                      className="w-5 h-5 text-blue-600 rounded-lg border-gray-300 focus:ring-blue-500 cursor-pointer"
                                     />
-                                    <span className={`text-xs ${isChecked ? 'font-bold text-gray-900' : 'text-gray-600'}`}>
-                                      {page.label}
-                                    </span>
-                                    <code className="text-[10px] text-gray-400 ml-auto font-mono">{page.path}</code>
+                                    <div>
+                                      <div className={`text-sm ${isRouteActive ? 'font-black text-gray-900' : 'font-semibold text-gray-600'}`}>
+                                        {page.label}
+                                      </div>
+                                      <code className="text-[11px] text-gray-400 font-mono">{page.path}</code>
+                                    </div>
                                   </label>
-                                );
-                              })}
-                            </div>
-                          )}
+
+                                  <div className="text-xs">
+                                    {isRouteActive ? (
+                                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        Accès Activé ({currentActions.length} action{currentActions.length > 1 ? 's' : ''})
+                                      </span>
+                                    ) : (
+                                      <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500">
+                                        Accès Désactivé
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Matrice des Actions (affichée uniquement quand la page est active) */}
+                                {isRouteActive && (
+                                  <div className="mt-3.5 pt-3 border-t border-gray-100 pl-8 space-y-2">
+                                    <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                                      <SlidersHorizontal size={12} />
+                                      <span>Actions spécifiques autorisées sur cette page :</span>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                      {page.allowedActions.map(actionKey => {
+                                        const def = ACTION_DEFINITIONS[actionKey] || { label: actionKey, color: 'bg-gray-50 text-gray-700 border-gray-200' };
+                                        const isActionGranted = currentActions.includes(actionKey);
+
+                                        return (
+                                          <button
+                                            type="button"
+                                            key={actionKey}
+                                            onClick={() => handleTogglePageAction(page.path, actionKey)}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
+                                              isActionGranted
+                                                ? `${def.color} shadow-2xs font-extrabold ring-1 ring-black/5`
+                                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'
+                                            }`}
+                                          >
+                                            <div className={`w-3.5 h-3.5 rounded flex items-center justify-center ${
+                                              isActionGranted ? 'bg-current text-white' : 'border border-gray-300'
+                                            }`}>
+                                              {isActionGranted && <Check size={10} className="stroke-[3]" />}
+                                            </div>
+                                            <span>{def.label}</span>
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
+
+                      </div>
+
+                    </div>
+
                   </div>
-                </div>
+                )}
 
-              </form>
+              </div>
 
-              <div className="flex justify-between items-center pt-3 border-t border-gray-100 mt-2">
+              {/* ── Pied du Modal avec Boutons d'Action ── */}
+              <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition text-sm"
+                  onClick={() => {
+                    if (activeTab === 'permissions') {
+                      setActiveTab('identity');
+                    } else {
+                      setShowModal(false);
+                    }
+                  }}
+                  className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-100 transition flex items-center gap-2"
                 >
-                  Annuler
+                  {activeTab === 'permissions' ? (
+                    <>
+                      <ArrowLeft size={14} />
+                      <span>Retour aux informations</span>
+                    </>
+                  ) : (
+                    <span>Annuler</span>
+                  )}
                 </button>
-                <button
-                  type="submit"
-                  form="staff-form"
-                  disabled={submitting}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition flex items-center gap-2 shadow-sm text-sm"
-                >
-                  {submitting && <Loader2 size={14} className="animate-spin" />}
-                  <span>{editingStaff ? 'Enregistrer les autorisations' : 'Créer l\'administrateur'}</span>
-                </button>
+
+                <div className="flex items-center gap-3">
+                  <div className="text-right hidden sm:block">
+                    <div className="text-xs font-bold text-gray-900">
+                      {selectedRoutes.length} pages • {totalActiveActionsCount} actions permises
+                    </div>
+                    <div className="text-[11px] text-gray-500">
+                      {selectedRoutes.length === ALL_ROUTES.length ? 'Accès complet accordé' : 'Permissions personnalisées'}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={submitting}
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-blue-500/20 active:scale-98"
+                  >
+                    {submitting && <Loader2 size={14} className="animate-spin" />}
+                    <span>{editingStaff ? 'Enregistrer les modifications' : 'Créer l\'administrateur'}</span>
+                  </button>
+                </div>
               </div>
 
             </div>
           </div>
         )}
 
-        {/* ── Modal Confirmation ── */}
+        {/* ── Modal de Confirmation (Suspendre / Supprimer / Réactiver) ── */}
         <ConfirmModal
           isOpen={confirmModal.isOpen}
           onClose={() => setConfirmModal({ isOpen: false, type: null, staff: null, loading: false })}
@@ -867,7 +1321,7 @@ export const StaffManagementPage = () => {
               ? 'Cette action supprimera irrévocablement le compte et toutes ses autorisations.'
               : confirmModal.type === 'suspend'
               ? 'L\'administrateur ne pourra plus accéder à aucune page jusqu\'à sa réactivation.'
-              : 'L\'administrateur pourra à nouveau se connecter et retrouver ses pages autorisées.'
+              : 'L\'administrateur pourra à nouveau se connecter et retrouver ses pages et actions autorisées.'
           }
           confirmLabel={
             confirmModal.type === 'delete'
