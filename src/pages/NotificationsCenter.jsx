@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Bell, Send, Clock, Users, ShieldAlert, Sparkles, 
-  MapPin, Globe, CheckCircle2, AlertCircle, RefreshCw, 
-  Calendar, Smartphone, Check, X, ChevronRight, ChevronLeft, 
+import {
+  Bell, Send, Clock, Users, ShieldAlert, Sparkles,
+  MapPin, Globe, CheckCircle2, AlertCircle, RefreshCw,
+  Calendar, Smartphone, Check, X, ChevronRight, ChevronLeft,
   Trash2, RotateCcw, Radio, Info, MessageSquare, ArrowRight, Eye,
   Edit3, Pencil
 } from 'lucide-react';
@@ -47,7 +47,7 @@ export const NotificationsCenter = () => {
   const canEdit = can('edit', '/notifications');
   const canDelete = can('delete', '/notifications');
   const [activeTab, setActiveTab] = useState(canCreate ? 'compose' : 'history'); // 'compose' | 'history'
-  
+
   // États de l'historique
   const [campaigns, setCampaigns] = useState([]);
   const [stats, setStats] = useState({
@@ -411,16 +411,16 @@ export const NotificationsCenter = () => {
   const availablePrefectures = form.region_id
     ? prefectures.filter(p => String(p.region_id) === String(form.region_id))
     : (form.country_id
-        ? prefectures.filter(p => availableRegions.some(r => r.id === p.region_id))
-        : prefectures);
+      ? prefectures.filter(p => availableRegions.some(r => r.id === p.region_id))
+      : prefectures);
 
   const availableCommunes = form.prefecture_id
     ? communes.filter(c => String(c.prefecture_id) === String(form.prefecture_id))
     : (form.region_id
+      ? communes.filter(c => availablePrefectures.some(p => p.id === c.prefecture_id))
+      : (form.country_id
         ? communes.filter(c => availablePrefectures.some(p => p.id === c.prefecture_id))
-        : (form.country_id
-            ? communes.filter(c => availablePrefectures.some(p => p.id === c.prefecture_id))
-            : communes));
+        : communes));
 
   const hasGeoFilter = Boolean(form.country_id || form.region_id || form.prefecture_id || form.commune_id);
 
@@ -437,11 +437,11 @@ export const NotificationsCenter = () => {
   return (
     <MainLayout>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        
+
         {/* ── En-tête Compact ── */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           backgroundColor: '#FFFFFF',
           padding: '10px 14px',
@@ -510,7 +510,7 @@ export const NotificationsCenter = () => {
 
         {/* ── Cartes KPIs ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
-          
+
           <div style={{ backgroundColor: '#FFFFFF', padding: '10px 14px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#ECFDF5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Send size={18} />
@@ -629,10 +629,10 @@ export const NotificationsCenter = () => {
         {/* ── VUE 1 : COMPOSITEUR DE NOTIFICATION & CIBLAGE ── */}
         {activeTab === 'compose' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.35fr) minmax(320px, 0.9fr)', gap: '12px' }}>
-            
+
             {/* Formulaire de composition */}
             <form onSubmit={handleSubmit} style={{ backgroundColor: '#FFFFFF', padding: '16px', borderRadius: '10px', border: '1px solid #E2E8F0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              
+
               {/* Bannière Mode Édition */}
               {editingCampaign && (
                 <div style={{
@@ -868,7 +868,7 @@ export const NotificationsCenter = () => {
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
-                    
+
                     {/* 1. Pays */}
                     <div>
                       <span style={{ fontSize: '10.5px', color: '#64748B', fontWeight: '600', display: 'block', marginBottom: '2px' }}>
@@ -876,19 +876,19 @@ export const NotificationsCenter = () => {
                       </span>
                       <select
                         value={form.country_id}
-                        onChange={e => setForm({ 
-                          ...form, 
-                          country_id: e.target.value, 
-                          region_id: '', 
-                          prefecture_id: '', 
-                          commune_id: '' 
+                        onChange={e => setForm({
+                          ...form,
+                          country_id: e.target.value,
+                          region_id: '',
+                          prefecture_id: '',
+                          commune_id: ''
                         })}
-                        style={{ 
-                          width: '100%', 
-                          padding: '6px 8px', 
-                          borderRadius: '6px', 
-                          border: form.country_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1', 
-                          fontSize: '11.5px', 
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          border: form.country_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1',
+                          fontSize: '11.5px',
                           backgroundColor: form.country_id ? '#EFF6FF' : '#F8FAFC',
                           fontWeight: form.country_id ? '700' : 'normal'
                         }}
@@ -909,19 +909,19 @@ export const NotificationsCenter = () => {
                       </span>
                       <select
                         value={form.region_id}
-                        onChange={e => setForm({ 
-                          ...form, 
-                          region_id: e.target.value, 
-                          prefecture_id: '', 
-                          commune_id: '' 
+                        onChange={e => setForm({
+                          ...form,
+                          region_id: e.target.value,
+                          prefecture_id: '',
+                          commune_id: ''
                         })}
                         disabled={form.country_id && availableRegions.length === 0}
-                        style={{ 
-                          width: '100%', 
-                          padding: '6px 8px', 
-                          borderRadius: '6px', 
-                          border: form.region_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1', 
-                          fontSize: '11.5px', 
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          border: form.region_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1',
+                          fontSize: '11.5px',
                           backgroundColor: form.region_id ? '#EFF6FF' : '#F8FAFC',
                           fontWeight: form.region_id ? '700' : 'normal',
                           opacity: (form.country_id && availableRegions.length === 0) ? 0.6 : 1
@@ -945,18 +945,18 @@ export const NotificationsCenter = () => {
                       </span>
                       <select
                         value={form.prefecture_id}
-                        onChange={e => setForm({ 
-                          ...form, 
-                          prefecture_id: e.target.value, 
-                          commune_id: '' 
+                        onChange={e => setForm({
+                          ...form,
+                          prefecture_id: e.target.value,
+                          commune_id: ''
                         })}
                         disabled={(form.region_id && availablePrefectures.length === 0) || (form.country_id && availablePrefectures.length === 0)}
-                        style={{ 
-                          width: '100%', 
-                          padding: '6px 8px', 
-                          borderRadius: '6px', 
-                          border: form.prefecture_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1', 
-                          fontSize: '11.5px', 
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          border: form.prefecture_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1',
+                          fontSize: '11.5px',
                           backgroundColor: form.prefecture_id ? '#EFF6FF' : '#F8FAFC',
                           fontWeight: form.prefecture_id ? '700' : 'normal',
                           opacity: (form.country_id && availablePrefectures.length === 0) ? 0.6 : 1
@@ -982,12 +982,12 @@ export const NotificationsCenter = () => {
                         value={form.commune_id}
                         onChange={e => setForm({ ...form, commune_id: e.target.value })}
                         disabled={(form.prefecture_id && availableCommunes.length === 0) || (form.country_id && availableCommunes.length === 0)}
-                        style={{ 
-                          width: '100%', 
-                          padding: '6px 8px', 
-                          borderRadius: '6px', 
-                          border: form.commune_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1', 
-                          fontSize: '11.5px', 
+                        style={{
+                          width: '100%',
+                          padding: '6px 8px',
+                          borderRadius: '6px',
+                          border: form.commune_id ? '1.5px solid #1A6FD4' : '1px solid #CBD5E1',
+                          fontSize: '11.5px',
                           backgroundColor: form.commune_id ? '#EFF6FF' : '#F8FAFC',
                           fontWeight: form.commune_id ? '700' : 'normal',
                           opacity: (form.prefecture_id && availableCommunes.length === 0) ? 0.6 : 1
@@ -1251,7 +1251,7 @@ export const NotificationsCenter = () => {
         {/* ── VUE 2 : HISTORIQUE & PROGRAMMATIONS ── */}
         {activeTab === 'history' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            
+
             {/* Barre de filtres */}
             <div style={{
               backgroundColor: '#FFFFFF',
@@ -1408,8 +1408,8 @@ export const NotificationsCenter = () => {
                               </div>
                               <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '2px' }}>
                                 {c.commune?.translations?.[0]?.name || c.commune?.name ||
-                                 c.prefecture?.translations?.[0]?.name || c.prefecture?.name ||
-                                 c.country?.translations?.[0]?.name || c.country?.name || 'Toutes zones'}
+                                  c.prefecture?.translations?.[0]?.name || c.prefecture?.name ||
+                                  c.country?.translations?.[0]?.name || c.country?.name || 'Toutes zones'}
                               </div>
                             </td>
 
@@ -1443,7 +1443,7 @@ export const NotificationsCenter = () => {
                             {/* Actions */}
                             <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                
+
                                 {/* 1. Modifier / Éditer */}
                                 {canEdit && (
                                   <button

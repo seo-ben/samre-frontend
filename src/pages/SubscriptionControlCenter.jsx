@@ -78,8 +78,8 @@ export function SubscriptionControlCenterPage() {
           },
           stats: {
             active_subscriptions_count: Array.isArray(rawSubs) ? rawSubs.length : 0,
-            total_revenue_cfa: Array.isArray(rawSubs) ? rawSubs.reduce((acc, curr) => acc + (parseFloat(curr.price_paid) || 0), 0) : 0,
-            popular_plan: rawPlans[0]?.name || 'Aucun'
+            total_revenue_cfa: Array.isArray(rawSubs) ? rawSubs.reduce((acc, curr) => acc + (parseFloat(curr.plan?.price || curr.price_paid || 0)), 0) : 0,
+            popular_plan: rawPlans[0]?.translations?.[0]?.name || rawPlans[0]?.name || rawPlans[0]?.key || 'Aucun'
           }
         };
       }

@@ -91,7 +91,7 @@ export const SurveysManagementPage = () => {
   const [editingSurvey, setEditingSurvey] = useState(null);
   const [selectedAnalytics, setSelectedAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  
+
   // Modal de confirmation de suppression personnalisée (pas d'alerte javascript native)
   const [surveyToDelete, setSurveyToDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -339,11 +339,10 @@ export const SurveysManagementPage = () => {
         <button
           key={p}
           onClick={() => setPage(p)}
-          className={`w-7 h-7 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-            currentPage === p
+          className={`w-7 h-7 text-xs font-bold rounded-lg transition-colors cursor-pointer ${currentPage === p
               ? 'bg-orange-600 text-white shadow-xs'
               : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-          }`}
+            }`}
         >
           {p}
         </button>
@@ -354,7 +353,7 @@ export const SurveysManagementPage = () => {
   return (
     <MainLayout>
       <div className="space-y-4 pb-12">
-        
+
         {/* Header Title & Bouton Nouveau Sondage Très Visible */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
@@ -394,9 +393,8 @@ export const SurveysManagementPage = () => {
 
         {/* Toast Alert */}
         {toast && (
-          <div className={`p-3.5 rounded-xl flex items-center gap-3 shadow-md transition-all ${
-            toast.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-          }`}>
+          <div className={`p-3.5 rounded-xl flex items-center gap-3 shadow-md transition-all ${toast.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+            }`}>
             {toast.type === 'error' ? <XCircle className="w-4 h-4 text-red-600 shrink-0" /> : <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
             <span className="text-xs font-semibold">{toast.message}</span>
           </div>
@@ -619,11 +617,10 @@ export const SurveysManagementPage = () => {
                             {canEdit && (
                               <button
                                 onClick={() => handleToggleStatus(survey)}
-                                className={`p-1 rounded-md transition cursor-pointer ${
-                                  isActive 
-                                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' 
+                                className={`p-1 rounded-md transition cursor-pointer ${isActive
+                                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-700'
                                     : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
-                                }`}
+                                  }`}
                                 title={isActive ? 'Clôturer le sondage' : 'Réactiver'}
                               >
                                 {isActive ? <Clock size={14} /> : <CheckCircle2 size={14} />}
@@ -653,7 +650,7 @@ export const SurveysManagementPage = () => {
           {/* Pagination Riche & Complète */}
           {pagination && (
             <div className="p-3 bg-slate-50/75 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-              
+
               {/* Info pagination */}
               <div className="flex items-center gap-3">
                 <span>
@@ -730,7 +727,7 @@ export const SurveysManagementPage = () => {
 
         {/* ─── MODAL DE CONFIRMATION DE SUPPRESSION PERSONNALISÉ (PAS DE WINDOW.CONFIRM) ── */}
         {surveyToDelete && (
-          <div 
+          <div
             onClick={(e) => {
               if (e.target === e.currentTarget && !deleting) setSurveyToDelete(null);
             }}
@@ -749,7 +746,7 @@ export const SurveysManagementPage = () => {
               padding: '16px'
             }}
           >
-            <div 
+            <div
               style={{
                 backgroundColor: '#ffffff',
                 borderRadius: '16px',
@@ -762,7 +759,7 @@ export const SurveysManagementPage = () => {
               className="space-y-4"
             >
               <div className="flex items-start gap-3.5">
-                <div 
+                <div
                   style={{
                     width: '44px',
                     height: '44px',
@@ -784,7 +781,7 @@ export const SurveysManagementPage = () => {
                   <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px', lineHeight: '1.5' }}>
                     Êtes-vous sûr de vouloir supprimer définitivement le sondage :
                   </p>
-                  <div 
+                  <div
                     style={{
                       backgroundColor: '#f8fafc',
                       padding: '10px 12px',
@@ -863,13 +860,13 @@ export const SurveysManagementPage = () => {
 
         {/* ─── MODAL CRÉATION / ÉDITION DE SONDAGE ───────────────────────────── */}
         {showCreateModal && (
-          <div 
+          <div
             onClick={(e) => {
               if (e.target === e.currentTarget) setShowCreateModal(false);
             }}
             className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
           >
-            <div 
+            <div
               className="bg-white rounded-3xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden border border-slate-200/80 animate-in fade-in zoom-in-95 duration-200"
               style={{ maxHeight: '88vh' }}
             >
@@ -1057,13 +1054,13 @@ export const SurveysManagementPage = () => {
 
         {/* ─── MODAL ANALYTICS & RÉSULTATS DÉTAILLÉS ─────────────────────────── */}
         {selectedAnalytics && (
-          <div 
+          <div
             onClick={(e) => {
               if (e.target === e.currentTarget) setSelectedAnalytics(null);
             }}
             className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-hidden"
           >
-            <div 
+            <div
               className="bg-white rounded-3xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden border border-slate-200/80 animate-in fade-in zoom-in-95 duration-200"
               style={{ maxHeight: '88vh' }}
             >
@@ -1092,7 +1089,7 @@ export const SurveysManagementPage = () => {
 
               {/* Corps SCROLLABLE */}
               <div className="p-6 overflow-y-auto flex-1 min-h-0 space-y-6">
-                
+
                 {/* Question */}
                 <div className="p-4 rounded-2xl bg-orange-50/60 border border-orange-100">
                   <p className="text-xs font-bold text-orange-600 uppercase tracking-wider mb-1">Question posée</p>
@@ -1119,7 +1116,7 @@ export const SurveysManagementPage = () => {
                             <span className="text-orange-600 font-poppins">{opt.votes_count} votes ({pct}%)</span>
                           </div>
                           <div className="w-full h-2.5 bg-slate-200 rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-500"
                               style={{ width: `${pct}%` }}
                             />

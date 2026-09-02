@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Sparkles, Clock, CheckCircle2, XCircle, AlertCircle, 
-  Search, RefreshCw, Eye, User, Phone, Mail, Calendar, 
+import {
+  Sparkles, Clock, CheckCircle2, XCircle, AlertCircle,
+  Search, RefreshCw, Eye, User, Phone, Mail, Calendar,
   Tag, MessageSquare, ChevronRight, Check, X, ShieldAlert,
   HelpCircle, ArrowUpRight, Filter, Building2, FileText
 } from 'lucide-react';
@@ -104,8 +104,8 @@ export const SpecialRequestsPage = () => {
 
       if (res.data?.success || res.data?.status === 'success') {
         showToast(
-          statusToSet === 'resolved' 
-            ? 'Demande marquée comme résolue.' 
+          statusToSet === 'resolved'
+            ? 'Demande marquée comme résolue.'
             : (statusToSet === 'rejected' ? 'Demande rejetée.' : 'Statut mis à jour (En cours).'),
           statusToSet === 'resolved' ? 'success' : (statusToSet === 'rejected' ? 'error' : 'info')
         );
@@ -181,7 +181,7 @@ export const SpecialRequestsPage = () => {
   return (
     <MainLayout>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
-        
+
         {/* En-tête de la page */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -212,13 +212,12 @@ export const SpecialRequestsPage = () => {
 
         {/* Cartes KPI */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div 
+          <div
             onClick={() => { setStatusFilter('all'); setPage(1); }}
-            className={`p-4 rounded-2xl border transition cursor-pointer ${
-              statusFilter === 'all' 
-                ? 'bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/10' 
+            className={`p-4 rounded-2xl border transition cursor-pointer ${statusFilter === 'all'
+                ? 'bg-slate-900 text-white border-slate-900 shadow-md shadow-slate-900/10'
                 : 'bg-white text-slate-900 border-slate-200 hover:border-slate-300 shadow-sm'
-            }`}
+              }`}
           >
             <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'all' ? 'text-slate-400' : 'text-slate-500'}`}>
               Total demandes
@@ -226,13 +225,12 @@ export const SpecialRequestsPage = () => {
             <p className="text-2xl font-black mt-1 font-poppins">{stats.total}</p>
           </div>
 
-          <div 
+          <div
             onClick={() => { setStatusFilter('pending'); setPage(1); }}
-            className={`p-4 rounded-2xl border transition cursor-pointer ${
-              statusFilter === 'pending' 
-                ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20' 
+            className={`p-4 rounded-2xl border transition cursor-pointer ${statusFilter === 'pending'
+                ? 'bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-500/20'
                 : 'bg-white text-slate-900 border-slate-200 hover:border-amber-300 shadow-sm'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'pending' ? 'text-amber-100' : 'text-amber-600'}`}>
@@ -243,13 +241,12 @@ export const SpecialRequestsPage = () => {
             <p className="text-2xl font-black mt-1 font-poppins">{stats.pending}</p>
           </div>
 
-          <div 
+          <div
             onClick={() => { setStatusFilter('in_progress'); setPage(1); }}
-            className={`p-4 rounded-2xl border transition cursor-pointer ${
-              statusFilter === 'in_progress' 
-                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20' 
+            className={`p-4 rounded-2xl border transition cursor-pointer ${statusFilter === 'in_progress'
+                ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20'
                 : 'bg-white text-slate-900 border-slate-200 hover:border-blue-300 shadow-sm'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'in_progress' ? 'text-blue-100' : 'text-blue-600'}`}>
@@ -260,13 +257,12 @@ export const SpecialRequestsPage = () => {
             <p className="text-2xl font-black mt-1 font-poppins">{stats.in_progress}</p>
           </div>
 
-          <div 
+          <div
             onClick={() => { setStatusFilter('resolved'); setPage(1); }}
-            className={`p-4 rounded-2xl border transition cursor-pointer ${
-              statusFilter === 'resolved' 
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20' 
+            className={`p-4 rounded-2xl border transition cursor-pointer ${statusFilter === 'resolved'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
                 : 'bg-white text-slate-900 border-slate-200 hover:border-emerald-300 shadow-sm'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'resolved' ? 'text-emerald-100' : 'text-emerald-600'}`}>
@@ -277,13 +273,12 @@ export const SpecialRequestsPage = () => {
             <p className="text-2xl font-black mt-1 font-poppins">{stats.resolved}</p>
           </div>
 
-          <div 
+          <div
             onClick={() => { setStatusFilter('rejected'); setPage(1); }}
-            className={`p-4 rounded-2xl border transition cursor-pointer ${
-              statusFilter === 'rejected' 
-                ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20' 
+            className={`p-4 rounded-2xl border transition cursor-pointer ${statusFilter === 'rejected'
+                ? 'bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20'
                 : 'bg-white text-slate-900 border-slate-200 hover:border-rose-300 shadow-sm'
-            }`}
+              }`}
           >
             <div className="flex items-center justify-between">
               <p className={`text-xs font-bold uppercase tracking-wider ${statusFilter === 'rejected' ? 'text-rose-100' : 'text-rose-600'}`}>
@@ -357,7 +352,7 @@ export const SpecialRequestsPage = () => {
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {requests.map((req) => {
-                    const userName = req.user?.candidateProfile 
+                    const userName = req.user?.candidateProfile
                       ? `${req.user.candidateProfile.first_name || ''} ${req.user.candidateProfile.last_name || ''}`.trim()
                       : (req.user?.companyProfile?.company_name || req.user?.email || 'Utilisateur');
 
@@ -445,7 +440,7 @@ export const SpecialRequestsPage = () => {
 
       {/* Modal de Traitement */}
       {selectedRequest && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             top: 0,
@@ -462,7 +457,7 @@ export const SpecialRequestsPage = () => {
             overflow: 'hidden'
           }}
         >
-          <div 
+          <div
             style={{
               backgroundColor: '#ffffff',
               borderRadius: '24px',
@@ -477,9 +472,9 @@ export const SpecialRequestsPage = () => {
               margin: 'auto'
             }}
           >
-            
+
             {/* Header FIXE du modal */}
-            <div 
+            <div
               style={{
                 padding: '18px 24px',
                 borderBottom: '1px solid #f1f5f9',
@@ -514,7 +509,7 @@ export const SpecialRequestsPage = () => {
             </div>
 
             {/* Corps DÉROULANT du modal / Scrollable Body */}
-            <div 
+            <div
               style={{
                 padding: '24px',
                 overflowY: 'auto',
@@ -531,7 +526,7 @@ export const SpecialRequestsPage = () => {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <p className="text-sm font-bold text-slate-900">
-                      {selectedRequest.user?.candidateProfile 
+                      {selectedRequest.user?.candidateProfile
                         ? `${selectedRequest.user.candidateProfile.first_name || ''} ${selectedRequest.user.candidateProfile.last_name || ''}`.trim()
                         : (selectedRequest.user?.companyProfile?.company_name || 'Utilisateur')}
                     </p>
@@ -674,7 +669,7 @@ export const SpecialRequestsPage = () => {
             </div>
 
             {/* Footer modal */}
-            <div 
+            <div
               style={{
                 padding: '16px 24px',
                 borderTop: '1px solid #f1f5f9',
@@ -744,7 +739,7 @@ export const SpecialRequestsPage = () => {
 
       {/* Toast Notification 100% opaque et visible */}
       {toast && (
-        <div 
+        <div
           style={{
             position: 'fixed',
             bottom: '24px',
@@ -766,8 +761,8 @@ export const SpecialRequestsPage = () => {
         >
           {toast.type === 'error' ? <AlertCircle size={18} color="#ffffff" /> : <CheckCircle2 size={18} color="#ffffff" />}
           <span>{toast.message}</span>
-          <button 
-            onClick={() => setToast(null)} 
+          <button
+            onClick={() => setToast(null)}
             style={{ background: 'none', border: 'none', color: '#ffffff', opacity: 0.8, cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
           >
             <X size={16} />
