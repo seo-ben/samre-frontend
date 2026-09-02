@@ -4,7 +4,7 @@ import apiClient from '../lib/apiClient';
 import {
   UserCog, Plus, Search, Shield, Mail, Phone,
   CheckCircle2, XCircle, Trash2, Edit, AlertCircle, Loader2,
-  RefreshCw, AlertTriangle, Layers, ChevronRight,
+  RefreshCw, AlertTriangle, Layers, ChevronDown, ChevronUp,
   LayoutDashboard, Users, Building2, Briefcase, CalendarDays, FileText,
   BadgeCheck, Vote, Handshake, Wallet, Star, Bell, BarChart3, Settings,
   Eye, CheckSquare, Square, ShieldCheck, KeyRound, ArrowRight, ArrowLeft,
@@ -236,17 +236,16 @@ export const StaffManagementPage = () => {
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'permissions'
-  const [selectedModuleId, setSelectedModuleId] = useState(ADMIN_MODULES_CONFIG[0].id);
+  const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' ou id du module
   const [moduleSearch, setModuleSearch] = useState('');
+  const [collapsedModules, setCollapsedModules] = useState({});
   const [editingStaff, setEditingStaff] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   // Permissions state
-  // allowedRoutes: ['/users', '/offers', ...]
   const [selectedRoutes, setSelectedRoutes] = useState([]);
-  // allowedActions: { '/users': ['view', 'edit'], '/offers': ['view', 'validate'] }
   const [selectedActions, setSelectedActions] = useState({});
 
   // Confirmation Modal
@@ -303,8 +302,9 @@ export const StaffManagementPage = () => {
   const handleOpenCreateModal = () => {
     setEditingStaff(null);
     setActiveTab('identity');
-    setSelectedModuleId(ADMIN_MODULES_CONFIG[0].id);
+    setSelectedCategory('all');
     setModuleSearch('');
+    setCollapsedModules({});
     // Par défaut, donner accès complet à tout
     setSelectedRoutes([...ALL_ROUTES]);
     setSelectedActions(JSON.parse(JSON.stringify(ALL_ACTIONS_MAP)));
@@ -324,8 +324,9 @@ export const StaffManagementPage = () => {
   const handleOpenEditModal = (staff) => {
     setEditingStaff(staff);
     setActiveTab('identity');
-    setSelectedModuleId(ADMIN_MODULES_CONFIG[0].id);
+    setSelectedCategory('all');
     setModuleSearch('');
+    setCollapsedModules({});
 
     const hasFull = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
     const existingRoutes = hasFull ? [...ALL_ROUTES] : (Array.isArray(staff.allowed_routes) ? staff.allowed_routes : ['/dashboard']);
@@ -335,7 +336,6 @@ export const StaffManagementPage = () => {
     if (staff.allowed_actions && typeof staff.allowed_actions === 'object' && !Array.isArray(staff.allowed_actions)) {
       setSelectedActions(staff.allowed_actions);
     } else {
-      // Activer les actions disponibles pour chaque route active
       const acts = {};
       existingRoutes.forEach(r => {
         acts[r] = ALL_ACTIONS_MAP[r] ? [...ALL_ACTIONS_MAP[r]] : ['view'];
@@ -371,7 +371,6 @@ export const StaffManagementPage = () => {
   };
 
   const applyModeratorPreset = () => {
-    // Consultation partout + validation/modération
     setSelectedRoutes([...ALL_ROUTES]);
     const modActions = {};
     ADMIN_MODULES_CONFIG.forEach(mod => {
@@ -391,7 +390,6 @@ export const StaffManagementPage = () => {
   // ── Toggle Page ──
   const handleTogglePageRoute = (path) => {
     if (selectedRoutes.includes(path)) {
-      // Désactiver la page
       setSelectedRoutes(prev => prev.filter(p => p !== path));
       setSelectedActions(prev => {
         const next = { ...prev };
@@ -399,7 +397,6 @@ export const StaffManagementPage = () => {
         return next;
       });
     } else {
-      // Activer la page avec toutes ses actions disponibles par défaut
       setSelectedRoutes(prev => [...prev, path]);
       const defaultActions = ALL_ACTIONS_MAP[path] ? [...ALL_ACTIONS_MAP[path]] : ['view'];
       setSelectedActions(prev => ({ ...prev, [path]: defaultActions }));
@@ -412,7 +409,6 @@ export const StaffManagementPage = () => {
     let updatedActions;
 
     if (currentActions.includes(actionId)) {
-      // Ne pas permettre de tout retirer : si c'est 'view' et qu'il y a d'autres actions, on retire
       updatedActions = currentActions.filter(a => a !== actionId);
     } else {
       updatedActions = [...currentActions, actionId];
@@ -424,13 +420,12 @@ export const StaffManagementPage = () => {
     }));
   };
 
-  // ── Toggle Module complet (toutes ses pages) ──
+  // ── Toggle Module complet ──
   const handleToggleModule = (mod) => {
     const modPaths = mod.pages.map(p => p.path);
     const allChecked = modPaths.every(p => selectedRoutes.includes(p));
 
     if (allChecked) {
-      // Tout retirer pour ce module
       setSelectedRoutes(prev => prev.filter(p => !modPaths.includes(p)));
       setSelectedActions(prev => {
         const next = { ...prev };
@@ -438,7 +433,6 @@ export const StaffManagementPage = () => {
         return next;
       });
     } else {
-      // Tout activer pour ce module avec actions complètes
       setSelectedRoutes(prev => Array.from(new Set([...prev, ...modPaths])));
       setSelectedActions(prev => {
         const next = { ...prev };
@@ -448,6 +442,14 @@ export const StaffManagementPage = () => {
         return next;
       });
     }
+  };
+
+  // ── Toggle Replier/Déplier Module ──
+  const toggleCollapseModule = (modId) => {
+    setCollapsedModules(prev => ({
+      ...prev,
+      [modId]: !prev[modId],
+    }));
   };
 
   // ── Soumission du Formulaire ──
@@ -532,19 +534,22 @@ export const StaffManagementPage = () => {
     }
   };
 
-  // Module sélectionné pour l'onglet Permissions
-  const activeModule = ADMIN_MODULES_CONFIG.find(m => m.id === selectedModuleId) || ADMIN_MODULES_CONFIG[0];
-
-  // Modules filtrés par recherche
-  const filteredModules = useMemo(() => {
-    if (!moduleSearch.trim()) return ADMIN_MODULES_CONFIG;
-    const q = moduleSearch.toLowerCase();
-    return ADMIN_MODULES_CONFIG.filter(m =>
-      m.label.toLowerCase().includes(q) ||
-      m.description.toLowerCase().includes(q) ||
-      m.pages.some(p => p.label.toLowerCase().includes(q) || p.path.toLowerCase().includes(q))
-    );
-  }, [moduleSearch]);
+  // Modules filtrés par recherche et catégorie
+  const displayedModules = useMemo(() => {
+    let list = ADMIN_MODULES_CONFIG;
+    if (selectedCategory !== 'all') {
+      list = list.filter(m => m.id === selectedCategory);
+    }
+    if (moduleSearch.trim()) {
+      const q = moduleSearch.toLowerCase();
+      list = list.filter(m =>
+        m.label.toLowerCase().includes(q) ||
+        m.description.toLowerCase().includes(q) ||
+        m.pages.some(p => p.label.toLowerCase().includes(q) || p.path.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [selectedCategory, moduleSearch]);
 
   // Total des actions accordées
   const totalActiveActionsCount = useMemo(() => {
@@ -585,7 +590,7 @@ export const StaffManagementPage = () => {
 
           <button
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-md shadow-blue-500/20 active:scale-98"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition shadow-md shadow-blue-500/20 active:scale-98 cursor-pointer"
           >
             <Plus size={18} />
             <span>Créer un administrateur</span>
@@ -647,7 +652,7 @@ export const StaffManagementPage = () => {
               onClick={fetchInitialData}
               disabled={loading}
               title="Rafraîchir"
-              className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition"
+              className="p-2 border border-gray-200 rounded-xl hover:bg-gray-50 text-gray-600 transition cursor-pointer"
             >
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -687,7 +692,6 @@ export const StaffManagementPage = () => {
                     const hasFullAccess = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
                     const countPages = hasFullAccess ? ALL_ROUTES.length : (staff.allowed_routes?.length || 0);
 
-                    // Calcul du nombre d'actions autorisées
                     let countActions = 0;
                     if (hasFullAccess) {
                       countActions = Object.values(ALL_ACTIONS_MAP).reduce((acc, acts) => acc + acts.length, 0);
@@ -764,7 +768,7 @@ export const StaffManagementPage = () => {
                             <button
                               onClick={() => handleOpenEditModal(staff)}
                               title="Modifier les droits d'accès & informations"
-                              className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-xl transition"
+                              className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-xl transition cursor-pointer"
                             >
                               <Edit size={16} />
                             </button>
@@ -773,7 +777,7 @@ export const StaffManagementPage = () => {
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, type: 'reactivate', staff, loading: false })}
                                 title="Réactiver le compte"
-                                className="p-2 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-xl transition"
+                                className="p-2 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-xl transition cursor-pointer"
                               >
                                 <CheckCircle2 size={16} />
                               </button>
@@ -781,7 +785,7 @@ export const StaffManagementPage = () => {
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, type: 'suspend', staff, loading: false })}
                                 title="Suspendre les accès"
-                                className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-xl transition"
+                                className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-xl transition cursor-pointer"
                               >
                                 <AlertTriangle size={16} />
                               </button>
@@ -790,7 +794,7 @@ export const StaffManagementPage = () => {
                             <button
                               onClick={() => setConfirmModal({ isOpen: true, type: 'delete', staff, loading: false })}
                               title="Supprimer définitivement"
-                              className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-xl transition"
+                              className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-xl transition cursor-pointer"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -806,61 +810,61 @@ export const StaffManagementPage = () => {
         </div>
 
         {/* ══════════════════════════════════════════════════════════════════════════ */}
-        {/* ── NOUVELLE ARCHITECTURE DU MODAL LARGE (2 ONGLETS & ACTIONS PAR PAGE) ── */}
+        {/* ── NOUVEAU MODAL FLUIDE, RESPONSIVE ET 100% SANS SLIDER BLOQUANT ───────── */}
         {/* ══════════════════════════════════════════════════════════════════════════ */}
         {showModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-hidden">
-            <div className="bg-white rounded-3xl max-w-5xl w-full h-[90vh] shadow-2xl border border-gray-100 flex flex-col animate-in fade-in zoom-in-95 duration-150 overflow-hidden">
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
+            <div className="bg-white rounded-3xl w-full max-w-5xl my-auto max-h-[92vh] shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               
-              {/* ── En-tête du Modal avec Navigation par Onglets ── */}
-              <div className="px-6 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-4 bg-gray-50/50">
+              {/* ── En-tête Sticky du Modal ── */}
+              <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3 bg-white shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-                    <ShieldCheck size={20} />
+                    <ShieldCheck size={22} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black text-gray-900 leading-tight">
-                      {editingStaff ? 'Configuration des Droits Administrateur' : 'Créer un Administrateur & Définir ses Droits'}
+                    <h2 className="text-base sm:text-lg font-black text-gray-900 leading-tight">
+                      {editingStaff ? 'Configuration des Droits Administrateur' : 'Créer un Compte Administrateur'}
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {editingStaff ? `Modification des autorisations pour ${editingStaff.first_name} ${editingStaff.last_name}` : 'Créez le compte et cochez précisément les pages et actions autorisées'}
+                      {editingStaff ? `Modification pour ${editingStaff.first_name} ${editingStaff.last_name}` : 'Définissez les accès et les actions permises par module'}
                     </p>
                   </div>
                 </div>
 
-                {/* Onglets de navigation */}
-                <div className="flex items-center bg-gray-200/70 p-1 rounded-2xl gap-1">
+                {/* Sélecteur d'étapes (Tabs) */}
+                <div className="flex items-center bg-gray-100/80 p-1 rounded-2xl gap-1">
                   <button
                     type="button"
                     onClick={() => setActiveTab('identity')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       activeTab === 'identity'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    <UserCog size={15} className={activeTab === 'identity' ? 'text-blue-600' : 'text-gray-500'} />
-                    <span>1. Profil & Identifiant</span>
+                    <UserCog size={14} className={activeTab === 'identity' ? 'text-blue-600' : 'text-gray-500'} />
+                    <span>1. Profil</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveTab('permissions')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       activeTab === 'permissions'
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
-                    <SlidersHorizontal size={15} className={activeTab === 'permissions' ? 'text-blue-600' : 'text-gray-500'} />
-                    <span>2. Pages & Actions ({selectedRoutes.length} pages, {totalActiveActionsCount} actions)</span>
+                    <SlidersHorizontal size={14} className={activeTab === 'permissions' ? 'text-blue-600' : 'text-gray-500'} />
+                    <span>2. Droits & Actions ({selectedRoutes.length} pages)</span>
                   </button>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition"
+                  className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-800 flex items-center justify-center transition cursor-pointer"
                 >
                   <X size={18} />
                 </button>
@@ -868,23 +872,23 @@ export const StaffManagementPage = () => {
 
               {/* ── Message d'erreur dans le Modal ── */}
               {error && (
-                <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2">
+                <div className="mx-6 mt-3 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold rounded-xl flex items-center gap-2 shrink-0">
                   <AlertCircle size={15} />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* ── Corps du Modal (Contenu des 2 Onglets) ── */}
-              <div className="flex-1 overflow-hidden p-6">
+              {/* ── Corps du Modal (UN SEUL CONTENEUR SCROLLABLE, FLUIDE ET NATUREL) ── */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
                 
                 {/* ───────────────────────────────────────────────────────────── */}
-                {/* ── ONGLET 1 : INFORMATIONS DE BASE & RÔLE ─────────────────── */}
+                {/* ── ONGLET 1 : INFORMATIONS PERSONNELLES & RÔLE ────────────── */}
                 {/* ───────────────────────────────────────────────────────────── */}
                 {activeTab === 'identity' && (
-                  <div className="max-w-3xl mx-auto h-full overflow-y-auto space-y-6 pr-2">
+                  <div className="max-w-3xl mx-auto space-y-6">
                     
-                    {/* Carte d'identité */}
-                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+                    {/* Bloc Informations d'identité */}
+                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 sm:p-6 space-y-4">
                       <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
                         <UserCog size={16} className="text-blue-600" />
                         <span>Identité du Collaborateur</span>
@@ -922,7 +926,7 @@ export const StaffManagementPage = () => {
                             <div>
                               <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                                 <Mail size={13} className="text-gray-400" />
-                                <span>Email professionnel (Identifiant de connexion) *</span>
+                                <span>Email professionnel (Identifiant unique) *</span>
                               </label>
                               <input
                                 type="email"
@@ -937,7 +941,7 @@ export const StaffManagementPage = () => {
                             <div>
                               <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1.5">
                                 <Phone size={13} className="text-gray-400" />
-                                <span>Numéro de téléphone vérifié *</span>
+                                <span>Numéro de téléphone *</span>
                               </label>
                               <input
                                 type="text"
@@ -964,18 +968,18 @@ export const StaffManagementPage = () => {
                               className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                             />
                             <p className="text-[11px] text-gray-400 mt-1">
-                              Le collaborateur pourra modifier son mot de passe à tout moment depuis son profil.
+                              Le collaborateur pourra modifier son mot de passe en toute sécurité après connexion.
                             </p>
                           </div>
                         </>
                       )}
                     </div>
 
-                    {/* Carte Rôle Principal */}
-                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-3">
+                    {/* Bloc Rôle */}
+                    <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 sm:p-6 space-y-3">
                       <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider flex items-center gap-2">
                         <Shield size={16} className="text-indigo-600" />
-                        <span>Rôle Hiérarchique de Base</span>
+                        <span>Rôle de Base</span>
                       </h3>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1007,15 +1011,14 @@ export const StaffManagementPage = () => {
                       </div>
                     </div>
 
-                    {/* Bouton d'avancement vers l'Étape 2 */}
+                    {/* Bouton pour aller à l'étape 2 */}
                     <div className="pt-2 flex justify-end">
                       <button
                         type="button"
                         onClick={() => setActiveTab('permissions')}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition flex items-center gap-2 shadow-md shadow-blue-500/20"
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition flex items-center gap-2 shadow-md shadow-blue-500/20 cursor-pointer"
                       >
-                        <span>Étape suivante : Configurer les Pages & Actions</span>
-                        <ArrowRight size={16} />
+                        <span>Passer aux Droits d'Accès & Actions ➔</span>
                       </button>
                     </div>
 
@@ -1023,230 +1026,267 @@ export const StaffManagementPage = () => {
                 )}
 
                 {/* ───────────────────────────────────────────────────────────── */}
-                {/* ── ONGLET 2 : MATRICE DES PAGES & ACTIONS PAR PAGE ────────── */}
+                {/* ── ONGLET 2 : MATRICE DES DROITS ET ACTIONS PAR PAGE ──────── */}
                 {/* ───────────────────────────────────────────────────────────── */}
                 {activeTab === 'permissions' && (
-                  <div className="h-full flex flex-col space-y-4">
-                    
-                    {/* Barre de Présélections Rapides */}
-                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between flex-wrap gap-3">
-                      <div className="flex items-center gap-2">
-                        <Sparkles size={16} className="text-blue-600" />
-                        <span className="text-xs font-extrabold text-gray-800">Modèles rapides :</span>
-                        <button
-                          type="button"
-                          onClick={applyFullAccessPreset}
-                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition"
-                        >
-                          👑 Tout autoriser (Accès Total)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={applyReadOnlyPreset}
-                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition"
-                        >
-                          👁️ Lecture Seule (Consultation uniquement)
-                        </button>
-                        <button
-                          type="button"
-                          onClick={applyModeratorPreset}
-                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition"
-                        >
-                          ⚖️ Modérateur (Lecture + Validation)
-                        </button>
-                      </div>
+                  <div className="space-y-6 max-w-4xl mx-auto">
 
-                      <button
-                        type="button"
-                        onClick={applyClearAllPreset}
-                        className="px-2.5 py-1 text-xs font-bold rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition"
-                      >
-                        Réinitialiser
-                      </button>
-                    </div>
-
-                    {/* Disposition Split (Gauche: Modules / Droite: Pages & Actions) */}
-                    <div className="flex-1 flex gap-4 min-h-0">
-                      
-                      {/* Panneau Gauche : Liste des Modules */}
-                      <div className="w-80 flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
-                        {/* Recherche de module */}
-                        <div className="p-3 border-b border-gray-100 bg-gray-50/50">
-                          <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                              type="text"
-                              placeholder="Filtrer les modules..."
-                              value={moduleSearch}
-                              onChange={(e) => setModuleSearch(e.target.value)}
-                              className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 font-medium"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Liste scrollable des modules */}
-                        <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-                          {filteredModules.map(mod => {
-                            const isSelected = mod.id === selectedModuleId;
-                            const modPaths = mod.pages.map(p => p.path);
-                            const activePagesCount = modPaths.filter(p => selectedRoutes.includes(p)).length;
-                            const isAllActive = activePagesCount === modPaths.length;
-                            const isPartiallyActive = activePagesCount > 0 && !isAllActive;
-
-                            return (
-                              <div
-                                key={mod.id}
-                                onClick={() => setSelectedModuleId(mod.id)}
-                                className={`p-3.5 flex items-center justify-between cursor-pointer transition ${
-                                  isSelected
-                                    ? 'bg-blue-50/70 border-l-4 border-blue-600'
-                                    : 'hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className={`p-1.5 rounded-xl ${
-                                    isSelected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    <mod.icon size={16} />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <div className="text-xs font-bold text-gray-900 truncate">{mod.label}</div>
-                                    <div className="text-[11px] text-gray-400">
-                                      {activePagesCount}/{modPaths.length} page{modPaths.length > 1 ? 's' : ''}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-1.5">
-                                  {activePagesCount > 0 ? (
-                                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center">
-                                      {activePagesCount}
-                                    </span>
-                                  ) : (
-                                    <span className="w-2 h-2 rounded-full bg-gray-300" />
-                                  )}
-                                  <ChevronRight size={14} className="text-gray-400" />
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Panneau Droit : Détails des Pages et Actions du Module Sélectionné */}
-                      <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
+                    {/* 1. Barre de Contrôle Supérieure (Recherche + Raccourcis) */}
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-3">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                         
-                        {/* En-tête du module actif */}
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 text-blue-600 rounded-xl">
-                              <activeModule.icon size={20} />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-black text-gray-900">{activeModule.label}</h4>
-                              <p className="text-xs text-gray-500">{activeModule.description}</p>
-                            </div>
-                          </div>
+                        {/* Recherche */}
+                        <div className="relative flex-1">
+                          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                          <input
+                            type="text"
+                            placeholder="Rechercher une page ou un module (ex: offres, utilisateurs, finances...)"
+                            value={moduleSearch}
+                            onChange={(e) => setModuleSearch(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 font-medium"
+                          />
+                        </div>
 
+                        {/* Raccourcis rapides */}
+                        <div className="flex items-center flex-wrap gap-1.5">
                           <button
                             type="button"
-                            onClick={() => handleToggleModule(activeModule)}
-                            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-blue-600 transition shadow-2xs"
+                            onClick={applyFullAccessPreset}
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition cursor-pointer"
                           >
-                            {activeModule.pages.every(p => selectedRoutes.includes(p.path))
-                              ? 'Tout désactiver ce module'
-                              : 'Tout activer ce module'}
+                            👑 Tout autoriser
+                          </button>
+                          <button
+                            type="button"
+                            onClick={applyReadOnlyPreset}
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition cursor-pointer"
+                          >
+                            👁️ Lecture seule
+                          </button>
+                          <button
+                            type="button"
+                            onClick={applyModeratorPreset}
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white border border-gray-200 hover:border-blue-300 text-gray-700 hover:text-blue-600 shadow-2xs transition cursor-pointer"
+                          >
+                            ⚖️ Modérateur
+                          </button>
+                          <button
+                            type="button"
+                            onClick={applyClearAllPreset}
+                            className="px-3 py-1.5 text-xs font-bold rounded-xl text-gray-500 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                          >
+                            Réinitialiser
                           </button>
                         </div>
 
-                        {/* Liste des Pages & Actions */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
-                          {activeModule.pages.map(page => {
-                            const isRouteActive = selectedRoutes.includes(page.path);
-                            const currentActions = selectedActions[page.path] || [];
+                      </div>
 
-                            return (
-                              <div
-                                key={page.path}
-                                className={`p-4 rounded-2xl border transition ${
-                                  isRouteActive
-                                    ? 'bg-white border-blue-200 shadow-xs'
-                                    : 'bg-gray-50/60 border-gray-200/80 opacity-75'
-                                }`}
-                              >
-                                {/* Ligne Principale de la Page */}
-                                <div className="flex items-center justify-between gap-3">
-                                  <label className="flex items-center gap-3 cursor-pointer flex-1">
-                                    <input
-                                      type="checkbox"
-                                      checked={isRouteActive}
-                                      onChange={() => handleTogglePageRoute(page.path)}
-                                      className="w-5 h-5 text-blue-600 rounded-lg border-gray-300 focus:ring-blue-500 cursor-pointer"
-                                    />
-                                    <div>
-                                      <div className={`text-sm ${isRouteActive ? 'font-black text-gray-900' : 'font-semibold text-gray-600'}`}>
-                                        {page.label}
-                                      </div>
-                                      <code className="text-[11px] text-gray-400 font-mono">{page.path}</code>
+                      {/* 2. Filtres par Catégorie (Pills horizontaux avec wrapping fluide) */}
+                      <div className="flex items-center flex-wrap gap-1.5 pt-2 border-t border-slate-200/60 text-xs">
+                        <span className="text-gray-400 font-bold mr-1">Filtrer :</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCategory('all')}
+                          className={`px-3 py-1 rounded-xl font-bold transition cursor-pointer ${
+                            selectedCategory === 'all'
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          Tous les modules ({ADMIN_MODULES_CONFIG.length})
+                        </button>
+                        {ADMIN_MODULES_CONFIG.map(m => {
+                          const isCatSelected = selectedCategory === m.id;
+                          const modPaths = m.pages.map(p => p.path);
+                          const activeCount = modPaths.filter(p => selectedRoutes.includes(p)).length;
+
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => setSelectedCategory(m.id)}
+                              className={`px-3 py-1 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                                isCatSelected
+                                  ? 'bg-blue-600 text-white shadow-xs'
+                                  : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              <span>{m.label}</span>
+                              {activeCount > 0 && (
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                                  isCatSelected ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+                                }`}>
+                                  {activeCount}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 3. Liste Responsive Pleine Largeur des Cartes de Modules */}
+                    <div className="space-y-4">
+                      {displayedModules.length === 0 ? (
+                        <div className="p-12 text-center bg-gray-50 rounded-2xl border border-gray-200 text-gray-500 font-medium">
+                          Aucun module ou page ne correspond à votre recherche.
+                        </div>
+                      ) : (
+                        displayedModules.map(mod => {
+                          const modPaths = mod.pages.map(p => p.path);
+                          const activePagesCount = modPaths.filter(p => selectedRoutes.includes(p)).length;
+                          const isAllActive = activePagesCount === modPaths.length;
+                          const isCollapsed = !!collapsedModules[mod.id];
+
+                          return (
+                            <div
+                              key={mod.id}
+                              className="bg-white border border-gray-200/90 rounded-2xl shadow-xs overflow-hidden transition"
+                            >
+                              {/* En-tête de la Carte du Module */}
+                              <div className="p-4 bg-slate-50/70 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                                
+                                <div
+                                  onClick={() => toggleCollapseModule(mod.id)}
+                                  className="flex items-center gap-3 cursor-pointer flex-1 min-w-[200px]"
+                                >
+                                  <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                                    <mod.icon size={20} />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-sm font-black text-gray-900">{mod.label}</h4>
+                                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                        activePagesCount > 0
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : 'bg-gray-200 text-gray-500'
+                                      }`}>
+                                        {activePagesCount}/{modPaths.length} page{modPaths.length > 1 ? 's' : ''} active{activePagesCount > 1 ? 's' : ''}
+                                      </span>
                                     </div>
-                                  </label>
-
-                                  <div className="text-xs">
-                                    {isRouteActive ? (
-                                      <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        Accès Activé ({currentActions.length} action{currentActions.length > 1 ? 's' : ''})
-                                      </span>
-                                    ) : (
-                                      <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-gray-100 text-gray-500">
-                                        Accès Désactivé
-                                      </span>
-                                    )}
+                                    <p className="text-xs text-gray-500 mt-0.5">{mod.description}</p>
                                   </div>
                                 </div>
 
-                                {/* Matrice des Actions (affichée uniquement quand la page est active) */}
-                                {isRouteActive && (
-                                  <div className="mt-3.5 pt-3 border-t border-gray-100 pl-8 space-y-2">
-                                    <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                      <SlidersHorizontal size={12} />
-                                      <span>Actions spécifiques autorisées sur cette page :</span>
-                                    </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleModule(mod)}
+                                    className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
+                                      isAllActive
+                                        ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                                        : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
+                                    }`}
+                                  >
+                                    {isAllActive ? 'Tout désactiver' : 'Tout activer'}
+                                  </button>
 
-                                    <div className="flex flex-wrap gap-2">
-                                      {page.allowedActions.map(actionKey => {
-                                        const def = ACTION_DEFINITIONS[actionKey] || { label: actionKey, color: 'bg-gray-50 text-gray-700 border-gray-200' };
-                                        const isActionGranted = currentActions.includes(actionKey);
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleCollapseModule(mod.id)}
+                                    className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-200/60 transition cursor-pointer"
+                                  >
+                                    {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+                                  </button>
+                                </div>
 
-                                        return (
-                                          <button
-                                            type="button"
-                                            key={actionKey}
-                                            onClick={() => handleTogglePageAction(page.path, actionKey)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 ${
-                                              isActionGranted
-                                                ? `${def.color} shadow-2xs font-extrabold ring-1 ring-black/5`
-                                                : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'
-                                            }`}
-                                          >
-                                            <div className={`w-3.5 h-3.5 rounded flex items-center justify-center ${
-                                              isActionGranted ? 'bg-current text-white' : 'border border-gray-300'
-                                            }`}>
-                                              {isActionGranted && <Check size={10} className="stroke-[3]" />}
-                                            </div>
-                                            <span>{def.label}</span>
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
                               </div>
-                            );
-                          })}
-                        </div>
 
-                      </div>
+                              {/* Liste des Pages & Actions du Module (Déplié) */}
+                              {!isCollapsed && (
+                                <div className="p-4 space-y-3 divide-y divide-gray-100">
+                                  {mod.pages.map((page, idx) => {
+                                    const isPageActive = selectedRoutes.includes(page.path);
+                                    const currentActions = selectedActions[page.path] || [];
 
+                                    return (
+                                      <div
+                                        key={page.path}
+                                        className={`pt-3 first:pt-0 ${
+                                          isPageActive ? 'opacity-100' : 'opacity-80'
+                                        }`}
+                                      >
+                                        <div className="bg-slate-50/50 hover:bg-blue-50/20 border border-gray-200/70 rounded-xl p-3.5 sm:p-4 transition space-y-3">
+                                          
+                                          {/* Ligne principale : Toggle de la Page */}
+                                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                                            <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-[240px]">
+                                              <input
+                                                type="checkbox"
+                                                checked={isPageActive}
+                                                onChange={() => handleTogglePageRoute(page.path)}
+                                                className="w-5 h-5 text-blue-600 rounded-lg border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                              />
+                                              <div>
+                                                <div className={`text-sm ${isPageActive ? 'font-black text-gray-900' : 'font-semibold text-gray-600'}`}>
+                                                  {page.label}
+                                                </div>
+                                                <code className="text-[11px] text-gray-400 font-mono">{page.path}</code>
+                                              </div>
+                                            </label>
+
+                                            <div className="flex items-center gap-2">
+                                              {isPageActive ? (
+                                                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                  ✓ Accès autorisé ({currentActions.length} action{currentActions.length > 1 ? 's' : ''})
+                                                </span>
+                                              ) : (
+                                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                                  Non autorisé
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {/* Matrice des Actions (affichée uniquement quand la page est active) */}
+                                          {isPageActive && (
+                                            <div className="pt-3 border-t border-gray-200/60 pl-2 sm:pl-8 space-y-2">
+                                              <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                <SlidersHorizontal size={12} />
+                                                <span>Actions autorisées pour cette page :</span>
+                                              </div>
+
+                                              {/* Boutons d'actions avec retour à la ligne 100% naturel (Flex Wrap, jamais coupé) */}
+                                              <div className="flex flex-wrap gap-2">
+                                                {page.allowedActions.map(actionKey => {
+                                                  const def = ACTION_DEFINITIONS[actionKey] || { label: actionKey, color: 'bg-gray-50 text-gray-700 border-gray-200' };
+                                                  const isActionGranted = currentActions.includes(actionKey);
+
+                                                  return (
+                                                    <button
+                                                      type="button"
+                                                      key={actionKey}
+                                                      onClick={() => handleTogglePageAction(page.path, actionKey)}
+                                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-2 cursor-pointer select-none ${
+                                                        isActionGranted
+                                                          ? `${def.color} shadow-xs font-black ring-1 ring-black/5`
+                                                          : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600'
+                                                      }`}
+                                                    >
+                                                      <div className={`w-4 h-4 rounded flex items-center justify-center transition ${
+                                                        isActionGranted ? 'bg-current text-white' : 'border border-gray-300 bg-gray-50'
+                                                      }`}>
+                                                        {isActionGranted && <Check size={11} className="stroke-[3]" />}
+                                                      </div>
+                                                      <span>{def.label}</span>
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            </div>
+                                          )}
+
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
 
                   </div>
@@ -1254,8 +1294,8 @@ export const StaffManagementPage = () => {
 
               </div>
 
-              {/* ── Pied du Modal avec Boutons d'Action ── */}
-              <div className="px-6 py-4 bg-gray-50/80 border-t border-gray-100 flex items-center justify-between">
+              {/* ── Pied Sticky du Modal avec Résumé et Enregistrement ── */}
+              <div className="px-5 sm:px-7 py-4 bg-gray-50/90 border-t border-gray-100 flex items-center justify-between flex-wrap gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -1265,25 +1305,25 @@ export const StaffManagementPage = () => {
                       setShowModal(false);
                     }
                   }}
-                  className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-100 transition flex items-center gap-2"
+                  className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl text-xs hover:bg-gray-100 transition flex items-center gap-2 cursor-pointer"
                 >
                   {activeTab === 'permissions' ? (
                     <>
                       <ArrowLeft size={14} />
-                      <span>Retour aux informations</span>
+                      <span>Retour au profil</span>
                     </>
                   ) : (
                     <span>Annuler</span>
                   )}
                 </button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div className="text-right hidden sm:block">
                     <div className="text-xs font-bold text-gray-900">
-                      {selectedRoutes.length} pages • {totalActiveActionsCount} actions permises
+                      {selectedRoutes.length} pages • {totalActiveActionsCount} actions configurées
                     </div>
                     <div className="text-[11px] text-gray-500">
-                      {selectedRoutes.length === ALL_ROUTES.length ? 'Accès complet accordé' : 'Permissions personnalisées'}
+                      {selectedRoutes.length === ALL_ROUTES.length ? 'Accès intégral actif' : 'Permissions personnalisées'}
                     </div>
                   </div>
 
@@ -1291,7 +1331,7 @@ export const StaffManagementPage = () => {
                     type="button"
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-blue-500/20 active:scale-98"
+                    className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-md shadow-blue-500/20 active:scale-98 cursor-pointer disabled:opacity-50"
                   >
                     {submitting && <Loader2 size={14} className="animate-spin" />}
                     <span>{editingStaff ? 'Enregistrer les modifications' : 'Créer l\'administrateur'}</span>
