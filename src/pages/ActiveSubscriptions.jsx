@@ -3,8 +3,12 @@ import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
 import { Loader2, AlertCircle, CheckCircle2, X, XCircle, Search, User, CreditCard, Calendar } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export const ActiveSubscriptionsPage = () => {
+  const { can } = useAuth();
+  const canCancel = can('cancel', '/subscriptions/active') || can('edit', '/subscriptions/active');
+
   const [subscriptions, setSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -223,17 +227,21 @@ export const ActiveSubscriptionsPage = () => {
                   </td>
                   <td style={{ padding: '12px 16px', verticalAlign: 'middle', textAlign: 'right' }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '4px' }}>
-                      <button 
-                        onClick={() => handleCancelClick(item)} 
-                        disabled={isCanceling === item.id}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center', height: '32px', padding: '0 12px', borderRadius: '6px', border: '1px solid #FECACA', background: '#FEF2F2', color: '#B91C1C', cursor: isCanceling === item.id ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s', fontSize: '12px', fontWeight: '500', opacity: isCanceling === item.id ? 0.6 : 1 }}
-                        title="Annuler l'abonnement"
-                        onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
-                        onMouseOut={e => e.currentTarget.style.backgroundColor = '#FEF2F2'}
-                      >
-                        {isCanceling === item.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                        Révoquer
-                      </button>
+                      {canCancel ? (
+                        <button 
+                          onClick={() => handleCancelClick(item)} 
+                          disabled={isCanceling === item.id}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'center', height: '32px', padding: '0 12px', borderRadius: '6px', border: '1px solid #FECACA', background: '#FEF2F2', color: '#B91C1C', cursor: isCanceling === item.id ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s', fontSize: '12px', fontWeight: '500', opacity: isCanceling === item.id ? 0.6 : 1 }}
+                          title="Annuler l'abonnement"
+                          onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'}
+                          onMouseOut={e => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+                        >
+                          {isCanceling === item.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                          Révoquer
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: '#A1A1AA', fontStyle: 'italic' }}>Lecture seule</span>
+                      )}
                     </div>
                   </td>
                 </tr>

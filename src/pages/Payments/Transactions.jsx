@@ -9,8 +9,11 @@ import {
   Filter, Eye, ArrowUpDown, TrendingUp, TrendingDown, DollarSign,
   Calendar, Layers, Check, CreditCard, Wallet, Copy, CheckCheck
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const TransactionsPage = () => {
+  const { can } = useAuth();
+  const canExport = can('export', '/transactions') || can('export', '/finances');
   const [searchParams, setSearchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
@@ -160,56 +163,58 @@ export const TransactionsPage = () => {
 
           {/* Quick Actions */}
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              disabled={totalCount === 0 && transactions.length === 0}
-              onClick={async () => {
-                if (totalCount === 0 && transactions.length === 0) {
-                  showToast('Aucune transaction disponible à exporter pour ces filtres.');
-                  return;
-                }
-                try {
-                  const response = await apiClient.get('/v1/admin/transactions/export/csv', {
-                    params: { search: searchTerm, type: typeFilter, status: statusFilter, provider: providerFilter },
-                    responseType: 'blob'
-                  });
-                  
-                  // Check if blob is valid
-                  if (response.data && response.data.size > 0) {
-                    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', `transactions_samre_${new Date().toISOString().split('T')[0]}.csv`);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    window.URL.revokeObjectURL(url);
-                    showToast('Rapport CSV téléchargé avec succès !');
-                  } else {
-                    showToast('Aucune donnée trouvée à exporter pour les critères sélectionnés.');
+            {canExport && (
+              <button
+                disabled={totalCount === 0 && transactions.length === 0}
+                onClick={async () => {
+                  if (totalCount === 0 && transactions.length === 0) {
+                    showToast('Aucune transaction disponible à exporter pour ces filtres.');
+                    return;
                   }
-                } catch (err) {
-                  console.error(err);
-                  showToast('Erreur lors du téléchargement du rapport CSV.');
-                }
-              }}
-              style={{
-                padding: '7px 12px',
-                borderRadius: '6px',
-                background: (totalCount === 0 && transactions.length === 0) ? '#94A3B8' : '#166534',
-                color: 'white',
-                border: 'none',
-                fontWeight: '600',
-                fontSize: '12px',
-                cursor: (totalCount === 0 && transactions.length === 0) ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 1px 2px rgba(22,101,52,0.2)'
-              }}
-              title={(totalCount === 0 && transactions.length === 0) ? 'Aucune transaction à exporter' : 'Télécharger le registre CSV'}
-            >
-              <Download size={13} /> Export CSV
-            </button>
+                  try {
+                    const response = await apiClient.get('/v1/admin/transactions/export/csv', {
+                      params: { search: searchTerm, type: typeFilter, status: statusFilter, provider: providerFilter },
+                      responseType: 'blob'
+                    });
+                    
+                    // Check if blob is valid
+                    if (response.data && response.data.size > 0) {
+                      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv;charset=utf-8;' }));
+                      const link = document.createElement('a');
+                      link.href = url;
+                      link.setAttribute('download', `transactions_samre_${new Date().toISOString().split('T')[0]}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      link.remove();
+                      window.URL.revokeObjectURL(url);
+                      showToast('Rapport CSV téléchargé avec succès !');
+                    } else {
+                      showToast('Aucune donnée trouvée à exporter pour les critères sélectionnés.');
+                    }
+                  } catch (err) {
+                    console.error(err);
+                    showToast('Erreur lors du téléchargement du rapport CSV.');
+                  }
+                }}
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  background: (totalCount === 0 && transactions.length === 0) ? '#94A3B8' : '#166534',
+                  color: 'white',
+                  border: 'none',
+                  fontWeight: '600',
+                  fontSize: '12px',
+                  cursor: (totalCount === 0 && transactions.length === 0) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 1px 2px rgba(22,101,52,0.2)'
+                }}
+                title={(totalCount === 0 && transactions.length === 0) ? 'Aucune transaction à exporter' : 'Télécharger le registre CSV'}
+              >
+                <Download size={13} /> Export CSV
+              </button>
+            )}
             <button 
               onClick={fetchTransactions}
               style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #CBD5E1', background: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: '#334155', fontSize: '12px', fontWeight: '500' }}

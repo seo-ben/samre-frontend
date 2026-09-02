@@ -7,9 +7,12 @@ import {
   Wallet, Search, RefreshCw, ArrowUpRight, Plus, Minus, 
   ExternalLink, ChevronLeft, ChevronRight, X, AlertCircle, CheckCircle2 
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const WalletsPage = () => {
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const canAdjust = can('adjust', '/wallets') || can('adjust', '/finances');
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -288,20 +291,24 @@ export const WalletsPage = () => {
                         {/* Actions */}
                         <td style={{ padding: '6px 12px', textAlign: 'center' }}>
                           <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center' }}>
-                            <button
-                              onClick={() => openModal(wallet, 'credit')}
-                              style={{ padding: '4px 9px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#16A34A', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                              title="Créditer le portefeuille"
-                            >
-                              <Plus size={11} /> Créditer
-                            </button>
-                            <button
-                              onClick={() => openModal(wallet, 'debit')}
-                              style={{ padding: '4px 9px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#DC2626', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
-                              title="Débiter le portefeuille"
-                            >
-                              <Minus size={11} /> Débiter
-                            </button>
+                            {canAdjust && (
+                              <>
+                                <button
+                                  onClick={() => openModal(wallet, 'credit')}
+                                  style={{ padding: '4px 9px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#16A34A', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                  title="Créditer le portefeuille"
+                                >
+                                  <Plus size={11} /> Créditer
+                                </button>
+                                <button
+                                  onClick={() => openModal(wallet, 'debit')}
+                                  style={{ padding: '4px 9px', fontSize: '11px', fontWeight: '700', color: 'white', background: '#DC2626', border: 'none', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                  title="Débiter le portefeuille"
+                                >
+                                  <Minus size={11} /> Débiter
+                                </button>
+                              </>
+                            )}
                             <button
                               onClick={() => navigate(`/transactions?search=${encodeURIComponent(wallet.user?.email || wallet.user?.phone || '')}`)}
                               style={{ padding: '4px 7px', fontSize: '11px', fontWeight: '600', color: '#334155', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { useRealtime } from '../contexts/RealtimeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Helper de badge d'audience
 const getAudienceBadge = (aud) => {
@@ -67,6 +68,10 @@ const getAudienceBadge = (aud) => {
 };
 
 export const SurveysManagementPage = () => {
+  const { can } = useAuth();
+  const canCreate = can('create', '/surveys');
+  const canEdit = can('edit', '/surveys');
+  const canDelete = can('delete', '/surveys');
   const { syncCounter, refreshNow } = useRealtime();
 
   const [surveys, setSurveys] = useState([]);
@@ -374,14 +379,16 @@ export const SurveysManagementPage = () => {
             </button>
 
             {/* Bouton Nouveau Sondage : Haute visibilité Orange */}
-            <button
-              onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
-              style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
-            >
-              <Plus size={16} className="text-white shrink-0" />
-              <span className="text-white font-extrabold tracking-wide">Nouveau Sondage</span>
-            </button>
+            {canCreate && (
+              <button
+                onClick={handleOpenCreate}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all cursor-pointer"
+                style={{ backgroundColor: '#ea580c', color: '#ffffff' }}
+              >
+                <Plus size={16} className="text-white shrink-0" />
+                <span className="text-white font-extrabold tracking-wide">Nouveau Sondage</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -599,34 +606,40 @@ export const SurveysManagementPage = () => {
                               <BarChart3 size={14} />
                             </button>
 
-                            <button
-                              onClick={() => handleOpenEdit(survey)}
-                              className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
-                              title="Modifier"
-                            >
-                              <Edit3 size={14} />
-                            </button>
+                            {canEdit && (
+                              <button
+                                onClick={() => handleOpenEdit(survey)}
+                                className="p-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer"
+                                title="Modifier"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                            )}
 
-                            <button
-                              onClick={() => handleToggleStatus(survey)}
-                              className={`p-1 rounded-md transition cursor-pointer ${
-                                isActive 
-                                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' 
-                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
-                              }`}
-                              title={isActive ? 'Clôturer le sondage' : 'Réactiver'}
-                            >
-                              {isActive ? <Clock size={14} /> : <CheckCircle2 size={14} />}
-                            </button>
+                            {canEdit && (
+                              <button
+                                onClick={() => handleToggleStatus(survey)}
+                                className={`p-1 rounded-md transition cursor-pointer ${
+                                  isActive 
+                                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-700' 
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
+                                }`}
+                                title={isActive ? 'Clôturer le sondage' : 'Réactiver'}
+                              >
+                                {isActive ? <Clock size={14} /> : <CheckCircle2 size={14} />}
+                              </button>
+                            )}
 
                             {/* Ouvre le modal de confirmation personnalisé (pas d'alerte JS) */}
-                            <button
-                              onClick={() => setSurveyToDelete(survey)}
-                              className="p-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
-                              title="Supprimer définitivement"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            {canDelete && (
+                              <button
+                                onClick={() => setSurveyToDelete(survey)}
+                                className="p-1 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-700 transition cursor-pointer"
+                                title="Supprimer définitivement"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

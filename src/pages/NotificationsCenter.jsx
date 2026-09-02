@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
+import { useAuth } from '../contexts/AuthContext';
 
 // Formatage de la date pour affichage
 const formatDate = (dateStr) => {
@@ -41,7 +42,11 @@ const formatToDatetimeLocal = (dateStr) => {
 };
 
 export const NotificationsCenter = () => {
-  const [activeTab, setActiveTab] = useState('compose'); // 'compose' | 'history'
+  const { can } = useAuth();
+  const canCreate = can('create', '/notifications');
+  const canEdit = can('edit', '/notifications');
+  const canDelete = can('delete', '/notifications');
+  const [activeTab, setActiveTab] = useState(canCreate ? 'compose' : 'history'); // 'compose' | 'history'
   
   // États de l'historique
   const [campaigns, setCampaigns] = useState([]);
@@ -456,27 +461,29 @@ export const NotificationsCenter = () => {
 
           {/* Onglets de navigation */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F1F5F9', padding: '3px', borderRadius: '8px' }}>
-            <button
-              onClick={() => setActiveTab('compose')}
-              style={{
-                padding: '6px 14px',
-                borderRadius: '6px',
-                border: 'none',
-                fontSize: '12px',
-                fontWeight: '700',
-                cursor: 'pointer',
-                backgroundColor: activeTab === 'compose' ? '#FFFFFF' : 'transparent',
-                color: activeTab === 'compose' ? '#1A6FD4' : '#64748B',
-                boxShadow: activeTab === 'compose' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.15s'
-              }}
-            >
-              <Send size={14} />
-              Nouvel Envoi & Ciblage
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => setActiveTab('compose')}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  backgroundColor: activeTab === 'compose' ? '#FFFFFF' : 'transparent',
+                  color: activeTab === 'compose' ? '#1A6FD4' : '#64748B',
+                  boxShadow: activeTab === 'compose' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <Send size={14} />
+                Nouvel Envoi & Ciblage
+              </button>
+            )}
             <button
               onClick={() => setActiveTab('history')}
               style={{
@@ -1085,53 +1092,55 @@ export const NotificationsCenter = () => {
 
               {/* Bouton de Soumission */}
               <div style={{ borderTop: '1px solid #F1F5F9', paddingTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  style={{
-                    padding: '8px 20px',
-                    backgroundColor: form.is_scheduled ? '#D97706' : '#1A6FD4',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  {submitting ? (
-                    <>
-                      <RefreshCw size={15} className="animate-spin" />
-                      Traitement en cours...
-                    </>
-                  ) : editingCampaign?.status === 'scheduled' ? (
-                    form.is_scheduled ? (
+                {(editingCampaign ? canEdit : canCreate) && (
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{
+                      padding: '8px 20px',
+                      backgroundColor: form.is_scheduled ? '#D97706' : '#1A6FD4',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    }}
+                  >
+                    {submitting ? (
+                      <>
+                        <RefreshCw size={15} className="animate-spin" />
+                        Traitement en cours...
+                      </>
+                    ) : editingCampaign?.status === 'scheduled' ? (
+                      form.is_scheduled ? (
+                        <>
+                          <Clock size={16} />
+                          Enregistrer les modifications de la programmation
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          Enregistrer et Diffuser Maintenant
+                        </>
+                      )
+                    ) : form.is_scheduled ? (
                       <>
                         <Clock size={16} />
-                        Enregistrer les modifications de la programmation
+                        {editingCampaign ? 'Programmer cette version' : 'Enregistrer la Programmation'}
                       </>
                     ) : (
                       <>
                         <Send size={16} />
-                        Enregistrer et Diffuser Maintenant
+                        {editingCampaign ? 'Diffuser cette nouvelle version' : 'Diffuser la Notification Maintenant'}
                       </>
-                    )
-                  ) : form.is_scheduled ? (
-                    <>
-                      <Clock size={16} />
-                      {editingCampaign ? 'Programmer cette version' : 'Enregistrer la Programmation'}
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      {editingCampaign ? 'Diffuser cette nouvelle version' : 'Diffuser la Notification Maintenant'}
-                    </>
-                  )}
-                </button>
+                    )}
+                  </button>
+                )}
               </div>
 
             </form>
@@ -1436,32 +1445,34 @@ export const NotificationsCenter = () => {
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
                                 
                                 {/* 1. Modifier / Éditer */}
-                                <button
-                                  onClick={() => handleEditCampaign(c)}
-                                  title={isScheduled ? "Modifier cette notification programmée" : "Éditer et renvoyer cette notification"}
-                                  style={{
-                                    padding: '4px 8px',
-                                    backgroundColor: '#F8FAFC',
-                                    color: '#334155',
-                                    border: '1px solid #CBD5E1',
-                                    borderRadius: '5px',
-                                    fontSize: '11px',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '3px',
-                                    transition: 'all 0.15s'
-                                  }}
-                                  onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#EFF6FF'; e.currentTarget.style.color = '#1A6FD4'; }}
-                                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.color = '#334155'; }}
-                                >
-                                  <Pencil size={12} />
-                                  {isScheduled ? 'Modifier' : 'Éditer'}
-                                </button>
+                                {canEdit && (
+                                  <button
+                                    onClick={() => handleEditCampaign(c)}
+                                    title={isScheduled ? "Modifier cette notification programmée" : "Éditer et renvoyer cette notification"}
+                                    style={{
+                                      padding: '4px 8px',
+                                      backgroundColor: '#F8FAFC',
+                                      color: '#334155',
+                                      border: '1px solid #CBD5E1',
+                                      borderRadius: '5px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      transition: 'all 0.15s'
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#EFF6FF'; e.currentTarget.style.color = '#1A6FD4'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#F8FAFC'; e.currentTarget.style.color = '#334155'; }}
+                                  >
+                                    <Pencil size={12} />
+                                    {isScheduled ? 'Modifier' : 'Éditer'}
+                                  </button>
+                                )}
 
                                 {/* 2. Annuler (si programmée) */}
-                                {isScheduled && (
+                                {isScheduled && canDelete && (
                                   <button
                                     onClick={() => handleCancelCampaign(c)}
                                     title="Annuler cette programmation"
@@ -1485,7 +1496,7 @@ export const NotificationsCenter = () => {
                                 )}
 
                                 {/* 3. Renvoyer (si passée) */}
-                                {!isScheduled && (
+                                {!isScheduled && (canCreate || canEdit) && (
                                   <button
                                     onClick={() => handleResendCampaign(c)}
                                     title="Renvoyer cette notification à l'identique"

@@ -9,6 +9,7 @@ import {
   ExternalLink, Eye, Layers, Copy, CheckCheck,
   Smartphone, Clock, Settings, Send, ShieldCheck, Check
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const getUserDisplayName = (user) => {
   if (!user) return 'Utilisateur';
@@ -133,6 +134,11 @@ export const getPurposeBadge = (purpose) => {
 
 export const FinanceDashboard = () => {
   const navigate = useNavigate();
+  const { can } = useAuth();
+  const canPayout = can('payout', '/finances');
+  const canConfigurePayout = can('configure_payout', '/finances') || can('edit', '/finances');
+  const canAdjust = can('adjust', '/finances') || can('adjust', '/wallets');
+
   const [stats, setStats] = useState({
     total_revenue: 0,
     conversion_rate: 0,
@@ -527,44 +533,48 @@ export const FinanceDashboard = () => {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button
-              onClick={() => setPayoutSettingsModalOpen(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 14px',
-                background: '#FFFFFF',
-                border: '1px solid #CBD5E1',
-                borderRadius: '7px',
-                fontSize: '12.5px',
-                fontWeight: '600',
-                color: '#334155',
-                cursor: 'pointer',
-              }}
-            >
-              <Settings size={14} />
-              Paramétrer le calendrier
-            </button>
-            <button
-              onClick={() => {
-                setPayoutAmount(payoutData?.available_balance ? String(payoutData.available_balance) : '');
-                setPayoutModalOpen(true);
-              }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 16px',
-                background: 'linear-gradient(135deg, #16A34A, #15803D)',
-                border: 'none',
-                borderRadius: '7px',
-                fontSize: '12.5px',
-                fontWeight: '700',
-                color: '#FFFFFF',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)',
-              }}
-            >
-              <Send size={14} />
-              Déclencher un virement
-            </button>
+            {canConfigurePayout && (
+              <button
+                onClick={() => setPayoutSettingsModalOpen(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 14px',
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: '600',
+                  color: '#334155',
+                  cursor: 'pointer',
+                }}
+              >
+                <Settings size={14} />
+                Paramétrer le calendrier
+              </button>
+            )}
+            {canPayout && (
+              <button
+                onClick={() => {
+                  setPayoutAmount(payoutData?.available_balance ? String(payoutData.available_balance) : '');
+                  setPayoutModalOpen(true);
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '8px 16px',
+                  background: 'linear-gradient(135deg, #16A34A, #15803D)',
+                  border: 'none',
+                  borderRadius: '7px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)',
+                }}
+              >
+                <Send size={14} />
+                Déclencher un virement
+              </button>
+            )}
           </div>
         </div>
 
@@ -951,26 +961,30 @@ export const FinanceDashboard = () => {
                 ) : (
                   /* Action buttons */
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      onClick={() => setWalletActionModal('credit')}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '6px', background: '#16A34A', color: 'white', border: 'none', fontWeight: '700', fontSize: '12.5px', cursor: 'pointer' }}
-                    >
-                      <Plus size={14} /> Créditer
-                    </button>
-                    <button
-                      onClick={() => setWalletActionModal('debit')}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '6px', background: '#DC2626', color: 'white', border: 'none', fontWeight: '700', fontSize: '12.5px', cursor: 'pointer' }}
-                    >
-                      <Minus size={14} /> Débiter
-                    </button>
+                    {canAdjust && (
+                      <>
+                        <button
+                          onClick={() => setWalletActionModal('credit')}
+                          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '6px', background: '#16A34A', color: 'white', border: 'none', fontWeight: '700', fontSize: '12.5px', cursor: 'pointer' }}
+                        >
+                          <Plus size={14} /> Créditer
+                        </button>
+                        <button
+                          onClick={() => setWalletActionModal('debit')}
+                          style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', padding: '9px', borderRadius: '6px', background: '#DC2626', color: 'white', border: 'none', fontWeight: '700', fontSize: '12.5px', cursor: 'pointer' }}
+                        >
+                          <Minus size={14} /> Débiter
+                        </button>
+                      </>
+                    )}
                     <button
                       onClick={() => {
                         navigate(`/transactions?search=${encodeURIComponent(selectedWallet.user?.email || selectedWallet.user?.phone || '')}`);
                       }}
-                      style={{ padding: '9px 12px', borderRadius: '6px', background: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0', fontWeight: '600', fontSize: '12.5px', cursor: 'pointer' }}
+                      style={{ padding: '9px 12px', borderRadius: '6px', background: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0', fontWeight: '600', fontSize: '12.5px', cursor: 'pointer', flex: canAdjust ? 'none' : 1 }}
                       title="Transactions"
                     >
-                      <ExternalLink size={14} />
+                      <ExternalLink size={14} /> {canAdjust ? '' : 'Voir Transactions'}
                     </button>
                   </div>
                 )}

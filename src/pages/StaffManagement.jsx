@@ -24,7 +24,10 @@ export const ACTION_DEFINITIONS = {
   suspend: { label: 'Suspendre', desc: 'Bloquer / Débloquer', color: 'bg-orange-50 text-orange-700 border-orange-200' },
   delete: { label: 'Supprimer', desc: 'Suppression définitive', color: 'bg-red-50 text-red-700 border-red-200' },
   export: { label: 'Exporter', desc: 'Télécharger CSV/Excel', color: 'bg-purple-50 text-purple-700 border-purple-200' },
-  adjust: { label: 'Ajuster solde', desc: 'Créditer ou débiter', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  adjust: { label: 'Créditer / Débiter', desc: 'Ajuster les soldes portefeuilles', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+  payout: { label: 'Déclencher virement', desc: 'Virement vers compte personnel (Payouts Zayono)', color: 'bg-emerald-50 text-emerald-800 border-emerald-300' },
+  configure_payout: { label: 'Paramétrer virement', desc: 'Calendrier et conditions de virement auto', color: 'bg-cyan-50 text-cyan-800 border-cyan-300' },
+  cancel: { label: 'Révoquer / Annuler', desc: 'Révoquer un abonnement actif', color: 'bg-rose-50 text-rose-800 border-rose-300' },
 };
 
 // Structure complète des Modules, Sous-menus et Actions par page
@@ -39,6 +42,10 @@ export const ADMIN_MODULES_CONFIG = [
         path: '/dashboard',
         label: 'Vue d\'ensemble générale',
         allowedActions: ['view', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter dashboard', desc: 'Afficher les métriques et graphiques' },
+          export: { label: 'Exporter statistiques', desc: 'Téléchargement des rapports' }
+        }
       }
     ]
   },
@@ -52,6 +59,13 @@ export const ADMIN_MODULES_CONFIG = [
         path: '/users',
         label: 'Gestion des Utilisateurs',
         allowedActions: ['view', 'edit', 'suspend', 'delete', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter utilisateurs', desc: 'Afficher la liste et fiches' },
+          edit: { label: 'Modifier profil', desc: 'Bouton d\'édition de profil' },
+          suspend: { label: 'Suspendre / Réactiver', desc: 'Bloquer ou débloquer un compte' },
+          delete: { label: 'Supprimer compte', desc: 'Suppression définitive' },
+          export: { label: 'Exporter liste', desc: 'Télécharger la liste CSV' }
+        }
       }
     ]
   },
@@ -65,6 +79,13 @@ export const ADMIN_MODULES_CONFIG = [
         path: '/companies',
         label: 'Entreprises & Viabilité',
         allowedActions: ['view', 'validate', 'edit', 'suspend', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter entreprises', desc: 'Afficher les fiches entreprises' },
+          validate: { label: 'Certifier viabilité', desc: 'Bouton bascule de certification' },
+          edit: { label: 'Offres internationales', desc: 'Bouton autorisation internationale' },
+          suspend: { label: 'Suspendre entreprise', desc: 'Bloquer l\'accès employeur' },
+          delete: { label: 'Supprimer entreprise', desc: 'Supprimer le compte entreprise' }
+        }
       }
     ]
   },
@@ -74,8 +95,27 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Briefcase,
     description: 'Modération, validation et gestion des offres d\'emploi et de stages',
     pages: [
-      { path: '/offers', label: 'Toutes les offres', allowedActions: ['view', 'create', 'edit', 'delete'] },
-      { path: '/offers/pending', label: 'Offres en attente', allowedActions: ['view', 'validate', 'delete'] },
+      {
+        path: '/offers',
+        label: 'Toutes les offres',
+        allowedActions: ['view', 'create', 'edit', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter offres', desc: 'Afficher la liste' },
+          create: { label: 'Nouvelle offre', desc: 'Bouton « Nouvelle offre »' },
+          edit: { label: 'Modifier offre', desc: 'Bouton modifier' },
+          delete: { label: 'Supprimer offre', desc: 'Bouton supprimer' }
+        }
+      },
+      {
+        path: '/offers/pending',
+        label: 'Offres en attente',
+        allowedActions: ['view', 'validate', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter en attente', desc: 'Afficher les offres soumises' },
+          validate: { label: 'Approuver / Rejeter', desc: 'Valider ou refuser l\'offre' },
+          delete: { label: 'Supprimer offre', desc: 'Suppression' }
+        }
+      },
       { path: '/offers/approved', label: 'Offres validées', allowedActions: ['view', 'edit', 'delete'] },
       { path: '/offers/expired', label: 'Offres expirées', allowedActions: ['view', 'edit', 'delete'] },
       { path: '/offers/deleted', label: 'Offres supprimées', allowedActions: ['view', 'delete'] }
@@ -87,7 +127,18 @@ export const ADMIN_MODULES_CONFIG = [
     icon: CalendarDays,
     description: 'Gestion des salons professionnels, billetterie et webinaires',
     pages: [
-      { path: '/events', label: 'Tous les événements', allowedActions: ['view', 'create', 'edit', 'delete'] },
+      {
+        path: '/events',
+        label: 'Tous les événements',
+        allowedActions: ['view', 'create', 'edit', 'validate', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter événements', desc: 'Afficher la liste' },
+          create: { label: 'Nouvel événement', desc: 'Bouton « Créer un événement »' },
+          edit: { label: 'Modifier événement', desc: 'Édition des détails' },
+          validate: { label: 'Valider / Pause / Rejeter', desc: 'Modération de statut' },
+          delete: { label: 'Supprimer événement', desc: 'Suppression' }
+        }
+      },
       { path: '/events/pending', label: 'Événements en attente', allowedActions: ['view', 'validate', 'delete'] },
       { path: '/events/approved', label: 'Événements validés', allowedActions: ['view', 'edit', 'delete'] },
       { path: '/events/expired', label: 'Événements expirés', allowedActions: ['view', 'delete'] },
@@ -104,7 +155,16 @@ export const ADMIN_MODULES_CONFIG = [
       { path: '/applications', label: 'Toutes les candidatures', allowedActions: ['view', 'export'] },
       { path: '/applications/by-status', label: 'Candidatures par statut', allowedActions: ['view', 'export'] },
       { path: '/applications/by-offer', label: 'Candidatures par offre', allowedActions: ['view', 'export'] },
-      { path: '/hiring-declarations', label: 'Déclarations d\'embauche', allowedActions: ['view', 'validate', 'export'] }
+      {
+        path: '/hiring-declarations',
+        label: 'Déclarations d\'embauche',
+        allowedActions: ['view', 'validate', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter déclarations', desc: 'Afficher les déclarations reçues' },
+          validate: { label: 'Valider embauche', desc: 'Bouton « Valider l\'embauche »' },
+          export: { label: 'Exporter CSV', desc: 'Télécharger les déclarations' }
+        }
+      }
     ]
   },
   {
@@ -113,7 +173,15 @@ export const ADMIN_MODULES_CONFIG = [
     icon: BadgeCheck,
     description: 'Contrôle des pièces d\'identité, diplômes et badges officiels',
     pages: [
-      { path: '/badges/pending', label: 'Demandes de badges en attente', allowedActions: ['view', 'validate'] },
+      {
+        path: '/badges/pending',
+        label: 'Demandes de badges en attente',
+        allowedActions: ['view', 'validate'],
+        actionDetails: {
+          view: { label: 'Examiner dossiers', desc: 'Voir les justificatifs' },
+          validate: { label: 'Valider / Attribuer badge', desc: 'Bouton valider ou rejeter' }
+        }
+      },
       { path: '/badges/candidates', label: 'Secrétaires vérifiées', allowedActions: ['view', 'validate'] },
       { path: '/badges/companies', label: 'Entreprises vérifiées', allowedActions: ['view', 'validate'] }
     ]
@@ -124,7 +192,18 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Vote,
     description: 'Questionnaires, baromètres et enquêtes d\'opinion',
     pages: [
-      { path: '/surveys', label: 'Gestion des sondages', allowedActions: ['view', 'create', 'edit', 'delete', 'export'] }
+      {
+        path: '/surveys',
+        label: 'Gestion des sondages',
+        allowedActions: ['view', 'create', 'edit', 'delete', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter sondages', desc: 'Afficher les sondages' },
+          create: { label: 'Créer un sondage', desc: 'Bouton « Créer un sondage »' },
+          edit: { label: 'Modifier sondage', desc: 'Bouton modifier' },
+          delete: { label: 'Supprimer sondage', desc: 'Bouton corbeille' },
+          export: { label: 'Exporter résultats', desc: 'Bouton exporter' }
+        }
+      }
     ]
   },
   {
@@ -133,7 +212,16 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Handshake,
     description: 'Échanges inter-entreprises, prestations et collaborations',
     pages: [
-      { path: '/service-exchanges', label: 'Bourse d\'échanges B2B', allowedActions: ['view', 'validate', 'delete'] }
+      {
+        path: '/service-exchanges',
+        label: 'Bourse d\'échanges B2B',
+        allowedActions: ['view', 'validate', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter annonces', desc: 'Afficher la bourse de troc' },
+          validate: { label: 'Valider / Rejeter', desc: 'Bouton valider ou refuser' },
+          delete: { label: 'Supprimer annonce', desc: 'Bouton supprimer' }
+        }
+      }
     ]
   },
   {
@@ -142,9 +230,37 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Wallet,
     description: 'Portefeuilles électroniques, transactions et comptabilité',
     pages: [
-      { path: '/finances', label: 'Vue d\'ensemble financière', allowedActions: ['view', 'export'] },
-      { path: '/wallets', label: 'Portefeuilles (Wallets)', allowedActions: ['view', 'adjust'] },
-      { path: '/transactions', label: 'Historique des transactions', allowedActions: ['view', 'export'] }
+      {
+        path: '/finances',
+        label: 'Vue d\'ensemble financière',
+        allowedActions: ['view', 'payout', 'configure_payout', 'adjust', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter finances', desc: 'Affichage des métriques et soldes' },
+          payout: { label: 'Déclencher un virement', desc: 'Bouton « Déclencher un virement » vers compte perso' },
+          configure_payout: { label: 'Paramétrer virement', desc: 'Bouton « Paramétrer le calendrier »' },
+          adjust: { label: 'Créditer / Débiter', desc: 'Boutons d\'ajustement de solde portefeuille' },
+          export: { label: 'Exporter bilan', desc: 'Téléchargement des rapports' }
+        }
+      },
+      {
+        path: '/wallets',
+        label: 'Portefeuilles (Wallets)',
+        allowedActions: ['view', 'adjust', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter portefeuilles', desc: 'Affichage des soldes des utilisateurs' },
+          adjust: { label: 'Créditer / Débiter', desc: 'Boutons vert/rouge « Créditer » et « Débiter »' },
+          export: { label: 'Exporter soldes', desc: 'Télécharger la liste des soldes' }
+        }
+      },
+      {
+        path: '/transactions',
+        label: 'Historique des transactions',
+        allowedActions: ['view', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter transactions', desc: 'Historique des paiements' },
+          export: { label: 'Export CSV', desc: 'Bouton « Export CSV »' }
+        }
+      }
     ]
   },
   {
@@ -153,10 +269,45 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Star,
     description: 'Formules d\'adhésion, abonnés actifs et facturation',
     pages: [
-      { path: '/subscriptions/control-center', label: 'Centre de contrôle', allowedActions: ['view', 'edit'] },
-      { path: '/subscriptions/plans', label: 'Plans d\'abonnement', allowedActions: ['view', 'create', 'edit', 'delete'] },
-      { path: '/subscriptions/active', label: 'Abonnés actifs', allowedActions: ['view', 'edit'] },
-      { path: '/subscriptions/history', label: 'Historique des abonnements', allowedActions: ['view', 'export'] }
+      {
+        path: '/subscriptions/control-center',
+        label: 'Centre de contrôle',
+        allowedActions: ['view', 'edit'],
+        actionDetails: {
+          view: { label: 'Consulter centre', desc: 'Affichage des règles de déblocage' },
+          edit: { label: 'Enregistrer tarifs', desc: 'Bouton « Enregistrer les modifications »' }
+        }
+      },
+      {
+        path: '/subscriptions/plans',
+        label: 'Plans d\'abonnement',
+        allowedActions: ['view', 'create', 'edit', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter plans', desc: 'Afficher les formules d\'adhésion' },
+          create: { label: 'Créer un plan', desc: 'Bouton bleu « Créer un plan »' },
+          edit: { label: 'Modifier plan', desc: 'Bouton crayon d\'édition du plan' },
+          delete: { label: 'Supprimer plan', desc: 'Bouton corbeille de suppression' }
+        }
+      },
+      {
+        path: '/subscriptions/active',
+        label: 'Abonnés actifs',
+        allowedActions: ['view', 'cancel'],
+        actionDetails: {
+          view: { label: 'Consulter abonnés', desc: 'Affichage des abonnements en cours' },
+          cancel: { label: 'Révoquer abonnement', desc: 'Bouton rouge « Révoquer »' }
+        }
+      },
+      {
+        path: '/subscriptions/history',
+        label: 'Historique des abonnements',
+        allowedActions: ['view', 'cancel', 'export'],
+        actionDetails: {
+          view: { label: 'Consulter historique', desc: 'Historique des souscriptions' },
+          cancel: { label: 'Révoquer abonnement', desc: 'Bouton « Révoquer » si actif' },
+          export: { label: 'Exporter historique', desc: 'Téléchargement de l\'historique' }
+        }
+      }
     ]
   },
   {
@@ -165,9 +316,35 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Bell,
     description: 'Campagnes Push, modération des signalements et demandes spéciales',
     pages: [
-      { path: '/special-requests', label: 'Demandes spéciales entreprises', allowedActions: ['view', 'validate'] },
-      { path: '/moderation/reports', label: 'Modération & Signalements', allowedActions: ['view', 'validate', 'delete'] },
-      { path: '/notifications', label: 'Centre Notifications Push', allowedActions: ['view', 'create', 'delete'] }
+      {
+        path: '/special-requests',
+        label: 'Demandes spéciales entreprises',
+        allowedActions: ['view', 'validate'],
+        actionDetails: {
+          view: { label: 'Consulter demandes', desc: 'Demandes spéciales reçues' },
+          validate: { label: 'Traiter décision', desc: 'Bouton « Enregistrer la décision »' }
+        }
+      },
+      {
+        path: '/moderation/reports',
+        label: 'Modération & Signalements',
+        allowedActions: ['view', 'validate', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter signalements', desc: 'Afficher les signalements' },
+          validate: { label: 'Traiter / Classer', desc: 'Sanctionner ou classer sans suite' },
+          delete: { label: 'Supprimer contenu', desc: 'Supprimer le contenu signalé' }
+        }
+      },
+      {
+        path: '/notifications',
+        label: 'Centre Notifications Push',
+        allowedActions: ['view', 'create', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter notifications', desc: 'Historique des notifications' },
+          create: { label: 'Créer campagne Push', desc: 'Bouton « Créer une campagne Push »' },
+          delete: { label: 'Supprimer notification', desc: 'Bouton supprimer' }
+        }
+      }
     ]
   },
   {
@@ -178,7 +355,17 @@ export const ADMIN_MODULES_CONFIG = [
     pages: [
       { path: '/cms/ads', label: 'Pages publicitaires', allowedActions: ['view', 'create', 'edit', 'delete'] },
       { path: '/cms/company-banners', label: 'Bannières Dashboard', allowedActions: ['view', 'create', 'edit', 'delete'] },
-      { path: '/cms/pages', label: 'Pages dynamiques (CGU, etc.)', allowedActions: ['view', 'create', 'edit'] },
+      {
+        path: '/cms/pages',
+        label: 'Pages dynamiques (CGU, etc.)',
+        allowedActions: ['view', 'create', 'edit', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter pages', desc: 'Affichage des pages' },
+          create: { label: 'Nouvelle page', desc: 'Bouton « Créer une page »' },
+          edit: { label: 'Modifier contenu', desc: 'Bouton modifier' },
+          delete: { label: 'Supprimer page', desc: 'Bouton supprimer' }
+        }
+      },
       { path: '/cms/languages', label: 'Langues supportées', allowedActions: ['view', 'create', 'edit', 'delete'] },
       { path: '/cms/translations', label: 'Traductions App mobile', allowedActions: ['view', 'edit'] },
       { path: '/cms/locations', label: 'Zones géographiques', allowedActions: ['view', 'create', 'edit', 'delete'] },
@@ -213,7 +400,18 @@ export const ADMIN_MODULES_CONFIG = [
     icon: Settings,
     description: 'Gestion de l\'équipe d\'administration et permissions',
     pages: [
-      { path: '/settings/staff', label: 'Comptes administrateurs & Droits', allowedActions: ['view', 'create', 'edit', 'delete'] }
+      {
+        path: '/settings/staff',
+        label: 'Comptes administrateurs & Droits',
+        allowedActions: ['view', 'create', 'edit', 'suspend', 'delete'],
+        actionDetails: {
+          view: { label: 'Consulter staff', desc: 'Afficher les administrateurs' },
+          create: { label: 'Créer administrateur', desc: 'Bouton « Créer un administrateur »' },
+          edit: { label: 'Modifier droits', desc: 'Bouton d\'édition des droits' },
+          suspend: { label: 'Suspendre / Réactiver', desc: 'Suspendre l\'accès au panel' },
+          delete: { label: 'Supprimer administrateur', desc: 'Suppression de compte' }
+        }
+      }
     ]
   }
 ];
@@ -1427,7 +1625,10 @@ export const StaffManagementPage = () => {
                                                   Droits :
                                                 </span>
                                                 {page.allowedActions.map(actionKey => {
+                                                  const customDetail = page.actionDetails?.[actionKey];
                                                   const def = ACTION_DEFINITIONS[actionKey] || { label: actionKey, color: 'bg-gray-50 text-gray-700 border-gray-200' };
+                                                  const label = customDetail?.label || def.label;
+                                                  const desc = customDetail?.desc || def.desc;
                                                   const isActionGranted = currentActions.includes(actionKey);
 
                                                   return (
@@ -1435,6 +1636,7 @@ export const StaffManagementPage = () => {
                                                       type="button"
                                                       key={actionKey}
                                                       onClick={() => handleTogglePageAction(page.path, actionKey)}
+                                                      title={desc}
                                                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition flex items-center gap-1.5 cursor-pointer select-none ${
                                                         isActionGranted
                                                           ? `${def.color} shadow-2xs font-extrabold ring-1 ring-black/5`
@@ -1446,7 +1648,7 @@ export const StaffManagementPage = () => {
                                                       }`}>
                                                         {isActionGranted && <Check size={8} className="stroke-[3]" />}
                                                       </div>
-                                                      <span>{def.label}</span>
+                                                      <span>{label}</span>
                                                     </button>
                                                   );
                                                 })}

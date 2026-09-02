@@ -9,8 +9,10 @@ import {
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useRealtime } from '../contexts/RealtimeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const ModerationReportsPage = () => {
+  const { can } = useAuth();
   const { syncCounter, refreshNow } = useRealtime();
   const [reports, setReports] = useState([]);
   const [stats, setStats] = useState({
@@ -680,53 +682,57 @@ export const ModerationReportsPage = () => {
               </button>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleAction('dismiss')}
-                  disabled={submittingAction}
-                  style={{
-                    padding: '11px 20px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    backgroundColor: '#16a34a',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: submittingAction ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
-                    transition: '0.2s'
-                  }}
-                >
-                  <Check size={16} />
-                  Classer sans suite
-                </button>
+                {can('validate', '/moderation/reports') && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction('dismiss')}
+                    disabled={submittingAction}
+                    style={{
+                      padding: '11px 20px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      backgroundColor: '#16a34a',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: submittingAction ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
+                      transition: '0.2s'
+                    }}
+                  >
+                    <Check size={16} />
+                    Classer sans suite
+                  </button>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => handleAction('ban')}
-                  disabled={submittingAction}
-                  style={{
-                    padding: '11px 20px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    backgroundColor: '#dc2626',
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: submittingAction ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
-                    transition: '0.2s'
-                  }}
-                >
-                  <Ban size={16} />
-                  Bannir le contenu
-                </button>
+                {(can('delete', '/moderation/reports') || can('validate', '/moderation/reports')) && (
+                  <button
+                    type="button"
+                    onClick={() => handleAction('ban')}
+                    disabled={submittingAction}
+                    style={{
+                      padding: '11px 20px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      backgroundColor: '#dc2626',
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: submittingAction ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 12px rgba(220, 38, 38, 0.25)',
+                      transition: '0.2s'
+                    }}
+                  >
+                    <Ban size={16} />
+                    Bannir le contenu
+                  </button>
+                )}
               </div>
             </div>
           </div>

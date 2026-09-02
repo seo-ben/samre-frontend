@@ -7,6 +7,7 @@ import {
   Crown, Rocket, Building, Tag, Eye, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
 
 const AVAILABLE_FEATURES = [
   // Candidats
@@ -33,6 +34,11 @@ const AVAILABLE_FEATURES = [
 ];
 
 export const SubscriptionPlansPage = () => {
+  const { can } = useAuth();
+  const canCreate = can('create', '/subscriptions/plans');
+  const canEdit = can('edit', '/subscriptions/plans');
+  const canDelete = can('delete', '/subscriptions/plans');
+
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -263,19 +269,21 @@ export const SubscriptionPlansPage = () => {
               </p>
             </div>
             
-            <button
-              onClick={() => handleOpenModal()}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                backgroundColor: '#2563eb', color: '#FFF',
-                border: 'none', height: '36px', padding: '0 16px', borderRadius: '8px',
-                fontWeight: '600', cursor: 'pointer', transition: '0.2s', fontSize: '13px',
-                boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
-              }}
-            >
-              <Plus size={16} />
-              Créer un plan
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => handleOpenModal()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  backgroundColor: '#2563eb', color: '#FFF',
+                  border: 'none', height: '36px', padding: '0 16px', borderRadius: '8px',
+                  fontWeight: '600', cursor: 'pointer', transition: '0.2s', fontSize: '13px',
+                  boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)'
+                }}
+              >
+                <Plus size={16} />
+                Créer un plan
+              </button>
+            )}
           </div>
         </div>
 
@@ -438,20 +446,26 @@ export const SubscriptionPlansPage = () => {
                             >
                               <Eye size={12} /> Voir
                             </button>
-                            <button 
-                              className="action-btn"
-                              style={{ width: '28px', height: '28px', color: '#3b82f6' }}
-                              onClick={() => handleOpenModal(plan)}
-                            >
-                              <Edit2 size={12} />
-                            </button>
-                            <button 
-                              className="action-btn"
-                              style={{ width: '28px', height: '28px', color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
-                              onClick={() => handleDeleteClick(plan)}
-                            >
-                              <Trash2 size={12} />
-                            </button>
+                            {canEdit && (
+                              <button 
+                                className="action-btn"
+                                style={{ width: '28px', height: '28px', color: '#3b82f6' }}
+                                onClick={() => handleOpenModal(plan)}
+                                title="Modifier le plan"
+                              >
+                                <Edit2 size={12} />
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button 
+                                className="action-btn"
+                                style={{ width: '28px', height: '28px', color: '#ef4444', borderColor: '#fecaca', background: '#fef2f2' }}
+                                onClick={() => handleDeleteClick(plan)}
+                                title="Supprimer le plan"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

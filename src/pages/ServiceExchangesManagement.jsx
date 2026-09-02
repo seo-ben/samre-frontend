@@ -10,6 +10,7 @@ import {
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useRealtime } from '../contexts/RealtimeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Helper pour grouper les messages par date
 const formatMessageDate = (dateString) => {
@@ -40,6 +41,8 @@ const formatMessageTime = (dateString) => {
 };
 
 export const ServiceExchangesManagement = () => {
+  const { can } = useAuth();
+  const canDelete = can('delete', '/service-exchanges');
   const { syncCounter, refreshNow } = useRealtime();
 
   // Tab: 'exchanges' or 'conversations'
@@ -586,13 +589,15 @@ export const ServiceExchangesManagement = () => {
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
-                              <button
-                                onClick={() => handleDeleteExchange(item.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Supprimer / Modérer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDeleteExchange(item.id)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Supprimer / Modérer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1265,12 +1270,14 @@ export const ServiceExchangesManagement = () => {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleDeleteExchange(selectedExchange)}
-                    className="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-1.5 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" /> Supprimer
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDeleteExchange(selectedExchange)}
+                      className="px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 rounded-xl flex items-center gap-1.5 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" /> Supprimer
+                    </button>
+                  )}
                   <button
                     onClick={() => setSelectedExchange(null)}
                     className="px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"

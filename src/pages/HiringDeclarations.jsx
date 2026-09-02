@@ -7,8 +7,11 @@ import {
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export const HiringDeclarationsPage = () => {
+  const { can } = useAuth();
+  const canValidate = can('validate', '/hiring-declarations');
   const [declarations, setDeclarations] = useState([]);
   const [stats, setStats] = useState({
     total_declarations: 0,
@@ -356,7 +359,7 @@ export const HiringDeclarationsPage = () => {
                         <td style={{ textAlign: 'right' }}>
                           <div style={{ display: 'flex', itemsAlign: 'center', justifyContent: 'flex-end', gap: '6px' }}>
                             {/* Validation rapide */}
-                            {dec.status !== 'validated' && (
+                            {canValidate && dec.status !== 'validated' && (
                               <button
                                 onClick={() => handleRequestStatusChange(dec.id, 'validated')}
                                 disabled={statusUpdatingId === dec.id}
@@ -499,7 +502,7 @@ export const HiringDeclarationsPage = () => {
 
             <div style={{ padding: '12px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
               <div style={{ display: 'flex', gap: '8px' }}>
-                {selectedDeclaration.status !== 'validated' && (
+                {canValidate && selectedDeclaration.status !== 'validated' && (
                   <button
                     onClick={() => handleRequestStatusChange(selectedDeclaration.id, 'validated')}
                     style={{ padding: '6px 12px', background: '#059669', color: '#fff', borderRadius: '6px', fontSize: '12px', fontWeight: '600', border: 'none', cursor: 'pointer' }}
@@ -507,7 +510,7 @@ export const HiringDeclarationsPage = () => {
                     Valider la déclaration
                   </button>
                 )}
-                {selectedDeclaration.status !== 'rejected' && (
+                {canValidate && selectedDeclaration.status !== 'rejected' && (
                   <button
                     onClick={() => handleRequestStatusChange(selectedDeclaration.id, 'rejected')}
                     style={{ padding: '6px 12px', background: '#e11d48', color: '#fff', borderRadius: '6px', fontSize: '12px', fontWeight: '600', border: 'none', cursor: 'pointer' }}

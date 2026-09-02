@@ -16,8 +16,12 @@ import {
   Check,
   ShieldCheck
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export function SubscriptionControlCenterPage() {
+  const { can } = useAuth();
+  const canEdit = can('edit', '/subscriptions/control-center');
+
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -331,19 +335,25 @@ export function SubscriptionControlCenterPage() {
               </div>
 
               <div style={{ gridColumn: '1 / -1', paddingTop: '8px' }}>
-                <button
-                  type="submit"
-                  disabled={savingSettings}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    backgroundColor: '#1A6FD4', color: '#FFF', border: 'none',
-                    padding: '12px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
-                    cursor: 'pointer', boxShadow: '0 4px 12px rgba(26, 111, 212, 0.25)', transition: '0.2s'
-                  }}
-                >
-                  {savingSettings ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
-                  {savingSettings ? 'Enregistrement en cours...' : 'Enregistrer les Tarifs'}
-                </button>
+                {canEdit ? (
+                  <button
+                    type="submit"
+                    disabled={savingSettings}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      backgroundColor: '#1A6FD4', color: '#FFF', border: 'none',
+                      padding: '12px 24px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+                      cursor: 'pointer', boxShadow: '0 4px 12px rgba(26, 111, 212, 0.25)', transition: '0.2s'
+                    }}
+                  >
+                    {savingSettings ? <Loader2 size={18} className="spin" /> : <Save size={18} />}
+                    {savingSettings ? 'Enregistrement en cours...' : 'Enregistrer les Tarifs'}
+                  </button>
+                ) : (
+                  <div style={{ padding: '10px 16px', background: '#F4F4F5', borderRadius: '8px', color: '#71717A', fontSize: '13px', fontWeight: '500' }}>
+                    Mode consultation uniquement (Modification non autorisée)
+                  </div>
+                )}
               </div>
             </form>
           </div>

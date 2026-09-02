@@ -7,8 +7,12 @@ import {
   ShieldCheck, RefreshCw, Check, AlertCircle, Building2, UserCheck, Info
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 
 export const VerifiedProfiles = ({ userType }) => {
+  const { can } = useAuth();
+  const isCandidate = userType === 'candidate';
+  const canValidate = can('validate', isCandidate ? '/badges/candidates' : '/badges/companies') || can('validate', '/badges/pending');
   const [requests, setRequests] = useState([]);
   const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +26,6 @@ export const VerifiedProfiles = ({ userType }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const title = userType === 'candidate' ? 'Secrétaires Certifiées' : 'Entreprises Certifiées';
-  const isCandidate = userType === 'candidate';
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -582,104 +585,106 @@ export const VerifiedProfiles = ({ userType }) => {
                         <p className="text-slate-700 leading-relaxed italic">{cand.bio}</p>
                       </div>
                     )}
+
+                    {/* 3. Gestion de la Certification (Révocation / Maintien) */}
+                    {canValidate && (
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <p className="text-xs font-bold uppercase text-slate-700 tracking-wider">
+                          Statut du Badge SAMRE :
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setStatusForm({ ...statusForm, status: 'approved' })}
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              backgroundColor: statusForm.status === 'approved' ? '#16a34a' : '#ffffff',
+                              color: statusForm.status === 'approved' ? '#ffffff' : '#1e293b',
+                              border: statusForm.status === 'approved' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                              boxShadow: statusForm.status === 'approved' ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
+                            }}
+                          >
+                            <Award size={15} color={statusForm.status === 'approved' ? '#ffffff' : '#16a34a'} />
+                            Maintenir Certifié
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStatusForm({ ...statusForm, status: 'pending' })}
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              backgroundColor: statusForm.status === 'pending' ? '#d97706' : '#ffffff',
+                              color: statusForm.status === 'pending' ? '#ffffff' : '#1e293b',
+                              border: statusForm.status === 'pending' ? '2px solid #d97706' : '1px solid #cbd5e1',
+                              boxShadow: statusForm.status === 'pending' ? '0 4px 12px rgba(217, 119, 6, 0.3)' : 'none'
+                            }}
+                          >
+                            <RefreshCw size={15} color={statusForm.status === 'pending' ? '#ffffff' : '#d97706'} />
+                            Remettre en attente
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setStatusForm({ ...statusForm, status: 'rejected' })}
+                            style={{
+                              padding: '12px 14px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: '700',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '8px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              backgroundColor: statusForm.status === 'rejected' ? '#dc2626' : '#ffffff',
+                              color: statusForm.status === 'rejected' ? '#ffffff' : '#1e293b',
+                              border: statusForm.status === 'rejected' ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                              boxShadow: statusForm.status === 'rejected' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : 'none'
+                            }}
+                          >
+                            <X size={15} color={statusForm.status === 'rejected' ? '#ffffff' : '#dc2626'} />
+                            Révoquer le badge
+                          </button>
+                        </div>
+
+                        {statusForm.status === 'rejected' && (
+                          <div className="space-y-1.5 pt-2 animate-fadeIn">
+                            <label className="text-xs font-bold text-rose-700">
+                              Motif de la révocation (notifié à l'utilisateur) :
+                            </label>
+                            <textarea
+                              rows={2}
+                              value={statusForm.note}
+                              onChange={(e) => setStatusForm({ ...statusForm, note: e.target.value })}
+                              placeholder="Ex: Le document d'identité a expiré ou le compte a été suspendu..."
+                              className="w-full p-3 rounded-xl border border-rose-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : null}
-
-                {/* 3. Gestion de la Certification (Révocation / Maintien) */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                  <p className="text-xs font-bold uppercase text-slate-700 tracking-wider">
-                    Statut du Badge SAMRE :
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setStatusForm({ ...statusForm, status: 'approved' })}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        backgroundColor: statusForm.status === 'approved' ? '#16a34a' : '#ffffff',
-                        color: statusForm.status === 'approved' ? '#ffffff' : '#1e293b',
-                        border: statusForm.status === 'approved' ? '2px solid #16a34a' : '1px solid #cbd5e1',
-                        boxShadow: statusForm.status === 'approved' ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
-                      }}
-                    >
-                      <Award size={15} color={statusForm.status === 'approved' ? '#ffffff' : '#16a34a'} />
-                      Maintenir Certifié
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setStatusForm({ ...statusForm, status: 'pending' })}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        backgroundColor: statusForm.status === 'pending' ? '#d97706' : '#ffffff',
-                        color: statusForm.status === 'pending' ? '#ffffff' : '#1e293b',
-                        border: statusForm.status === 'pending' ? '2px solid #d97706' : '1px solid #cbd5e1',
-                        boxShadow: statusForm.status === 'pending' ? '0 4px 12px rgba(217, 119, 6, 0.3)' : 'none'
-                      }}
-                    >
-                      <RefreshCw size={15} color={statusForm.status === 'pending' ? '#ffffff' : '#d97706'} />
-                      Remettre en attente
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setStatusForm({ ...statusForm, status: 'rejected' })}
-                      style={{
-                        padding: '12px 14px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        backgroundColor: statusForm.status === 'rejected' ? '#dc2626' : '#ffffff',
-                        color: statusForm.status === 'rejected' ? '#ffffff' : '#1e293b',
-                        border: statusForm.status === 'rejected' ? '2px solid #dc2626' : '1px solid #cbd5e1',
-                        boxShadow: statusForm.status === 'rejected' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : 'none'
-                      }}
-                    >
-                      <X size={15} color={statusForm.status === 'rejected' ? '#ffffff' : '#dc2626'} />
-                      Révoquer le badge
-                    </button>
-                  </div>
-
-                  {statusForm.status === 'rejected' && (
-                    <div className="space-y-1.5 pt-2 animate-fadeIn">
-                      <label className="text-xs font-bold text-rose-700">
-                        Motif de la révocation (notifié à l'utilisateur) :
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={statusForm.note}
-                        onChange={(e) => setStatusForm({ ...statusForm, note: e.target.value })}
-                        placeholder="Ex: Le document d'identité a expiré ou le compte a été suspendu..."
-                        className="w-full p-3 rounded-xl border border-rose-200 text-xs focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
-                      />
-                    </div>
-                  )}
-                </div>
 
               </div>
 
@@ -714,38 +719,40 @@ export const VerifiedProfiles = ({ userType }) => {
                   Fermer
                 </button>
 
-                <button
-                  type="button"
-                  onClick={submitStatusChange}
-                  disabled={submitting}
-                  style={{
-                    padding: '11px 22px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    backgroundColor: statusForm.status === 'approved' ? '#16a34a' : (statusForm.status === 'rejected' ? '#dc2626' : '#f59e0b'),
-                    color: '#ffffff',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    transition: '0.2s'
-                  }}
-                >
-                  {submitting ? (
-                    <>
-                      <RefreshCw size={14} className="animate-spin" />
-                      Enregistrement...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={16} />
-                      Enregistrer les modifications
-                    </>
-                  )}
-                </button>
+                {canValidate && (
+                  <button
+                    type="button"
+                    onClick={submitStatusChange}
+                    disabled={submitting}
+                    style={{
+                      padding: '11px 22px',
+                      borderRadius: '12px',
+                      border: 'none',
+                      backgroundColor: statusForm.status === 'approved' ? '#16a34a' : (statusForm.status === 'rejected' ? '#dc2626' : '#f59e0b'),
+                      color: '#ffffff',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: submitting ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      transition: '0.2s'
+                    }}
+                  >
+                    {submitting ? (
+                      <>
+                        <RefreshCw size={14} className="animate-spin" />
+                        Enregistrement...
+                      </>
+                    ) : (
+                      <>
+                        <Check size={16} />
+                        Enregistrer la décision
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
             </div>

@@ -3,8 +3,10 @@ import { MainLayout } from "../components/layout/MainLayout";
 import apiClient from "../lib/apiClient";
 import { Plus, X, Loader2, AlertCircle, Trash2, Edit2, Tag, CheckCircle2, XCircle, ChevronRight, Image as ImageIcon, Wand2, Briefcase, CalendarDays } from "lucide-react";
 import { ConfirmModal } from "../components/ui/ConfirmModal";
+import { useAuth } from "../contexts/AuthContext";
 
 export const CategoriesPage = () => {
+  const { can } = useAuth();
   // We have two tabs: 'job-categories' and 'event-categories'
   const [activeMainTab, setActiveMainTab] = useState('job-categories');
 
@@ -210,21 +212,23 @@ export const CategoriesPage = () => {
             Centralisez vos secteurs d'offres et les thématiques d'événements.
           </p>
         </div>
-        <button
-          onClick={() => handleOpenModal()}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            backgroundColor: '#FF4500', color: '#FFF',
-            border: 'none', padding: '10px 20px', borderRadius: '8px',
-            fontWeight: '600', cursor: 'pointer', transition: '0.2s',
-            boxShadow: '0 4px 12px rgba(255, 69, 0, 0.2)'
-          }}
-          onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseOut={(e) => e.currentTarget.style.transform = 'none'}
-        >
-          <Plus size={20} />
-          Nouvelle Catégorie
-        </button>
+        {can('create', '/cms/categories') && (
+          <button
+            onClick={() => handleOpenModal()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              backgroundColor: '#FF4500', color: '#FFF',
+              border: 'none', padding: '10px 20px', borderRadius: '8px',
+              fontWeight: '600', cursor: 'pointer', transition: '0.2s',
+              boxShadow: '0 4px 12px rgba(255, 69, 0, 0.2)'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'none'}
+          >
+            <Plus size={20} />
+            Nouvelle Catégorie
+          </button>
+        )}
       </div>
 
       {error && !isModalOpen && (
@@ -335,12 +339,16 @@ export const CategoriesPage = () => {
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <button onClick={() => handleOpenModal(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4B5563', padding: '6px', marginRight: '8px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#E5E7EB'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                        <Edit2 size={18} />
-                      </button>
-                      <button onClick={() => handleDeleteClick(item, activeMainTab)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-                        <Trash2 size={18} />
-                      </button>
+                      {can('edit', '/cms/categories') && (
+                        <button onClick={() => handleOpenModal(item)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4B5563', padding: '6px', marginRight: '8px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#E5E7EB'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'} title="Modifier la catégorie">
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {can('delete', '/cms/categories') && (
+                        <button onClick={() => handleDeleteClick(item, activeMainTab)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#DC2626', padding: '6px', borderRadius: '6px' }} onMouseOver={e => e.currentTarget.style.backgroundColor = '#FEE2E2'} onMouseOut={e => e.currentTarget.style.backgroundColor = 'transparent'} title="Supprimer la catégorie">
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );

@@ -8,8 +8,11 @@ import {
 import apiClient from '../lib/apiClient';
 import { MainLayout } from '../components/layout/MainLayout';
 import { useRealtime } from '../contexts/RealtimeContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export const SpecialRequestsPage = () => {
+  const { can } = useAuth();
+  const canValidate = can('validate', '/special-requests');
   const { syncCounter, refreshNow } = useRealtime();
   const [requests, setRequests] = useState([]);
   const [stats, setStats] = useState({
@@ -588,84 +591,86 @@ export const SpecialRequestsPage = () => {
               </div>
 
               {/* 4. Statut */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Statut à appliquer :
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setNewStatus('in_progress')}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      backgroundColor: newStatus === 'in_progress' ? '#2563eb' : '#ffffff',
-                      color: newStatus === 'in_progress' ? '#ffffff' : '#1e293b',
-                      border: newStatus === 'in_progress' ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                      boxShadow: newStatus === 'in_progress' ? '0 4px 12px rgba(37, 99, 235, 0.3)' : 'none'
-                    }}
-                  >
-                    <RefreshCw size={13} color={newStatus === 'in_progress' ? '#ffffff' : '#2563eb'} />
-                    En cours
-                  </button>
+              {canValidate && (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Statut à appliquer :
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNewStatus('in_progress')}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: newStatus === 'in_progress' ? '#2563eb' : '#ffffff',
+                        color: newStatus === 'in_progress' ? '#ffffff' : '#1e293b',
+                        border: newStatus === 'in_progress' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                        boxShadow: newStatus === 'in_progress' ? '0 4px 12px rgba(37, 99, 235, 0.3)' : 'none'
+                      }}
+                    >
+                      <RefreshCw size={13} color={newStatus === 'in_progress' ? '#ffffff' : '#2563eb'} />
+                      En cours
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setNewStatus('resolved')}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      backgroundColor: newStatus === 'resolved' ? '#16a34a' : '#ffffff',
-                      color: newStatus === 'resolved' ? '#ffffff' : '#1e293b',
-                      border: newStatus === 'resolved' ? '2px solid #16a34a' : '1px solid #cbd5e1',
-                      boxShadow: newStatus === 'resolved' ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
-                    }}
-                  >
-                    <CheckCircle2 size={13} color={newStatus === 'resolved' ? '#ffffff' : '#16a34a'} />
-                    Résolue
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewStatus('resolved')}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: newStatus === 'resolved' ? '#16a34a' : '#ffffff',
+                        color: newStatus === 'resolved' ? '#ffffff' : '#1e293b',
+                        border: newStatus === 'resolved' ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                        boxShadow: newStatus === 'resolved' ? '0 4px 12px rgba(22, 163, 74, 0.3)' : 'none'
+                      }}
+                    >
+                      <CheckCircle2 size={13} color={newStatus === 'resolved' ? '#ffffff' : '#16a34a'} />
+                      Résolue
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setNewStatus('rejected')}
-                    style={{
-                      padding: '10px 12px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      backgroundColor: newStatus === 'rejected' ? '#dc2626' : '#ffffff',
-                      color: newStatus === 'rejected' ? '#ffffff' : '#1e293b',
-                      border: newStatus === 'rejected' ? '2px solid #dc2626' : '1px solid #cbd5e1',
-                      boxShadow: newStatus === 'rejected' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : 'none'
-                    }}
-                  >
-                    <XCircle size={13} color={newStatus === 'rejected' ? '#ffffff' : '#dc2626'} />
-                    Rejetée
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewStatus('rejected')}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        backgroundColor: newStatus === 'rejected' ? '#dc2626' : '#ffffff',
+                        color: newStatus === 'rejected' ? '#ffffff' : '#1e293b',
+                        border: newStatus === 'rejected' ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                        boxShadow: newStatus === 'rejected' ? '0 4px 12px rgba(220, 38, 38, 0.3)' : 'none'
+                      }}
+                    >
+                      <XCircle size={13} color={newStatus === 'rejected' ? '#ffffff' : '#dc2626'} />
+                      Rejetée
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Footer modal */}
@@ -698,38 +703,40 @@ export const SpecialRequestsPage = () => {
                 Fermer
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleUpdateStatus()}
-                disabled={submittingAction}
-                style={{
-                  padding: '11px 22px',
-                  borderRadius: '12px',
-                  border: 'none',
-                  backgroundColor: newStatus === 'rejected' ? '#dc2626' : (newStatus === 'in_progress' ? '#2563eb' : '#16a34a'),
-                  color: '#ffffff',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  cursor: submittingAction ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  transition: '0.2s'
-                }}
-              >
-                {submittingAction ? (
-                  <>
-                    <RefreshCw size={14} className="animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Valider le statut
-                  </>
-                )}
-              </button>
+              {canValidate && (
+                <button
+                  type="button"
+                  onClick={() => handleUpdateStatus()}
+                  disabled={submittingAction}
+                  style={{
+                    padding: '11px 22px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    backgroundColor: newStatus === 'rejected' ? '#dc2626' : (newStatus === 'in_progress' ? '#2563eb' : '#16a34a'),
+                    color: '#ffffff',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: submittingAction ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    transition: '0.2s'
+                  }}
+                >
+                  {submittingAction ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      Enregistrement...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Enregistrer la décision
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

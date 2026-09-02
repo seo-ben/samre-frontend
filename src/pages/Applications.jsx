@@ -10,6 +10,7 @@ import {
   CalendarCheck, Award, MessageSquare, ChevronDown
 } from 'lucide-react';
 import apiClient from '../lib/apiClient';
+import { useAuth } from '../contexts/AuthContext';
 
 // Helper d'extraction propre du titre de l'offre
 const getOfferTitle = (jobOffer) => {
@@ -118,6 +119,8 @@ const formatToDatetimeLocal = (dateStr) => {
 };
 
 export const ApplicationsPage = () => {
+  const { can } = useAuth();
+  const canEdit = can('edit', '/applications');
   const [applications, setApplications] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -851,27 +854,29 @@ export const ApplicationsPage = () => {
                             </button>
 
                             {/* Bouton Programmer Entretien */}
-                            <button
-                              onClick={() => openScheduleModal(app)}
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                padding: '6px 9px',
-                                borderRadius: '7px',
-                                backgroundColor: '#FAF5FF',
-                                border: '1px solid #E9D5FF',
-                                color: '#7E22CE',
-                                fontSize: '11.5px',
-                                fontWeight: '700',
-                                cursor: 'pointer',
-                                transition: 'all 0.15s ease'
-                              }}
-                              title="Programmer ou modifier un entretien"
-                            >
-                              <Calendar size={12} />
-                              <span>Entretien</span>
-                            </button>
+                            {canEdit && (
+                              <button
+                                onClick={() => openScheduleModal(app)}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '6px 9px',
+                                  borderRadius: '7px',
+                                  backgroundColor: '#FAF5FF',
+                                  border: '1px solid #E9D5FF',
+                                  color: '#7E22CE',
+                                  fontSize: '11.5px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                                title="Programmer ou modifier un entretien"
+                              >
+                                <Calendar size={12} />
+                                <span>Entretien</span>
+                              </button>
+                            )}
 
                           </div>
                         </td>
@@ -1833,51 +1838,55 @@ export const ApplicationsPage = () => {
               gap: '10px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    openScheduleModal(selectedApp);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 14px',
-                    backgroundColor: '#7E22CE',
-                    color: '#FFFFFF',
-                    borderRadius: '7px',
-                    border: 'none',
-                    fontSize: '12.5px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <Calendar size={14} />
-                  <span>{selectedApp.latest_appointment ? 'Modifier l\'entretien' : 'Programmer un Entretien'}</span>
-                </button>
+                {canEdit && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        openScheduleModal(selectedApp);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 14px',
+                        backgroundColor: '#7E22CE',
+                        color: '#FFFFFF',
+                        borderRadius: '7px',
+                        border: 'none',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Calendar size={14} />
+                      <span>{selectedApp.latest_appointment ? 'Modifier l\'entretien' : 'Programmer un Entretien'}</span>
+                    </button>
 
-                <button
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    openStatusModal(selectedApp);
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #CBD5E1',
-                    color: '#334155',
-                    borderRadius: '7px',
-                    fontSize: '12.5px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <span>Changer le statut</span>
-                  <ChevronDown size={13} />
-                </button>
+                    <button
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        openStatusModal(selectedApp);
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 12px',
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #CBD5E1',
+                        color: '#334155',
+                        borderRadius: '7px',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span>Changer le statut</span>
+                      <ChevronDown size={13} />
+                    </button>
+                  </>
+                )}
               </div>
 
               <button
