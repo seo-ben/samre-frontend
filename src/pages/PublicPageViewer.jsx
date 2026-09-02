@@ -121,7 +121,7 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
         ) : (
           <article className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-12 relative overflow-hidden">
             
-            {/* Filigrane officiel SAMRE en arrière-plan (Effet papier officiel transparent et flouté blanc) */}
+            {/* Filigrane officiel SAMRE en arrière-plan (Agrandit & bien visible) */}
             <div
               aria-hidden="true"
               style={{
@@ -140,12 +140,12 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
                 src="/logo-samre.png"
                 alt=""
                 style={{
-                  width: '460px',
-                  maxWidth: '75%',
+                  width: '640px',
+                  maxWidth: '88%',
                   height: 'auto',
                   objectFit: 'contain',
-                  opacity: 0.03,
-                  filter: 'grayscale(100%) brightness(1.2) blur(0.5px)',
+                  opacity: 0.10,
+                  filter: 'grayscale(100%)',
                 }}
               />
             </div>
