@@ -5,11 +5,12 @@ import apiClient from '../lib/apiClient';
 import {
   UserCog, Plus, Search, Shield, Mail, Phone,
   CheckCircle2, XCircle, Trash2, Edit, AlertCircle, Loader2,
-  RefreshCw, AlertTriangle, Layers, ChevronDown, ChevronUp,
+  RefreshCw, AlertTriangle, Layers, ChevronDown, ChevronUp, ChevronRight,
   LayoutDashboard, Users, Building2, Briefcase, CalendarDays, FileText,
   BadgeCheck, Vote, Handshake, Wallet, Star, Bell, BarChart3, Settings,
   Eye, CheckSquare, Square, ShieldCheck, KeyRound, ArrowRight, ArrowLeft,
-  SlidersHorizontal, Sparkles, Filter, Check, X
+  SlidersHorizontal, Sparkles, Filter, Check, X,
+  Folder, FolderOpen, Minus, ListTree
 } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 
@@ -239,7 +240,11 @@ export const StaffManagementPage = () => {
   const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'permissions'
   const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' ou id du module
   const [moduleSearch, setModuleSearch] = useState('');
-  const [collapsedModules, setCollapsedModules] = useState({});
+  const [expandedModules, setExpandedModules] = useState(() => {
+    const init = {};
+    ADMIN_MODULES_CONFIG.forEach(m => { init[m.id] = true; });
+    return init;
+  });
   const [editingStaff, setEditingStaff] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -305,7 +310,9 @@ export const StaffManagementPage = () => {
     setActiveTab('identity');
     setSelectedCategory('all');
     setModuleSearch('');
-    setCollapsedModules({});
+    const allExp = {};
+    ADMIN_MODULES_CONFIG.forEach(m => { allExp[m.id] = true; });
+    setExpandedModules(allExp);
     // Par défaut, donner accès complet à tout
     setSelectedRoutes([...ALL_ROUTES]);
     setSelectedActions(JSON.parse(JSON.stringify(ALL_ACTIONS_MAP)));
@@ -327,7 +334,9 @@ export const StaffManagementPage = () => {
     setActiveTab('identity');
     setSelectedCategory('all');
     setModuleSearch('');
-    setCollapsedModules({});
+    const allExp = {};
+    ADMIN_MODULES_CONFIG.forEach(m => { allExp[m.id] = true; });
+    setExpandedModules(allExp);
 
     const hasFull = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
     const existingRoutes = hasFull ? [...ALL_ROUTES] : (Array.isArray(staff.allowed_routes) ? staff.allowed_routes : ['/dashboard']);
@@ -445,13 +454,37 @@ export const StaffManagementPage = () => {
     }
   };
 
-  // ── Toggle Replier/Déplier Module ──
-  const toggleCollapseModule = (modId) => {
-    setCollapsedModules(prev => ({
+  // ── Contrôles Arborescence (Déplier / Replier) ──
+  const toggleModuleExpanded = (modId) => {
+    setExpandedModules(prev => ({
       ...prev,
       [modId]: !prev[modId],
     }));
   };
+
+  const expandAllModules = () => {
+    const allExp = {};
+    ADMIN_MODULES_CONFIG.forEach(m => { allExp[m.id] = true; });
+    setExpandedModules(allExp);
+  };
+
+  const collapseAllModules = () => {
+    setExpandedModules({});
+  };
+
+  // Auto-déplier lors d'une recherche
+  useEffect(() => {
+    if (moduleSearch.trim()) {
+      const q = moduleSearch.toLowerCase();
+      const exp = {};
+      ADMIN_MODULES_CONFIG.forEach(m => {
+        const matches = m.label.toLowerCase().includes(q) ||
+          m.pages.some(p => p.label.toLowerCase().includes(q) || p.path.toLowerCase().includes(q));
+        if (matches) exp[m.id] = true;
+      });
+      setExpandedModules(prev => ({ ...prev, ...exp }));
+    }
+  }, [moduleSearch]);
 
   // ── Soumission du Formulaire ──
   const handleSubmit = async (e) => {
@@ -1154,129 +1187,176 @@ export const StaffManagementPage = () => {
                       </div>
                     </div>
 
-                    {/* 3. Liste Responsive Pleine Largeur des Cartes de Modules */}
-                    <div className="space-y-4">
-                      {displayedModules.length === 0 ? (
-                        <div className="p-12 text-center bg-gray-50 rounded-2xl border border-gray-200 text-gray-500 font-medium">
-                          Aucun module ou page ne correspond à votre recherche.
+                    {/* 3. Arborescence de Fichiers (Tree View comme demandé) */}
+                    <div className="bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+                      
+                      {/* En-tête de l'arborescence avec contrôles */}
+                      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between flex-wrap gap-2 text-xs">
+                        <div className="flex items-center gap-2 text-slate-700 font-extrabold">
+                          <ListTree size={16} className="text-blue-600" />
+                          <span>Arborescence des Dossiers & Pages ({ALL_ROUTES.length} pages disponibles)</span>
                         </div>
-                      ) : (
-                        displayedModules.map(mod => {
-                          const modPaths = mod.pages.map(p => p.path);
-                          const activePagesCount = modPaths.filter(p => selectedRoutes.includes(p)).length;
-                          const isAllActive = activePagesCount === modPaths.length;
-                          const isCollapsed = !!collapsedModules[mod.id];
 
-                          return (
-                            <div
-                              key={mod.id}
-                              className="bg-white border border-gray-200/90 rounded-2xl shadow-xs overflow-hidden transition"
-                            >
-                              {/* En-tête de la Carte du Module */}
-                              <div className="p-4 bg-slate-50/70 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={expandAllModules}
+                            className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition flex items-center gap-1.5 text-[11px] cursor-pointer shadow-2xs"
+                          >
+                            <FolderOpen size={13} className="text-amber-500" />
+                            <span>Tout déplier</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={collapseAllModules}
+                            className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold transition flex items-center gap-1.5 text-[11px] cursor-pointer shadow-2xs"
+                          >
+                            <Folder size={13} className="text-amber-500" />
+                            <span>Tout replier</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Liste Arborescente */}
+                      <div className="p-3 sm:p-4 divide-y divide-slate-100">
+                        {displayedModules.length === 0 ? (
+                          <div className="p-10 text-center text-slate-400 font-medium text-xs">
+                            Aucun dossier ou page ne correspond à votre recherche.
+                          </div>
+                        ) : (
+                          displayedModules.map(mod => {
+                            const modPaths = mod.pages.map(p => p.path);
+                            const activeCount = modPaths.filter(p => selectedRoutes.includes(p)).length;
+                            const isAllChecked = activeCount === modPaths.length && modPaths.length > 0;
+                            const isIndeterminate = activeCount > 0 && !isAllChecked;
+                            const isExpanded = expandedModules[mod.id] !== false;
+
+                            return (
+                              <div key={mod.id} className="py-2 first:pt-0 last:pb-0">
                                 
-                                <div
-                                  onClick={() => toggleCollapseModule(mod.id)}
-                                  className="flex items-center gap-3 cursor-pointer flex-1 min-w-[200px]"
-                                >
-                                  <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
-                                    <mod.icon size={20} />
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="text-sm font-black text-gray-900">{mod.label}</h4>
-                                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                                        activePagesCount > 0
-                                          ? 'bg-blue-100 text-blue-700'
-                                          : 'bg-gray-200 text-gray-500'
-                                      }`}>
-                                        {activePagesCount}/{modPaths.length} page{modPaths.length > 1 ? 's' : ''} active{activePagesCount > 1 ? 's' : ''}
+                                {/* ── Ligne Dossier (Niveau 1 : Module Parent) ── */}
+                                <div className="flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-50/80 transition group select-none">
+                                  
+                                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    {/* Flèche Déplier / Replier */}
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleModuleExpanded(mod.id)}
+                                      className="w-5 h-5 rounded hover:bg-slate-200/80 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
+                                    >
+                                      {isExpanded ? (
+                                        <ChevronDown size={15} className="text-slate-700 stroke-[2.5]" />
+                                      ) : (
+                                        <ChevronRight size={15} className="text-slate-400" />
+                                      )}
+                                    </button>
+
+                                    {/* Checkbox Dossier Parent */}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleModule(mod)}
+                                      className="cursor-pointer shrink-0"
+                                    >
+                                      {isAllChecked ? (
+                                        <div className="w-4 h-4 rounded bg-blue-600 text-white flex items-center justify-center shadow-2xs">
+                                          <Check size={11} className="stroke-[3]" />
+                                        </div>
+                                      ) : isIndeterminate ? (
+                                        <div className="w-4 h-4 rounded bg-blue-100 border border-blue-400 text-blue-600 flex items-center justify-center">
+                                          <Minus size={11} className="stroke-[3]" />
+                                        </div>
+                                      ) : (
+                                        <div className="w-4 h-4 rounded border border-slate-300 bg-white hover:border-slate-400" />
+                                      )}
+                                    </button>
+
+                                    {/* Icône Dossier & Titre */}
+                                    <div
+                                      onClick={() => toggleModuleExpanded(mod.id)}
+                                      className="flex items-center gap-2 cursor-pointer min-w-0 flex-1"
+                                    >
+                                      {isExpanded ? (
+                                        <FolderOpen size={18} className="text-amber-500 fill-amber-100 shrink-0" />
+                                      ) : (
+                                        <Folder size={18} className="text-amber-500 fill-amber-100 shrink-0" />
+                                      )}
+                                      <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                        {mod.label}
+                                      </span>
+                                      <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">
+                                        ({mod.pages.length} page{mod.pages.length > 1 ? 's' : ''})
                                       </span>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-0.5">{mod.description}</p>
                                   </div>
+
+                                  {/* Badge d'état & Action Rapide */}
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                      activeCount > 0 ? 'bg-blue-50 text-blue-700 border border-blue-200/60' : 'bg-slate-100 text-slate-500'
+                                    }`}>
+                                      {activeCount}/{mod.pages.length} active{activeCount > 1 ? 's' : ''}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleModule(mod)}
+                                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline px-1 py-0.5 cursor-pointer"
+                                    >
+                                      {isAllChecked ? 'Décocher tout' : 'Cocher tout'}
+                                    </button>
+                                  </div>
+
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleModule(mod)}
-                                    className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition cursor-pointer ${
-                                      isAllActive
-                                        ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
-                                        : 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50'
-                                    }`}
-                                  >
-                                    {isAllActive ? 'Tout désactiver' : 'Tout activer'}
-                                  </button>
+                                {/* ── Sous-arborescence des Pages & Droits (si dossier déplié) ── */}
+                                {isExpanded && (
+                                  <div className="ml-6 sm:ml-8 pl-3 sm:pl-4 border-l-2 border-slate-200/80 my-1 space-y-2">
+                                    {mod.pages.map(page => {
+                                      const isPageActive = selectedRoutes.includes(page.path);
+                                      const currentActions = selectedActions[page.path] || [];
 
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleCollapseModule(mod.id)}
-                                    className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-200/60 transition cursor-pointer"
-                                  >
-                                    {isCollapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
-                                  </button>
-                                </div>
-
-                              </div>
-
-                              {/* Liste des Pages & Actions du Module (Déplié) */}
-                              {!isCollapsed && (
-                                <div className="p-4 space-y-3 divide-y divide-gray-100">
-                                  {mod.pages.map((page, idx) => {
-                                    const isPageActive = selectedRoutes.includes(page.path);
-                                    const currentActions = selectedActions[page.path] || [];
-
-                                    return (
-                                      <div
-                                        key={page.path}
-                                        className={`pt-3 first:pt-0 ${
-                                          isPageActive ? 'opacity-100' : 'opacity-80'
-                                        }`}
-                                      >
-                                        <div className="bg-slate-50/50 hover:bg-blue-50/20 border border-gray-200/70 rounded-xl p-3.5 sm:p-4 transition space-y-3">
+                                      return (
+                                        <div key={page.path} className="space-y-1.5 py-1">
                                           
-                                          {/* Ligne principale : Toggle de la Page */}
-                                          <div className="flex items-center justify-between gap-3 flex-wrap">
-                                            <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-[240px]">
+                                          {/* Ligne Fichier (Niveau 2 : Page) */}
+                                          <div className="flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-slate-50 transition select-none">
+                                            <label className="flex items-center gap-2.5 cursor-pointer flex-1 min-w-0">
                                               <input
                                                 type="checkbox"
                                                 checked={isPageActive}
                                                 onChange={() => handleTogglePageRoute(page.path)}
-                                                className="w-5 h-5 text-blue-600 rounded-lg border-gray-300 focus:ring-blue-500 cursor-pointer"
+                                                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer shrink-0"
                                               />
-                                              <div>
-                                                <div className={`text-sm ${isPageActive ? 'font-black text-gray-900' : 'font-semibold text-gray-600'}`}>
-                                                  {page.label}
-                                                </div>
-                                                <code className="text-[11px] text-gray-400 font-mono">{page.path}</code>
-                                              </div>
+                                              <FileText size={15} className={isPageActive ? "text-blue-600 shrink-0" : "text-slate-400 shrink-0"} />
+                                              <span className={`text-xs ${isPageActive ? 'font-bold text-slate-900' : 'font-medium text-slate-600'} truncate`}>
+                                                {page.label}
+                                              </span>
+                                              <code className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded hidden md:inline shrink-0">
+                                                {page.path}
+                                              </code>
                                             </label>
 
-                                            <div className="flex items-center gap-2">
+                                            <div className="shrink-0">
                                               {isPageActive ? (
-                                                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                  ✓ Accès autorisé ({currentActions.length} action{currentActions.length > 1 ? 's' : ''})
+                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                  {currentActions.length} action{currentActions.length > 1 ? 's' : ''}
                                                 </span>
                                               ) : (
-                                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
-                                                  Non autorisé
+                                                <span className="text-[10px] text-slate-400 font-medium">
+                                                  Désactivé
                                                 </span>
                                               )}
                                             </div>
                                           </div>
 
-                                          {/* Matrice des Actions (affichée uniquement quand la page est active) */}
+                                          {/* Ligne Actions (Niveau 3 : Droits d'actions spécifiques) */}
                                           {isPageActive && (
-                                            <div className="pt-3 border-t border-gray-200/60 pl-2 sm:pl-8 space-y-2">
-                                              <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                                <SlidersHorizontal size={12} />
-                                                <span>Actions autorisées pour cette page :</span>
-                                              </div>
-
-                                              {/* Boutons d'actions avec retour à la ligne 100% naturel (Flex Wrap, jamais coupé) */}
-                                              <div className="flex flex-wrap gap-2">
+                                            <div className="ml-7 pl-3 border-l-2 border-dashed border-slate-200/80 pt-1 pb-1.5">
+                                              <div className="flex items-center flex-wrap gap-1.5">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                                                  Droits :
+                                                </span>
                                                 {page.allowedActions.map(actionKey => {
                                                   const def = ACTION_DEFINITIONS[actionKey] || { label: actionKey, color: 'bg-gray-50 text-gray-700 border-gray-200' };
                                                   const isActionGranted = currentActions.includes(actionKey);
@@ -1286,16 +1366,16 @@ export const StaffManagementPage = () => {
                                                       type="button"
                                                       key={actionKey}
                                                       onClick={() => handleTogglePageAction(page.path, actionKey)}
-                                                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-2 cursor-pointer select-none ${
+                                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition flex items-center gap-1.5 cursor-pointer select-none ${
                                                         isActionGranted
-                                                          ? `${def.color} shadow-xs font-black ring-1 ring-black/5`
-                                                          : 'bg-white text-gray-400 border-gray-200 hover:border-gray-300 hover:text-gray-600'
+                                                          ? `${def.color} shadow-2xs font-extrabold ring-1 ring-black/5`
+                                                          : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
                                                       }`}
                                                     >
-                                                      <div className={`w-4 h-4 rounded flex items-center justify-center transition ${
-                                                        isActionGranted ? 'bg-current text-white' : 'border border-gray-300 bg-gray-50'
+                                                      <div className={`w-3 h-3 rounded flex items-center justify-center transition ${
+                                                        isActionGranted ? 'bg-current text-white' : 'border border-slate-300 bg-white'
                                                       }`}>
-                                                        {isActionGranted && <Check size={11} className="stroke-[3]" />}
+                                                        {isActionGranted && <Check size={8} className="stroke-[3]" />}
                                                       </div>
                                                       <span>{def.label}</span>
                                                     </button>
@@ -1306,16 +1386,17 @@ export const StaffManagementPage = () => {
                                           )}
 
                                         </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
+                                      );
+                                    })}
+                                  </div>
+                                )}
 
-                            </div>
-                          );
-                        })
-                      )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
                     </div>
 
                   </div>
