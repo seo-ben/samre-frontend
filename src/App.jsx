@@ -24,7 +24,6 @@ import { PendingBadges } from './pages/PendingBadges'
 import { VerifiedProfiles } from './pages/VerifiedProfiles'
 import { AdPages } from './pages/AdPages'
 import { CompanyBanners } from './pages/CompanyBanners'
-import { SystemSettings } from './pages/SystemSettings'
 import { FinanceDashboard } from './pages/Payments/FinanceDashboard'
 import { WalletsPage } from './pages/Payments/Wallets'
 import { TransactionsPage } from './pages/Payments/Transactions'
@@ -168,7 +167,7 @@ function App() {
       <Route path="/settings/staff"    element={<Protected><StaffManagementPage /></Protected>} />
       <Route path="/settings/profile"  element={<Protected><AdminProfilePage /></Protected>} />
       <Route path="/settings/password" element={<Protected><AdminPasswordPage /></Protected>} />
-      <Route path="/settings/system"   element={<Protected><SystemSettings /></Protected>} />
+      <Route path="/settings/system"   element={<Navigate to="/cms/quotas" replace />} />
       <Route path="/settings/language" element={<Protected><ComingSoon title="Langue du panel" /></Protected>} />
 
       {/* Fallback */}

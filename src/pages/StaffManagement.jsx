@@ -168,8 +168,7 @@ export const ADMIN_NAVIGATION_MODULES = [
     label: 'Paramètres',
     icon: Settings,
     pages: [
-      { label: 'Comptes administrateurs & Staff', path: '/settings/staff' },
-      { label: 'Variables système', path: '/settings/system' }
+      { label: 'Comptes administrateurs & Staff', path: '/settings/staff' }
     ]
   }
 ];
