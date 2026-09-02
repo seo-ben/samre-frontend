@@ -37,6 +37,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { SubscriptionControlCenterPage } from './pages/SubscriptionControlCenter'
 import { AuditLogsPage } from './pages/AuditLogs'
 import { NotificationsCenter } from './pages/NotificationsCenter'
+import { AnalyticsPage } from './pages/Analytics'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
@@ -142,18 +143,19 @@ function App() {
       <Route path="/payments/payouts"    element={<Protected><ComingSoon title="Payouts" /></Protected>} />
       <Route path="/payments/conversion" element={<Protected><ComingSoon title="Taux de conversion" /></Protected>} />
 
-      {/* ── Statistiques ──────────────────────── */}
-      <Route path="/stats/users"        element={<Protected><ComingSoon title="Stats utilisateurs" /></Protected>} />
-      <Route path="/stats/companies"    element={<Protected><ComingSoon title="Stats entreprises" /></Protected>} />
-      <Route path="/stats/offers"       element={<Protected><ComingSoon title="Stats offres" /></Protected>} />
-      <Route path="/stats/applications" element={<Protected><ComingSoon title="Stats candidatures" /></Protected>} />
-      <Route path="/stats/events"       element={<Protected><ComingSoon title="Stats événements" /></Protected>} />
-      <Route path="/stats/revenue"      element={<Protected><ComingSoon title="Stats revenus" /></Protected>} />
-      <Route path="/stats/exports"      element={<Protected><ComingSoon title="Exports de rapports" /></Protected>} />
+      {/* ── Statistiques & Suite Analytique (Unifiée) ─────────── */}
+      <Route path="/stats"             element={<Protected><AnalyticsPage defaultTab="overview" /></Protected>} />
+      <Route path="/stats/users"        element={<Protected><AnalyticsPage defaultTab="users" /></Protected>} />
+      <Route path="/stats/companies"    element={<Protected><AnalyticsPage defaultTab="users" /></Protected>} />
+      <Route path="/stats/offers"       element={<Protected><AnalyticsPage defaultTab="jobs" /></Protected>} />
+      <Route path="/stats/applications" element={<Protected><AnalyticsPage defaultTab="jobs" /></Protected>} />
+      <Route path="/stats/events"       element={<Protected><AnalyticsPage defaultTab="events" /></Protected>} />
+      <Route path="/stats/revenue"      element={<Protected><AnalyticsPage defaultTab="revenue" /></Protected>} />
+      <Route path="/stats/exports"      element={<Protected><AnalyticsPage defaultTab="exports" /></Protected>} />
 
       {/* ── Paramètres ────────────────────────── */}
       <Route path="/settings/language" element={<Protected><ComingSoon title="Langue du panel" /></Protected>} />
-      <Route path="/settings/system"   element={<Protected><QuotasPage /></Protected>} />
+      <Route path="/settings/system"   element={<Protected><SystemSettings /></Protected>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
