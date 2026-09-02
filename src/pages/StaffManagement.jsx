@@ -338,8 +338,10 @@ export const StaffManagementPage = () => {
     ADMIN_MODULES_CONFIG.forEach(m => { allExp[m.id] = true; });
     setExpandedModules(allExp);
 
-    const hasFull = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
-    const existingRoutes = hasFull ? [...ALL_ROUTES] : (Array.isArray(staff.allowed_routes) ? staff.allowed_routes : ['/dashboard']);
+    const hasExplicitRoutes = Array.isArray(staff.allowed_routes) && !staff.allowed_routes.includes('*');
+    const existingRoutes = hasExplicitRoutes
+      ? [...staff.allowed_routes]
+      : (staff.allowed_routes?.includes('*') || staff.role?.name === 'super_admin' ? [...ALL_ROUTES] : ['/dashboard']);
     setSelectedRoutes(existingRoutes);
 
     // Charger les actions ou initialiser
@@ -772,7 +774,8 @@ export const StaffManagementPage = () => {
                     const fullName = `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Admin';
                     const isSuspended = staff.user?.status === 'suspended';
                     const roleName = staff.role?.name || 'Administrateur';
-                    const hasFullAccess = staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes.includes('*');
+                    const hasExplicitRoutes = Array.isArray(staff.allowed_routes) && !staff.allowed_routes.includes('*');
+                    const hasFullAccess = !hasExplicitRoutes && (staff.role?.name === 'super_admin' || !staff.allowed_routes || staff.allowed_routes?.includes('*'));
                     const countPages = hasFullAccess ? ALL_ROUTES.length : (staff.allowed_routes?.length || 0);
 
                     let countActions = 0;
@@ -780,6 +783,8 @@ export const StaffManagementPage = () => {
                       countActions = Object.values(ALL_ACTIONS_MAP).reduce((acc, acts) => acc + acts.length, 0);
                     } else if (staff.allowed_actions && typeof staff.allowed_actions === 'object') {
                       countActions = Object.values(staff.allowed_actions).reduce((acc, acts) => acc + (acts?.length || 0), 0);
+                    } else {
+                      countActions = countPages * 2;
                     }
 
                     return (

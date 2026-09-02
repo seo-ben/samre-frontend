@@ -26,6 +26,20 @@ export const AuthProvider = ({ children }) => {
       }
     }
     setLoading(false);
+
+    // Synchronisation en arrière-plan avec l'API pour récupérer les droits à jour
+    if (storedToken) {
+      apiClient.get('/v1/auth/admin/me')
+        .then(res => {
+          if (res.data?.data) {
+            setUser(res.data.data);
+            localStorage.setItem('admin_user', JSON.stringify(res.data.data));
+          }
+        })
+        .catch(() => {
+          // Ignorer en cas de perte de réseau temporaire
+        });
+    }
   }, []);
 
   // ─── Login ─────────────────────────────────────────────────────────────────
@@ -65,11 +79,38 @@ export const AuthProvider = ({ children }) => {
       const freshUser = data.data;
       setUser(freshUser);
       localStorage.setItem('admin_user', JSON.stringify(freshUser));
+      return freshUser;
     } catch {
       // Token invalide → déconnecter
       await logout();
     }
   }, [logout]);
+
+  // ─── Vérification des droits d'action fins (view, create, edit, delete, export) ───
+  const can = useCallback((action, pagePath) => {
+    if (!user) return false;
+    const routes = user.allowed_routes;
+    const actions = user.allowed_actions;
+
+    // Si pas de restriction explicite
+    if (!routes || routes.includes('*')) return true;
+
+    const path = pagePath || (typeof window !== 'undefined' ? window.location.pathname : '');
+
+    // Si la page n'est pas autorisée du tout
+    const isRouteAllowed = routes.some(r => path === r || path.startsWith(r + '/'));
+    if (!isRouteAllowed) return false;
+
+    // Si les actions par page sont configurées
+    if (actions && typeof actions === 'object' && !Array.isArray(actions)) {
+      const pageActions = actions[path];
+      if (Array.isArray(pageActions)) {
+        return pageActions.includes(action);
+      }
+    }
+
+    return true;
+  }, [user]);
 
   const value = {
     user,
@@ -79,6 +120,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     refreshUser,
+    can,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
