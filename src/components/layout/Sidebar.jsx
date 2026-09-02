@@ -7,7 +7,7 @@ import {
   PanelLeftOpen, UserX, Clock, CheckCircle2, XCircle, ListFilter,
   Building2, UserCheck, Wallet, TrendingUp, ReceiptText, Send,
   History, Globe, Tag, Percent, Eye, LayoutGrid, Megaphone,
-  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, ShieldCheck, Sparkles, Vote, Trash2, Handshake
+  Languages, MapPin, Award, UserCog, Type, LayoutTemplate, Sliders, ShieldAlert, ShieldCheck, Sparkles, Vote, Trash2, Handshake, Download
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRealtime } from '../../contexts/RealtimeContext';
@@ -152,17 +152,11 @@ const NAV = [
   },
   {
     id: 'stats',
-    label: 'Statistiques',
+    label: 'Statistiques & Analytics',
     icon: BarChart3,
     children: [
-      { label: 'Vue d\'ensemble', path: '/stats',              icon: LayoutDashboard },
-      { label: 'Utilisateurs',    path: '/stats/users',        icon: Users },
-      { label: 'Entreprises',     path: '/stats/companies',    icon: Building2 },
-      { label: 'Offres',          path: '/stats/offers',       icon: Briefcase },
-      { label: 'Candidatures',    path: '/stats/applications', icon: FileText },
-      { label: 'Événements',      path: '/stats/events',       icon: CalendarDays },
-      { label: 'Revenus',         path: '/stats/revenue',      icon: TrendingUp },
-      { label: 'Exports',         path: '/stats/exports',      icon: LayoutGrid },
+      { label: 'Tableau Analytique', path: '/stats',         icon: BarChart3 },
+      { label: 'Rapports & Exports', path: '/stats/exports', icon: Download },
     ],
   },
   {
