@@ -121,13 +121,32 @@ export const PublicPageViewer = ({ forcedSlug = null }) => {
         ) : (
           <article className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-12 relative overflow-hidden">
             
-            {/* Filigrane officiel SAMRE en arrière-plan */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0 overflow-hidden opacity-[0.04] print:opacity-[0.06]">
+            {/* Filigrane officiel SAMRE en arrière-plan (Effet papier officiel transparent et flouté blanc) */}
+            <div
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                zIndex: 0,
+                overflow: 'hidden',
+              }}
+            >
               <img
                 src="/logo-samre.png"
                 alt=""
-                aria-hidden="true"
-                className="w-[500px] max-w-none h-auto object-contain filter grayscale"
+                style={{
+                  width: '460px',
+                  maxWidth: '75%',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  opacity: 0.03,
+                  filter: 'grayscale(100%) brightness(1.2) blur(0.5px)',
+                }}
               />
             </div>
 
