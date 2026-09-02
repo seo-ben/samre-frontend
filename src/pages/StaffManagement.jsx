@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import apiClient from '../lib/apiClient';
 import {
@@ -675,16 +676,16 @@ export const StaffManagementPage = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-4">Administrateur</th>
-                    <th className="px-6 py-4">Rôle</th>
-                    <th className="px-6 py-4">Pages & Actions Autorisées</th>
-                    <th className="px-6 py-4">Contact</th>
-                    <th className="px-6 py-4">Statut</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
+                  <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-2.5">Administrateur</th>
+                    <th className="px-4 py-2.5">Rôle</th>
+                    <th className="px-4 py-2.5">Pages & Actions Autorisées</th>
+                    <th className="px-4 py-2.5">Contact</th>
+                    <th className="px-4 py-2.5">Statut</th>
+                    <th className="px-4 py-2.5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-sm">
+                <tbody className="divide-y divide-gray-100 text-xs">
                   {filteredStaff.map((staff) => {
                     const fullName = `${staff.first_name || ''} ${staff.last_name || ''}`.trim() || 'Admin';
                     const isSuspended = staff.user?.status === 'suspended';
@@ -701,102 +702,102 @@ export const StaffManagementPage = () => {
 
                     return (
                       <tr key={staff.id} className="hover:bg-blue-50/20 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-sm">
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-2xs shrink-0">
                               {staff.first_name?.[0]?.toUpperCase()}{staff.last_name?.[0]?.toUpperCase()}
                             </div>
-                            <div>
-                              <div className="font-bold text-gray-900">{fullName}</div>
-                              <div className="text-xs text-gray-500 font-medium">{staff.user?.email || 'N/A'}</div>
+                            <div className="min-w-0">
+                              <div className="font-bold text-gray-900 truncate">{fullName}</div>
+                              <div className="text-[11px] text-gray-400 font-medium truncate">{staff.user?.email || 'N/A'}</div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="px-6 py-4">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                            <Shield size={12} />
+                        <td className="px-4 py-2">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                            <Shield size={11} />
                             <span>{roleName}</span>
                           </span>
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-2">
                           {hasFullAccess ? (
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                                <CheckCircle2 size={12} />
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                <CheckCircle2 size={11} />
                                 <span>Accès Intégral ({ALL_ROUTES.length} pages)</span>
                               </span>
-                              <span className="text-[11px] font-semibold text-gray-400">Toutes actions</span>
+                              <span className="text-[10px] font-semibold text-gray-400">Toutes actions</span>
                             </div>
                           ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
-                                <Layers size={12} />
+                            <div className="flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200/60">
+                                <Layers size={11} />
                                 <span>{countPages} page{countPages > 1 ? 's' : ''}</span>
                               </span>
-                              <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                              <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
                                 {countActions} action{countActions > 1 ? 's' : ''}
                               </span>
                             </div>
                           )}
                         </td>
 
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
-                            <Phone size={13} className="text-gray-400" />
+                        <td className="px-4 py-2">
+                          <div className="flex items-center gap-1 text-[11px] text-gray-600 font-medium">
+                            <Phone size={12} className="text-gray-400 shrink-0" />
                             <span>{staff.user?.phone || 'N/A'}</span>
                           </div>
                         </td>
 
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-2">
                           {isSuspended ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                              <XCircle size={12} />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-100 text-red-700">
+                              <XCircle size={11} />
                               <span>Suspendu</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
-                              <CheckCircle2 size={12} />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">
+                              <CheckCircle2 size={11} />
                               <span>Actif</span>
                             </span>
                           )}
                         </td>
 
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td className="px-4 py-2 text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleOpenEditModal(staff)}
                               title="Modifier les droits d'accès & informations"
-                              className="p-2 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-xl transition cursor-pointer"
+                              className="p-1.5 hover:bg-blue-50 text-gray-500 hover:text-blue-600 rounded-lg transition cursor-pointer"
                             >
-                              <Edit size={16} />
+                              <Edit size={15} />
                             </button>
 
                             {isSuspended ? (
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, type: 'reactivate', staff, loading: false })}
                                 title="Réactiver le compte"
-                                className="p-2 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-xl transition cursor-pointer"
+                                className="p-1.5 hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 rounded-lg transition cursor-pointer"
                               >
-                                <CheckCircle2 size={16} />
+                                <CheckCircle2 size={15} />
                               </button>
                             ) : (
                               <button
                                 onClick={() => setConfirmModal({ isOpen: true, type: 'suspend', staff, loading: false })}
                                 title="Suspendre les accès"
-                                className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-xl transition cursor-pointer"
+                                className="p-1.5 hover:bg-amber-50 text-gray-400 hover:text-amber-600 rounded-lg transition cursor-pointer"
                               >
-                                <AlertTriangle size={16} />
+                                <AlertTriangle size={15} />
                               </button>
                             )}
 
                             <button
                               onClick={() => setConfirmModal({ isOpen: true, type: 'delete', staff, loading: false })}
                               title="Supprimer définitivement"
-                              className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-xl transition cursor-pointer"
+                              className="p-1.5 hover:bg-red-50 text-gray-400 hover:text-red-600 rounded-lg transition cursor-pointer"
                             >
-                              <Trash2 size={16} />
+                              <Trash2 size={15} />
                             </button>
                           </div>
                         </td>
@@ -812,9 +813,37 @@ export const StaffManagementPage = () => {
         {/* ══════════════════════════════════════════════════════════════════════════ */}
         {/* ── NOUVEAU MODAL FLUIDE, RESPONSIVE ET 100% SANS SLIDER BLOQUANT ───────── */}
         {/* ══════════════════════════════════════════════════════════════════════════ */}
-        {showModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
-            <div className="bg-white rounded-3xl w-full max-w-5xl my-auto max-h-[92vh] shadow-2xl border border-gray-100 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        {showModal && createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 999999,
+              backgroundColor: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '860px',
+                maxHeight: '88vh',
+                backgroundColor: '#ffffff',
+                borderRadius: '24px',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                border: '1px solid #e2e8f0',
+              }}
+            >
               
               {/* ── En-tête Sticky du Modal ── */}
               <div className="px-5 sm:px-7 pt-5 pb-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3 bg-white shrink-0">
@@ -1340,7 +1369,8 @@ export const StaffManagementPage = () => {
               </div>
 
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* ── Modal de Confirmation (Suspendre / Supprimer / Réactiver) ── */}

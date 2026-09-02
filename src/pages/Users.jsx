@@ -879,13 +879,13 @@ export const UsersPage = () => {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontFamily: 'var(--font-inter)' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--gray-border)' }}>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Utilisateur</th>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Contact</th>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Type</th>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Statut</th>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Complétude</th>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Inscription</th>
-                    <th style={{ padding: '16px 12px', fontSize: '12px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Utilisateur</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Contact</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Type</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Statut</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Complétude</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase' }}>Inscription</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: '600', color: 'var(--gray-medium)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -907,25 +907,25 @@ export const UsersPage = () => {
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         
                         {/* Utilisateur */}
-                        <td style={{ padding: '14px 12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <td style={{ padding: '7px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {user.user_type === 'candidate' ? (
                               user.candidateProfile?.profile_photo_url ? (
                                 <img
                                   src={user.candidateProfile.profile_photo_url}
                                   alt="Photo"
                                   style={{
-                                    width: '38px', height: '38px', borderRadius: '50%',
+                                    width: '28px', height: '28px', borderRadius: '50%',
                                     objectFit: 'cover', border: '1px solid var(--gray-border)'
                                   }}
                                 />
                               ) : (
                                 <div style={{
-                                  width: '38px', height: '38px', borderRadius: '50%',
+                                  width: '28px', height: '28px', borderRadius: '50%',
                                   background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}>
-                                  <User size={18} color="#ffffff" />
+                                  <User size={15} color="#ffffff" />
                                 </div>
                               )
                             ) : user.user_type === 'company' ? (
@@ -934,53 +934,53 @@ export const UsersPage = () => {
                                   src={user.companyProfile.logo_url}
                                   alt="Logo"
                                   style={{
-                                    width: '38px', height: '38px', borderRadius: '10px',
+                                    width: '28px', height: '28px', borderRadius: '8px',
                                     objectFit: 'cover', border: '1px solid var(--gray-border)'
                                   }}
                                 />
                               ) : (
                                 <div style={{
-                                  width: '38px', height: '38px', borderRadius: '10px',
+                                  width: '28px', height: '28px', borderRadius: '8px',
                                   background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center'
                                 }}>
-                                  <Building2 size={18} color="#ffffff" />
+                                  <Building2 size={15} color="#ffffff" />
                                 </div>
                               )
                             ) : (
                               <div style={{
-                                width: '38px', height: '38px', borderRadius: '50%',
+                                width: '28px', height: '28px', borderRadius: '50%',
                                 background: 'linear-gradient(135deg, #1A6FD4, #0052ff)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '13px', fontWeight: '700', color: '#ffffff'
+                                fontSize: '11px', fontWeight: '700', color: '#ffffff'
                               }}>
                                 {initials}
                               </div>
                             )}
                             <div>
-                              <span style={{ fontSize: '14px', fontWeight: '600', color: 'var(--black-deep)', display: 'block' }}>{name}</span>
+                              <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--black-deep)', display: 'block' }}>{name}</span>
                             </div>
                           </div>
                         </td>
 
                         {/* Contact */}
-                        <td style={{ padding: '14px 12px' }}>
-                          <span style={{ fontSize: '13.5px', color: 'var(--black-deep)', display: 'block' }}>{user.email || '—'}</span>
-                          <span style={{ fontSize: '12px', color: 'var(--gray-medium)', display: 'block' }}>{user.phone}</span>
+                        <td style={{ padding: '7px 12px' }}>
+                          <span style={{ fontSize: '12.5px', color: 'var(--black-deep)', display: 'block' }}>{user.email || '—'}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--gray-medium)', display: 'block' }}>{user.phone}</span>
                         </td>
 
                         {/* Type */}
-                        <td style={{ padding: '14px 12px' }}>
+                        <td style={{ padding: '7px 12px' }}>
                           {getTypeBadge(user.user_type)}
                         </td>
 
                         {/* Statut */}
-                        <td style={{ padding: '14px 12px' }}>
+                        <td style={{ padding: '7px 12px' }}>
                           {getStatusBadge(user.status)}
                         </td>
 
                         {/* Complétude */}
-                        <td style={{ padding: '14px 12px' }}>
+                        <td style={{ padding: '7px 12px' }}>
                           {completenessScore === null ? (
                             <span style={{ fontSize: '12px', color: 'var(--gray-medium)' }}>—</span>
                           ) : (
@@ -995,7 +995,7 @@ export const UsersPage = () => {
                                 }} />
                               </div>
                               <span style={{
-                                fontSize: '12px', fontWeight: '600', minWidth: '34px',
+                                fontSize: '11px', fontWeight: '600', minWidth: '34px',
                                 color: completenessScore >= 80 ? '#059669' : completenessScore >= 40 ? '#d97706' : '#dc2626'
                               }}>
                                 {completenessScore}%
@@ -1005,18 +1005,18 @@ export const UsersPage = () => {
                         </td>
 
                         {/* Inscription */}
-                        <td style={{ padding: '14px 12px', fontSize: '13px', color: 'var(--gray-medium)' }}>
+                        <td style={{ padding: '7px 12px', fontSize: '12px', color: 'var(--gray-medium)' }}>
                           {new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </td>
 
                         {/* Actions */}
-                        <td style={{ padding: '14px 12px', textAlign: 'right' }}>
-                          <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        <td style={{ padding: '7px 12px', textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: '4px' }}>
                             <button
                               onClick={() => openUserDetails(user)}
                               title="Voir les détails"
                               style={{
-                                padding: '6px 10px', background: 'var(--gray-light)', border: '1px solid var(--gray-border)',
+                                padding: '4px 8px', background: 'var(--gray-light)', border: '1px solid var(--gray-border)',
                                 borderRadius: '6px', cursor: 'pointer', color: 'var(--black-deep)', display: 'flex', alignItems: 'center'
                               }}
                             >
