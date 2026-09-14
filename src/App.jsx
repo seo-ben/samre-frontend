@@ -42,6 +42,7 @@ import { AdminProfilePage } from './pages/AdminProfile'
 import { AdminPasswordPage } from './pages/AdminPassword'
 import { DynamicPagesManagementPage } from './pages/DynamicPagesManagement'
 import { PublicPageViewer } from './pages/PublicPageViewer'
+import { UserGuidePage } from './pages/UserGuidePage'
 
 // ─── Guard partagé ─────────────────────────────────────────────────────────────
 const Protected = ({ children }) => (
@@ -51,6 +52,13 @@ const Protected = ({ children }) => (
 function App() {
   return (
     <Routes>
+      {/* ── Documentation & Guide Utilisateur (Accessibles sans login) ── */}
+      <Route path="/guide" element={<UserGuidePage />} />
+      <Route path="/guide-utilisateur" element={<UserGuidePage />} />
+      <Route path="/documentation" element={<UserGuidePage />} />
+      <Route path="/docs" element={<UserGuidePage />} />
+      <Route path="/user-guide" element={<UserGuidePage />} />
+
       {/* ── Pages Publiques Légales & Institutionnelles (Accessibles sans login) ── */}
       <Route path="/" element={<Login />} />
       <Route path="/p/:slug" element={<PublicPageViewer />} />
