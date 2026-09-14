@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -230,38 +230,15 @@ export const Login = () => {
           </div>
         </div>
 
-        {/* Help & Guide Utilisateur */}
-        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-          <Link
-            to="/guide"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '13px',
-              color: '#0d3b7a',
-              fontWeight: '700',
-              textDecoration: 'none',
-              backgroundColor: '#e0edff',
-              padding: '8px 16px',
-              borderRadius: '20px',
-              transition: 'all 0.15s',
-              boxShadow: '0 1px 3px rgba(13, 59, 122, 0.08)'
-            }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#d0e3ff'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#e0edff'}
-          >
-            📖 Consulter le Guide d'Utilisation SAMRE
-          </Link>
-          <p style={{ margin: 0, fontSize: '13px', color: '#64748b', textAlign: 'center' }}>
-            Besoin d'assistance technique ?{' '}
-            <a href="mailto:support@samre.pro" style={{ color: '#1a6fd4', fontWeight: '600', textDecoration: 'none' }}
-              onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-              onMouseLeave={e => e.target.style.textDecoration = 'none'}>
-              Contacter le support IT
-            </a>
-          </p>
-        </div>
+        {/* Help */}
+        <p style={{ marginTop: '24px', fontSize: '14px', color: '#434656', textAlign: 'center' }}>
+          Besoin d'aide ?{' '}
+          <a href="#" style={{ color: '#003ec7', fontWeight: '600', textDecoration: 'none' }}
+            onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+            onMouseLeave={e => e.target.style.textDecoration = 'none'}>
+            Contacter le support IT
+          </a>
+        </p>
       </main>
 
       {/* Toast Error */}

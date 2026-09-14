@@ -1,1702 +1,923 @@
-import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Smartphone, ShieldCheck, KeyRound, UserCheck, Briefcase, Calendar,
-  CheckCircle2, XCircle, Clock, MapPin, Award, QrCode, FileText,
-  Search, ChevronRight, ChevronDown, Printer, Copy, Check, Download,
-  Sparkles, ExternalLink, HelpCircle, ArrowRight, Building2, Users,
-  Ticket, RefreshCw, Zap, Compass, CheckSquare, Shield, AlertTriangle
+  Search, Copy, Check, Printer, ExternalLink, ChevronRight,
+  Menu, X, FileText, CheckCircle2, AlertCircle, Info, ArrowUpRight
 } from 'lucide-react';
 
 export const UserGuidePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeAudience, setActiveAudience] = useState('all'); // 'all', 'candidate', 'company', 'visitor'
-  const [expandedFaq, setExpandedFaq] = useState({});
+  const [activeSection, setActiveSection] = useState('intro');
   const [copiedLink, setCopiedLink] = useState(false);
-  const [activeSection, setActiveSection] = useState('otp-registration');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // FAQ Accordion Toggle
-  const toggleFaq = (index) => {
-    setExpandedFaq(prev => ({ ...prev, [index]: !prev[index] }));
-  };
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2200);
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
+  // Synchronisation de la section active avec le hash d'URL
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) setActiveSection(hash);
+    };
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const scrollToSection = (id) => {
     setActiveSection(id);
-    const element = document.getElementById(id);
-    if (element) {
-      const yOffset = -80;
-      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    setMobileMenuOpen(false);
+    window.history.replaceState(null, null, `#${id}`);
+    const el = document.getElementById(id);
+    if (el) {
+      const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
 
-  // FAQ data
-  const faqs = [
+  const handleCopy = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const navigationGroups = [
     {
-      q: "Que faire si je ne reçois pas le code SMS (OTP) lors de l'inscription ?",
-      a: "Vérifiez que vous avez sélectionné le bon indicatif pays (ex: +229 pour le Bénin, +33 pour la France). Si le SMS tarde à arriver, patientez jusqu'à la fin du compte à rebours de sécurité (60 secondes) puis cliquez sur « Renvoyer le code ». Assurez-vous que votre smartphone capte convenablement le réseau cellulaire et n'est pas en mode avion.",
-      badge: "Inscription & OTP",
-      audience: "all"
+      title: "Prise en main",
+      items: [
+        { id: "intro", label: "Introduction à SAMRE" },
+        { id: "auth-otp", label: "Inscription & Code OTP" },
+        { id: "profile-roles", label: "Sélection du profil métier" },
+      ]
     },
     {
-      q: "Puis-je modifier mon numéro de téléphone après mon inscription ?",
-      a: "Non. Pour des impératifs stricts de sécurité juridique et pour garantir l'inviolabilité des conventions de stage et certificats officiels émis, le numéro validé par SMS reste lié de façon définitive à votre compte. En cas de changement impératif (perte ou vol de SIM), une demande doit être adressée directement au support SAMRE.",
-      badge: "Sécurité",
-      audience: "all"
+      title: "Espace Candidat",
+      items: [
+        { id: "candidate-profile", label: "Profil & CV certifié" },
+        { id: "candidate-apply", label: "Offres d'emploi & Postuler" },
+      ]
     },
     {
-      q: "Que faire si le pointage automatique ne s'est pas déclenché ce matin ?",
-      a: "Pas de panique ! Ouvrez l'application et appuyez directement sur le bouton « Pointer mon arrivée (GPS) » dans l'onglet Aujourd'hui. Pensez également à vérifier dans les paramètres de votre téléphone que l'autorisation de géolocalisation pour SAMRE est bien réglée sur « Toujours autoriser ».",
-      badge: "Pointage de Stage",
-      audience: "candidate"
+      title: "Suivi de Stage (Stagiaire)",
+      items: [
+        { id: "internship-join", label: "Rejoindre avec le Code" },
+        { id: "internship-convention", label: "Convention officielle (PDF)" },
+        { id: "internship-checkin", label: "Pointage Présence (Auto & GPS)" },
+        { id: "internship-calendar", label: "Calendrier au millimètre" },
+        { id: "internship-logbook", label: "Carnet de bord quotidien" },
+        { id: "internship-steps", label: "Progression (15% à 100%)" },
+      ]
     },
     {
-      q: "J'ai oublié de consigner mes missions hier, est-il possible de rattraper ?",
-      a: "Oui absolument. Rendez-vous dans l'onglet « Calendrier », touchez la case de la journée d'hier et appuyez sur « Consigner / Modifier mes activités ». Votre tuteur aura accès à votre historique actualisé.",
-      badge: "Carnet de bord",
-      audience: "candidate"
+      title: "Espace Entreprise & Tuteur",
+      items: [
+        { id: "company-setup", label: "Horaires & Périmètre GPS" },
+        { id: "company-supervision", label: "Supervision des arrivées" },
+        { id: "company-certificate", label: "Délivrance du Certificat QR" },
+      ]
     },
     {
-      q: "Comment un futur recruteur vérifie-t-il l'authenticité de mon Certificat SAMRE ?",
-      a: "Chaque certificat généré comporte un QR Code cryptographique unique. Le recruteur scanne ce QR Code avec son appareil photo : il est instantanément redirigé vers une page officielle SAMRE qui certifie l'identité de l'entreprise d'accueil, les dates du stage, les missions validées et le taux d'assiduité réel.",
-      badge: "Certification QR",
-      audience: "candidate"
-    },
-    {
-      q: "Comment configurer les horaires de bureau en tant qu'entreprise ?",
-      a: "Dans votre espace Entreprise, accédez aux paramètres de votre profil pour renseigner : l'heure d'embauche le matin (ex: 08:00), l'heure de fin (ex: 17:00), la tolérance de retard (ex: 15 min), les jours ouvrés (du lundi au vendredi) et le périmètre GPS de vos locaux (rayon de 30 à 50 mètres).",
-      badge: "Entreprise & Tuteur",
-      audience: "company"
-    },
-    {
-      q: "Que se passe-t-il si un stagiaire arrive après l'heure limite ?",
-      a: "Le système valide son arrivée tout en enregistrant le nombre exact de minutes de retard. Cela est consigné dans le journal d'audit et se répercute avec transparence dans le calcul mensuel du taux de ponctualité.",
-      badge: "Assiduité",
-      audience: "company"
-    },
-    {
-      q: "Puis-je rompre le suivi en cas de force majeure ?",
-      a: "Oui. Dans l'onglet Convention & Dossier, l'option « Se détacher de cette entreprise » permet de clôturer le suivi après confirmation explicite.",
-      badge: "Convention",
-      audience: "candidate"
+      title: "Services & FAQ",
+      items: [
+        { id: "other-services", label: "Événements, Troc & Sondages" },
+        { id: "faq", label: "Foire Aux Questions (FAQ)" },
+      ]
     }
   ];
-
-  // Filtered FAQs
-  const filteredFaqs = useMemo(() => {
-    return faqs.filter(item => {
-      const matchAudience = activeAudience === 'all' || item.audience === 'all' || item.audience === activeAudience;
-      const matchQuery = !searchQuery || 
-        item.q.toLowerCase().includes(searchQuery.toLowerCase()) || 
-        item.a.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.badge.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchAudience && matchQuery;
-    });
-  }, [faqs, activeAudience, searchQuery]);
 
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#f8fafc',
+      backgroundColor: '#ffffff',
       color: '#0f172a',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      fontSize: '15px',
+      lineHeight: 1.7
     }}>
 
-      {/* ── Top Bar / Header Public ── */}
+      {/* ── Top Navigation (Style Documentation Premium : Stripe / GitHub Docs) ── */}
       <header style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        backgroundColor: 'rgba(255, 255, 255, 0.96)',
-        backdropFilter: 'blur(12px)',
+        backgroundColor: '#ffffff',
         borderBottom: '1px solid #e2e8f0',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+        height: '64px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 24px',
+        justifyContent: 'space-between'
       }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '0 20px',
-          height: '72px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px'
-        }}>
-          {/* Logo SAMRE + Tag */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Left: Brand / Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{
+              display: 'none',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '6px',
+              color: '#334155'
+            }}
+            className="mobile-menu-btn"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <img
               src="/logo-samre.png"
-              alt="Logo Officiel SAMRE"
-              style={{
-                height: '46px',
-                width: 'auto',
-                objectFit: 'contain'
-              }}
-              onError={(e) => {
-                // Fallback icon if image fails
-                e.target.style.display = 'none';
-              }}
+              alt="SAMRE"
+              style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+              onError={(e) => { e.target.style.display = 'none'; }}
             />
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{
-                  fontWeight: 900,
-                  fontSize: '20px',
-                  color: '#0d3b7a',
-                  letterSpacing: '-0.02em'
-                }}>
-                  SAMRE
-                </span>
-                <span style={{
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  background: 'linear-gradient(135deg, #1a6fd4, #0d3b7a)',
-                  color: '#ffffff',
-                  padding: '2px 8px',
-                  borderRadius: '20px'
-                }}>
-                  Guide Utilisateur
-                </span>
-              </div>
-              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-                Documentation Officielle d'Utilisation
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+              <span style={{ fontWeight: 800, fontSize: '18px', color: '#0d3b7a', letterSpacing: '-0.02em' }}>
+                SAMRE
+              </span>
+              <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
+                / Docs
+              </span>
+              <span style={{
+                fontSize: '11px',
+                color: '#475569',
+                backgroundColor: '#f1f5f9',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                padding: '1px 6px',
+                fontWeight: 600
+              }}>
+                v2.4
               </span>
             </div>
           </div>
+        </div>
 
-          {/* Quick Search & Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Search Input in Header */}
-            <div style={{
-              display: 'flex',
+        {/* Center: Search */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          padding: '6px 12px',
+          width: '340px',
+          maxWidth: '100%'
+        }} className="hidden md:flex">
+          <Search size={15} color="#94a3b8" style={{ marginRight: '8px', flexShrink: 0 }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Rechercher dans la documentation..."
+            style={{
+              border: 'none',
+              outline: 'none',
+              backgroundColor: 'transparent',
+              fontSize: '13px',
+              width: '100%',
+              color: '#0f172a'
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* Right: Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            onClick={handleCopy}
+            title="Copier le lien direct"
+            style={{
+              display: 'inline-flex',
               alignItems: 'center',
-              backgroundColor: '#f1f5f9',
-              borderRadius: '10px',
-              padding: '6px 14px',
-              width: '280px',
-              border: '1px solid #e2e8f0'
-            }} className="hidden md:flex">
-              <Search size={16} color="#64748b" style={{ marginRight: '8px', flexShrink: 0 }} />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Rechercher (OTP, stage, pointage...)"
-                style={{
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent',
-                  fontSize: '13px',
-                  width: '100%',
-                  color: '#1e293b'
-                }}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '14px' }}
-                >
-                  ×
-                </button>
-              )}
-            </div>
+              gap: '6px',
+              padding: '6px 12px',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e2e8f0',
+              borderRadius: '6px',
+              fontSize: '13px',
+              color: '#334155',
+              cursor: 'pointer',
+              fontWeight: 500
+            }}
+          >
+            {copiedLink ? <Check size={14} color="#16a34a" /> : <Copy size={14} />}
+            <span>{copiedLink ? 'Copié' : 'Partager'}</span>
+          </button>
 
-            {/* Action Buttons */}
-            <button
-              onClick={handleCopyLink}
-              title="Copier le lien"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 14px',
-                backgroundColor: '#ffffff',
-                border: '1px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#334155',
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
-            >
-              {copiedLink ? <Check size={14} color="#16a34a" /> : <Copy size={14} />}
-              <span>{copiedLink ? 'Lien copié !' : 'Partager'}</span>
-            </button>
-
-            <button
-              onClick={handlePrint}
-              title="Imprimer / Exporter en PDF"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 14px',
-                backgroundColor: '#0d3b7a',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#ffffff',
-                cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(13, 59, 122, 0.25)',
-                transition: 'all 0.15s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a6fd4'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0d3b7a'}
-            >
-              <Printer size={14} />
-              <span>Imprimer</span>
-            </button>
-          </div>
+          <button
+            onClick={() => window.print()}
+            title="Imprimer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              backgroundColor: '#0d3b7a',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '13px',
+              color: '#ffffff',
+              cursor: 'pointer',
+              fontWeight: 600
+            }}
+          >
+            <Printer size={14} />
+            <span>Imprimer</span>
+          </button>
         </div>
       </header>
 
-      {/* ── Hero Banner with SAMRE Brand Signature ── */}
-      <section style={{
-        background: 'linear-gradient(135deg, #0a2540 0%, #0d3b7a 40%, #1a6fd4 85%, #f5a623 100%)',
-        color: '#ffffff',
-        padding: '52px 20px 48px',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        {/* Decorative ambient circles */}
-        <div style={{
-          position: 'absolute',
-          top: '-60px',
-          right: '-40px',
-          width: '320px',
-          height: '320px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(245, 166, 35, 0.22) 0%, rgba(245, 166, 35, 0) 70%)',
-          pointerEvents: 'none'
-        }} />
-        <div style={{
-          position: 'absolute',
-          bottom: '-80px',
-          left: '10%',
-          width: '380px',
-          height: '380px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(26, 111, 212, 0.3) 0%, rgba(26, 111, 212, 0) 70%)',
-          pointerEvents: 'none'
-        }} />
-
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
-          <div style={{ maxWidth: '820px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: 'rgba(255, 255, 255, 0.12)',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-              padding: '6px 14px',
-              borderRadius: '30px',
-              fontSize: '12px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginBottom: '18px',
-              backdropFilter: 'blur(8px)'
-            }}>
-              <Sparkles size={14} color="#f5a623" />
-              Plateforme Mobile & Web SAMRE
-            </div>
-
-            <h1 style={{
-              fontSize: '38px',
-              fontWeight: 900,
-              lineHeight: 1.15,
-              letterSpacing: '-0.02em',
-              margin: '0 0 14px 0'
-            }}>
-              Guide d'Utilisation Officiel de l'Application
-            </h1>
-
-            <p style={{
-              fontSize: '16px',
-              lineHeight: 1.6,
-              color: '#e2e8f0',
-              margin: '0 0 28px 0',
-              fontWeight: 400
-            }}>
-              Accédez à toutes les explications pratiques pour maîtriser l'application SAMRE : inscription sécurisée par numéro et code OTP, choix du profil, pointage d'assiduité automatique et manuel par GPS, calendrier de stage au millimètre près et délivrance du certificat officiel infalsifiable.
-            </p>
-
-            {/* Quick Badge Highlights */}
-            <div style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '12px',
-              fontSize: '13px',
-              fontWeight: 600
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                backdropFilter: 'blur(6px)'
-              }}>
-                <KeyRound size={16} color="#f5a623" />
-                <span>Validation OTP SMS Sécurisée</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                backdropFilter: 'blur(6px)'
-              }}>
-                <MapPin size={16} color="#34d399" />
-                <span>Pointage Automatique & GPS</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                backdropFilter: 'blur(6px)'
-              }}>
-                <Calendar size={16} color="#60a5fa" />
-                <span>Calendrier au Millimètre Près</span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                backdropFilter: 'blur(6px)'
-              }}>
-                <QrCode size={16} color="#fbbf24" />
-                <span>Certificat Officiel Infalsifiable</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Audience Selector Filter Bar ── */}
+      {/* ── Document Shell: Sidebar + Content + On-this-page ── */}
       <div style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '12px 20px',
-        position: 'sticky',
-        top: '72px',
-        zIndex: 40,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-      }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569', marginRight: '6px' }}>
-              Filtrer par profil :
-            </span>
-
-            {[
-              { id: 'all', label: 'Tous les guides', icon: Compass },
-              { id: 'candidate', label: 'Candidats & Stagiaires', icon: UserCheck, color: '#1a6fd4' },
-              { id: 'company', label: 'Entreprises & Tuteurs', icon: Building2, color: '#059669' },
-              { id: 'visitor', label: 'Visiteurs & Partenaires', icon: Users, color: '#7c3aed' },
-            ].map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeAudience === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveAudience(tab.id)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '6px 14px',
-                    borderRadius: '20px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    border: isActive ? '1px solid #0d3b7a' : '1px solid #e2e8f0',
-                    backgroundColor: isActive ? '#0d3b7a' : '#f8fafc',
-                    color: isActive ? '#ffffff' : '#475569',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <Icon size={14} color={isActive ? '#ffffff' : (tab.color || '#64748b')} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
-            Mis à jour pour la version mobile 2026
-          </div>
-        </div>
-      </div>
-
-      {/* ── Main Layout: Sidebar Navigation + Content ── */}
-      <div style={{
-        maxWidth: '1280px',
-        margin: '32px auto 64px',
-        padding: '0 20px',
+        maxWidth: '1440px',
+        margin: '0 auto',
         display: 'grid',
-        gridTemplateColumns: '280px 1fr',
-        gap: '36px',
-        alignItems: 'start'
-      }}>
+        gridTemplateColumns: '260px minmax(0, 1fr) 220px',
+        gap: '40px',
+        padding: '32px 24px'
+      }} className="docs-container">
 
-        {/* ── Sticky Left Sidebar Navigation ── */}
+        {/* ── Left Sidebar Navigation ── */}
         <aside style={{
           position: 'sticky',
-          top: '150px',
-          backgroundColor: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #e2e8f0',
-          padding: '20px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-        }}>
-          <h3 style={{
-            fontSize: '12px',
-            fontWeight: 800,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: '#64748b',
-            margin: '0 0 16px 0'
-          }}>
-            Table des Matières
-          </h3>
-
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {[
-              { id: 'otp-registration', label: '1. Inscription & Code OTP', icon: KeyRound, audience: 'all' },
-              { id: 'profile-choice', label: '2. Choix du Profil Métier', icon: UserCheck, audience: 'all' },
-              { id: 'candidate-jobs', label: '3. Espace Candidat & Offres', icon: Briefcase, audience: 'candidate' },
-              { id: 'internship-join', label: '4. Code de Stage & Contrat PDF', icon: FileText, audience: 'candidate' },
-              { id: 'internship-attendance', label: '5. Pointage Auto & GPS', icon: MapPin, audience: 'candidate' },
-              { id: 'internship-calendar', label: '6. Calendrier au Millimètre', icon: Calendar, audience: 'candidate' },
-              { id: 'company-setup', label: '7. Espace Entreprise & Horaires', icon: Building2, audience: 'company' },
-              { id: 'company-certificate', label: '8. Certificat Officiel & QR Code', icon: Award, audience: 'company' },
-              { id: 'other-services', label: '9. Billetterie & Troc de services', icon: Ticket, audience: 'all' },
-              { id: 'faq-section', label: '10. Foire Aux Questions (FAQ)', icon: HelpCircle, audience: 'all' },
-            ].map(item => {
-              const Icon = item.icon;
-              const isSelected = activeSection === item.id;
-              const isDimmed = activeAudience !== 'all' && item.audience !== 'all' && item.audience !== activeAudience;
-              if (isDimmed) return null;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '9px 12px',
-                    borderRadius: '8px',
-                    textAlign: 'left',
-                    background: isSelected ? '#eff6ff' : 'transparent',
-                    border: 'none',
-                    color: isSelected ? '#1a6fd4' : '#334155',
-                    fontWeight: isSelected ? 700 : 500,
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.backgroundColor = '#f8fafc';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Icon size={16} color={isSelected ? '#1a6fd4' : '#64748b'} />
-                    <span>{item.label}</span>
-                  </div>
-                  {isSelected && <ChevronRight size={14} color="#1a6fd4" />}
-                </button>
-              );
-            })}
-          </nav>
-
-          <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '20px 0' }} />
-
-          {/* Quick Help Box */}
-          <div style={{
-            backgroundColor: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '12px',
-            padding: '14px',
-            fontSize: '12px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#0d3b7a', marginBottom: '4px' }}>
-              <ShieldCheck size={16} color="#0d3b7a" />
-              Sécurité SAMRE
-            </div>
-            <p style={{ margin: 0, color: '#64748b', lineHeight: 1.45 }}>
-              L'application certifie l'identité des stagiaires et protège les données des entreprises partenaires selon les normes les plus strictes.
-            </p>
-          </div>
-        </aside>
-
-        {/* ── Main Content Area ── */}
-        <main style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 1: INSCRIPTION PAR TÉLÉPHONE & CODE OTP              */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="otp-registration" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+          top: '96px',
+          height: 'calc(100vh - 120px)',
+          overflowY: 'auto',
+          paddingRight: '12px'
+        }} className="docs-sidebar">
+          {navigationGroups.map((group, gIdx) => (
+            <div key={gIdx} style={{ marginBottom: '24px' }}>
               <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0d3b7a, #1a6fd4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
+                fontSize: '12px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: '#64748b',
+                marginBottom: '8px',
+                paddingLeft: '10px'
               }}>
-                <KeyRound size={20} />
+                {group.title}
               </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1a6fd4' }}>
-                  Étape 1 • Authentification Sécurisée
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Inscription avec Numéro de Téléphone & Code OTP SMS
-                </h2>
-              </div>
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {group.items.map((item) => {
+                  const isCurrent = activeSection === item.id;
+                  const matchesSearch = !searchQuery || item.label.toLowerCase().includes(searchQuery.toLowerCase());
+                  if (!matchesSearch) return null;
 
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Pour garantir la véracité des signatures de conventions et l'authenticité des certificats délivrés, SAMRE ne repose pas sur de simples mots de passe faciles à pirater ou à usurper. Votre identité est sécurisée directement par votre <strong>numéro de téléphone mobile</strong> validé par un <strong>code secret SMS (OTP à 6 chiffres)</strong>.
-            </p>
-
-            {/* Visual Stepper */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '16px',
-              marginTop: '24px'
-            }}>
-              {[
-                {
-                  step: "01",
-                  title: "Saisie du Numéro",
-                  desc: "Sélectionnez votre indicatif pays (ex: 🇧🇯 +229, 🇫🇷 +33, 🇨🇮 +225) et tapez votre numéro personnel.",
-                  icon: Smartphone,
-                  color: "#1a6fd4"
-                },
-                {
-                  step: "02",
-                  title: "Réception du SMS",
-                  desc: "Un SMS immédiat vous transmet votre code de sécurité unique à 6 chiffres (ex: 482 195).",
-                  icon: KeyRound,
-                  color: "#f5a623"
-                },
-                {
-                  step: "03",
-                  title: "Validation Instantanée",
-                  desc: "Dès que le 6ᵉ chiffre est renseigné, l'application vérifie et sécurise votre connexion en un quart de seconde.",
-                  icon: CheckCircle2,
-                  color: "#10b981"
-                },
-                {
-                  step: "04",
-                  title: "Numéro Fixé & Garanti",
-                  desc: "Ce numéro est scellé à votre compte afin de certifier juridiquement vos conventions et diplômes.",
-                  icon: ShieldCheck,
-                  color: "#0d3b7a"
-                }
-              ].map((card, idx) => {
-                const CardIcon = card.icon;
-                return (
-                  <div key={idx} style={{
-                    backgroundColor: '#f8fafc',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
-                    padding: '20px',
-                    position: 'relative'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '12px'
-                    }}>
-                      <div style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '8px',
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #cbd5e1',
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => scrollToSection(item.id)}
+                      style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        color: card.color
-                      }}>
-                        <CardIcon size={18} />
-                      </div>
-                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#94a3b8' }}>
-                        {card.step}
-                      </span>
-                    </div>
-                    <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>
-                      {card.title}
-                    </h4>
-                    <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                      {card.desc}
-                    </p>
-                  </div>
-                );
-              })}
+                        justifyContent: 'space-between',
+                        textAlign: 'left',
+                        padding: '7px 10px',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        border: 'none',
+                        backgroundColor: isCurrent ? '#f1f5f9' : 'transparent',
+                        color: isCurrent ? '#0d3b7a' : '#334155',
+                        fontWeight: isCurrent ? 700 : 500,
+                        cursor: 'pointer',
+                        borderLeft: isCurrent ? '3px solid #0d3b7a' : '3px solid transparent',
+                        transition: 'background-color 0.15s'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isCurrent) e.currentTarget.style.backgroundColor = '#f8fafc';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+          ))}
+        </aside>
 
-            {/* Note d'information */}
+        {/* ── Center Article Body ── */}
+        <main style={{ maxWidth: '820px', minWidth: 0 }} className="docs-main">
+          
+          {/* Breadcrumbs */}
+          <div style={{
+            fontSize: '13px',
+            color: '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            marginBottom: '16px'
+          }}>
+            <span>Documentation</span>
+            <ChevronRight size={12} />
+            <span>Guide Utilisateur Officiel</span>
+            <ChevronRight size={12} />
+            <span style={{ color: '#0f172a', fontWeight: 600 }}>SAMRE Mobile & Web</span>
+          </div>
+
+          {/* Document Title Header */}
+          <div style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '24px', marginBottom: '36px' }}>
+            <h1 style={{
+              fontSize: '32px',
+              fontWeight: 800,
+              color: '#0f172a',
+              letterSpacing: '-0.02em',
+              margin: '0 0 10px 0'
+            }}>
+              Manuel d'Utilisation SAMRE
+            </h1>
+            <p style={{ fontSize: '16px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
+              Ce guide détaille le fonctionnement complet de la plateforme : authentification sécurisée par numéro et code OTP, gestion de profil, suivi de stage certifié, carnet de présence au millimètre près et émission des attestations officielles avec QR Code.
+            </p>
+          </div>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 1: INTRODUCTION                                       */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="intro" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              1. Introduction à la Plateforme
+            </h2>
+            <p>
+              SAMRE est une solution intégrée conçue pour professionnaliser l'insertion des talents, encadrer le déroulement des stages en entreprise et dématérialiser la validation des compétences sans paperasse superflue.
+            </p>
+            <p>
+              La plateforme répond à trois besoins majeurs :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li><strong>Candidats et Stagiaires :</strong> Accéder à des offres vérifiées, formaliser leur période de stage par un contrat numérique clair et certifier leurs heures réelles grâce au pointage géolocalisé.</li>
+              <li><strong>Entreprises et Tuteurs :</strong> Superviser en direct l'assiduité et la ponctualité des stagiaires, valider les étapes d'évaluation et délivrer un certificat officiel reconnu par le marché de l'emploi.</li>
+              <li><strong>Partenaires et Professionnels :</strong> Développer leur réseau via les événements, le troc de compétences et les sondages d'opinion.</li>
+            </ul>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 2: AUTHENTIFICATION OTP                               */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="auth-otp" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              2. Inscription & Code de Vérification (OTP)
+            </h2>
+            <p>
+              Afin d'éliminer les risques de fausses déclarations, de doublons ou de comptes fictifs, SAMRE certifie l'identité de chaque utilisateur à travers son <strong>numéro de téléphone mobile</strong> et un <strong>code secret unique reçu par SMS (OTP)</strong>.
+            </p>
+
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', margin: '20px 0 8px 0' }}>
+              Procédure d'inscription pas à pas :
+            </h3>
+            <ol style={{ paddingLeft: '24px', margin: '0 0 20px', lineHeight: 1.8 }}>
+              <li>Ouvrez l'application SAMRE et choisissez <strong>Commencer</strong> ou <strong>Créer un compte</strong>.</li>
+              <li>Sélectionnez l'indicatif correspondant à votre pays (ex : <code>+229</code> Bénin, <code>+33</code> France, <code>+225</code> Côte d'Ivoire, <code>+228</code> Togo).</li>
+              <li>Saisissez votre numéro de téléphone personnel et confirmez.</li>
+              <li>Vous recevez instantanément un SMS contenant un <strong>code à 6 chiffres</strong>.</li>
+              <li>Saisissez les 6 chiffres dans les cases dédiées : la validation s'exécute automatiquement dès le dernier chiffre renseigné.</li>
+            </ol>
+
+            {/* Note Callout */}
             <div style={{
-              marginTop: '20px',
-              backgroundColor: '#eff6ff',
-              borderLeft: '4px solid #1a6fd4',
-              borderRadius: '0 10px 10px 0',
+              backgroundColor: '#f8fafc',
+              borderLeft: '4px solid #0d3b7a',
               padding: '14px 18px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '12px'
+              borderRadius: '0 8px 8px 0',
+              marginBottom: '20px'
             }}>
-              <Sparkles size={18} color="#1a6fd4" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <div style={{ fontSize: '13px', color: '#1e3a8a', lineHeight: 1.5 }}>
-                <strong>Astuce en cas de retard SMS :</strong> Si le SMS met quelques secondes à arriver à cause du réseau de votre opérateur, un compte à rebours s'affiche. Une fois le temps écoulé, un bouton <strong>« Renvoyer le code »</strong> devient actif pour déclencher un nouvel envoi sans quitter l'écran.
+              <div style={{ fontWeight: 700, fontSize: '13px', color: '#0d3b7a', marginBottom: '4px' }}>
+                Note Importante — Numéro de téléphone immuable
+              </div>
+              <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
+                Le numéro validé par code OTP est scellé à votre compte afin de conférer une valeur probante aux conventions de stage et aux diplômes émis. Il ne peut pas être modifié librement par la suite.
               </div>
             </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 2: CHOIX DU PROFIL UTILISATEUR                        */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="profile-choice" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10b981, #059669)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <UserCheck size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#059669' }}>
-                  Étape 2 • Personnalisation Métier
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Sélection du Type de Profil (« Qui êtes-vous ? »)
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Juste après la validation de votre code OTP, l'écran vous propose de sélectionner le rôle correspondant à votre situation. Ce choix configure sur-mesure votre interface, vos menus et vos autorisations.
-            </p>
-
-            {/* Profile Cards */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '18px',
-              marginTop: '20px'
-            }}>
-              {/* Profil Candidat */}
-              <div style={{
-                border: '2px solid #3b82f6',
-                borderRadius: '14px',
-                padding: '24px',
-                backgroundColor: '#ffffff',
-                position: 'relative'
-              }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#dbeafe',
-                  color: '#1d4ed8',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  marginBottom: '14px'
-                }}>
-                  <UserCheck size={14} />
-                  PROFIL 1
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e3a8a', margin: '0 0 8px 0' }}>
-                  Secrétaire / Candidat / Stagiaire
-                </h3>
-                <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, marginBottom: '16px' }}>
-                  Pour les étudiants, assistants, secrétaires et demandeurs d'emploi en quête de stage ou d'insertion professionnelle.
-                </p>
-                <ul style={{
-                  paddingLeft: '18px',
-                  margin: 0,
-                  fontSize: '13px',
-                  color: '#334155',
-                  lineHeight: 1.6
-                }}>
-                  <li>Créer un CV valorisé par intelligence artificielle</li>
-                  <li>Postuler aux offres de stage et d'emploi</li>
-                  <li>Saisir le <strong>Code de Stage</strong> de son entreprise</li>
-                  <li>Pointer son arrivée et son départ (Auto ou GPS)</li>
-                  <li>Consigner ses missions dans le carnet de bord</li>
-                  <li>Obtenir sa Convention PDF et son Certificat officiel</li>
-                </ul>
-              </div>
-
-              {/* Profil Entreprise */}
-              <div style={{
-                border: '2px solid #10b981',
-                borderRadius: '14px',
-                padding: '24px',
-                backgroundColor: '#ffffff',
-                position: 'relative'
-              }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#d1fae5',
-                  color: '#065f46',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  marginBottom: '14px'
-                }}>
-                  <Building2 size={14} />
-                  PROFIL 2
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#065f46', margin: '0 0 8px 0' }}>
-                  Entreprise / Recruteur / Tuteur
-                </h3>
-                <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, marginBottom: '16px' }}>
-                  Pour les dirigeants, responsables RH, tuteurs et secrétaires d'entreprise encadrant du personnel.
-                </p>
-                <ul style={{
-                  paddingLeft: '18px',
-                  margin: 0,
-                  fontSize: '13px',
-                  color: '#334155',
-                  lineHeight: 1.6
-                }}>
-                  <li>Publier des offres d'emploi et de stage</li>
-                  <li>Paramétrer les horaires officiels et le périmètre GPS</li>
-                  <li>Transmettre le Code Unique de Stage aux stagiaires</li>
-                  <li>Superviser la ponctualité et les présences en temps réel</li>
-                  <li>Valider les étapes de progression du stagiaire</li>
-                  <li>Délivrer le <strong>Certificat Officiel SAMRE avec QR Code</strong></li>
-                </ul>
-              </div>
-
-              {/* Profil Visiteur */}
-              <div style={{
-                border: '2px solid #8b5cf6',
-                borderRadius: '14px',
-                padding: '24px',
-                backgroundColor: '#ffffff',
-                position: 'relative'
-              }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#ede9fe',
-                  color: '#5b21b6',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  marginBottom: '14px'
-                }}>
-                  <Users size={14} />
-                  PROFIL 3
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#5b21b6', margin: '0 0 8px 0' }}>
-                  Visiteur / Partenaire / Autre
-                </h3>
-                <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, marginBottom: '16px' }}>
-                  Pour les professionnels indépendants, curieux et partenaires de l'écosystème SAMRE.
-                </p>
-                <ul style={{
-                  paddingLeft: '18px',
-                  margin: 0,
-                  fontSize: '13px',
-                  color: '#334155',
-                  lineHeight: 1.6
-                }}>
-                  <li>Explorer les salons, conférences et masterclasses</li>
-                  <li>Réserver des places avec e-ticket QR Code sécurisé</li>
-                  <li>Participer à la place de marché de troc de compétences</li>
-                  <li>Répondre aux sondages et cumuler des récompenses</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 3: ESPACE CANDIDAT & OFFRES                           */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="candidate-jobs" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <Briefcase size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#2563eb' }}>
-                  Guide Candidat • Chapitre 1
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Espace Candidat : Profil, CV IA & Candidatures
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              L'application SAMRE intègre une place de marché dynamique pour décrocher un stage ou un emploi qualifié :
-            </p>
 
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '20px',
-              marginTop: '18px'
+              backgroundColor: '#fffbeb',
+              borderLeft: '4px solid #f59e0b',
+              padding: '14px 18px',
+              borderRadius: '0 8px 8px 0'
             }}>
+              <div style={{ fontWeight: 700, fontSize: '13px', color: '#92400e', marginBottom: '4px' }}>
+                En cas de délai de réception du SMS
+              </div>
+              <div style={{ fontSize: '13px', color: '#78350f', lineHeight: 1.5 }}>
+                Un compte à rebours de 60 secondes est déclenché à l'envoi. Si le SMS n'est pas parvenu à expiration du délai, appuyez sur <strong>« Renvoyer le code »</strong>. Vérifiez que votre terminal n'est pas en mode hors-ligne.
+              </div>
+            </div>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 3: SÉLECTION DU PROFIL                                */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="profile-roles" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              3. Sélection du Profil Métier
+            </h2>
+            <p>
+              Dès la validation du code OTP, l'écran <strong>« Qui êtes-vous ? »</strong> vous propose d'orienter votre espace de travail selon votre rôle :
+            </p>
+
+            {/* Table comparative des profils */}
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '13px',
+              margin: '20px 0',
+              border: '1px solid #e2e8f0'
+            }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155', width: '25%' }}>Profil</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155', width: '35%' }}>Public Cible</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155' }}>Fonctionnalités Clés</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0d3b7a' }}>Secrétaire / Candidat</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Étudiants, assistants, secrétaires et stagiaires</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>CV assisté par IA, candidature aux offres, code de stage, pointage présence, convention PDF.</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#059669' }}>Entreprise / Recruteur</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Employeurs, DRH, tuteurs et gérants de structures</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Publication d'offres, code de stage, horaires & rayon GPS, audit des présences en temps réel, émission du certificat officiel.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#7c3aed' }}>Visiteur / Autre</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Indépendants, partenaires institutionnels</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Salons & conférences avec e-ticket QR, troc de services inter-professionnels, participation aux sondages.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 4: CANDIDAT & CV                                      */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="candidate-profile" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              4. Espace Candidat : Profil & CV Numérique
+            </h2>
+            <p>
+              Pour maximiser vos opportunités de sélection, l'application vous invite à compléter votre dossier :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li><strong>Renseignements de base :</strong> Titre de poste recherché, compétences clés, formations académiques et expériences antérieures.</li>
+              <li><strong>Génération de CV assistée :</strong> Mise en page automatique d'un curriculum vitae prêt à l'emploi.</li>
+              <li><strong>Statut de visibilité :</strong> Option pour rendre votre profil consultable directement par les entreprises partenaires de SAMRE.</li>
+            </ul>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 5: OFFRES & CANDIDATURES                              */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="candidate-apply" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              5. Consultation des Offres & Dépôt de Candidature
+            </h2>
+            <p>
+              Depuis l'onglet <strong>Offres</strong>, filtrez par type de contrat (Stage professionnel, Stage académique, CDD, CDI), par localisation ou par domaine d'activité.
+            </p>
+            <p>
+              En appuyant sur <strong>« Postuler »</strong>, votre profil complet est transmis sans friction au service de recrutement de l'entreprise. Vous pouvez suivre l'état d'examen de vos candidatures dans votre tableau de bord.
+            </p>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 6: REJOINDRE LE SUIVI DE STAGE                        */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="internship-join" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              6. Rejoindre son Entreprise (Code de Stage)
+            </h2>
+            <p>
+              Lorsque votre période de stage débute, l'entreprise vous transmet son <strong>Code de Stage Unique</strong> (par ex : <code>STG-7B9K2P</code>) :
+            </p>
+            <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
+              <li>Appuyez sur le raccourci <strong>« Suivi de stage »</strong> sur l'écran d'accueil.</li>
+              <li>Renseignez le code fourni par votre structure d'accueil.</li>
+              <li>L'écran affiche la proposition de stage : coordonnées de l'entreprise, horaires contractuels (ex: <code>08:00 - 17:00</code>) et jours ouvrés.</li>
+              <li>Appuyez sur <strong>« Accepter la convention et activer mon suivi »</strong>. L'application configure alors le périmètre de pointage et officialise l'accord réciproque.</li>
+            </ol>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 7: CONVENTION OFFICIELLE PDF                          */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="internship-convention" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              7. Convention de Stage Officielle (PDF)
+            </h2>
+            <p>
+              Dès que l'accord est scellé, un document contractuel officiel de 3 pages est édité :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>Rendez-vous dans l'onglet <strong>Convention & Dossier</strong> ou cliquez sur l'icône <strong>PDF</strong>.</li>
+              <li>Appuyez sur <strong>« Télécharger ma convention (PDF) »</strong>.</li>
+              <li>Le fichier PDF intègre les mentions légales, les engagements des deux parties, les horaires, l'adresse de travail ainsi que les références d'accord numérique et le cachet certifié.</li>
+            </ul>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 8: POINTAGE PRÉSENCE (AUTO & GPS)                     */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="internship-checkin" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              8. Le Pointage de Présence : Automatique ou Manuel
+            </h2>
+            <p>
+              Pour certifier que le stagiaire est présent sur le lieu de travail conformément à la convention, l'application propose deux modalités :
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', margin: '20px 0' }}>
               <div style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
                 padding: '18px',
-                borderRadius: '12px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0'
+                backgroundColor: '#f8fafc'
               }}>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={16} color="#2563eb" />
-                  Profil & CV valorisé à 100 %
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Renseignez vos diplômes, compétences et expériences. L'assistant intelligent structure automatiquement votre CV dans un format prêt à être consulté ou téléchargé au format PDF professionnel.
+                <div style={{ fontWeight: 700, color: '#0d3b7a', marginBottom: '8px' }}>
+                  A. Pointage Automatique [ON]
+                </div>
+                <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
+                  Dans l'onglet <strong>Aujourd'hui</strong>, activez l'interrupteur. Dès votre arrivée dans le périmètre de l'entreprise le matin avec votre téléphone, l'application valide automatiquement votre badgeage sans aucune manipulation. Le départ est consigné de même lorsque vous quittez les locaux.
                 </p>
               </div>
 
               <div style={{
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
                 padding: '18px',
-                borderRadius: '12px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0'
+                backgroundColor: '#f8fafc'
               }}>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Zap size={16} color="#f5a623" />
-                  Postuler en 1 clic
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Filtrez les annonces par domaine, type de contrat ou ville. Un simple appui sur « Postuler » transmet instantanément votre dossier à l'entreprise recruteuse avec notification de confirmation.
+                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '8px' }}>
+                  B. Pointage Manuel (Bouton GPS)
+                </div>
+                <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
+                  Si le mode automatique est désactivé ou pour un pointage ponctuel, ouvrez l'application à votre arrivée et appuyez sur <strong>« Pointer mon arrivée (GPS) »</strong>. La position satellite est vérifiée par rapport aux coordonnées de l'entreprise et valide la présence.
                 </p>
               </div>
             </div>
           </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 4: CODE DE STAGE & ACCORD NUMÉRIQUE                   */}
+          {/* SECTION 9: CALENDRIER MENSUEL AU MILLIMÈTRE                   */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="internship-join" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0d3b7a, #1a6fd4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <FileText size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1a6fd4' }}>
-                  Guide Stagiaire • Chapitre 2
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Rejoindre son Entreprise avec le Code de Stage & Contrat PDF
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Le suivi de stage débute le jour où votre entreprise d'accueil vous communique son <strong>Code Unique de Stage</strong> (par ex : <code>STG-7B9K2P</code>) :
+          <section id="internship-calendar" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              9. Calendrier Mensuel au Millimètre Près
+            </h2>
+            <p>
+              L'onglet <strong>Calendrier</strong> présente une vue intégrale sur chacun des mois du stage (Mois 1, Mois 2, Mois 3) :
             </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li><strong>Crochet Vert (✔) :</strong> Journée validée avec succès (présence certifiée).</li>
+              <li><strong>Croix Rouge (✖) :</strong> Journée ouvrée sans enregistrement de présence (absence).</li>
+              <li><strong>Badge Orange :</strong> Journée en cours en attente de pointage ou de clôture.</li>
+              <li><strong>Fiche d'audit détaillée :</strong> En touchant n'importe quel jour du calendrier, vous affichez l'heure exacte d'arrivée, l'heure exacte de départ, la durée effective travaillée, la méthode de validation utilisée et les tâches accomplies.</li>
+            </ul>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 10: CARNET DE BORD QUOTIDIEN                          */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="internship-logbook" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              10. Consigner son Résumé de Journée (Carnet de bord)
+            </h2>
+            <p>
+              Chaque jour, le stagiaire est invité à résumer brièvement ses activités :
+            </p>
+            <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
+              <li>Dans l'onglet <strong>Aujourd'hui</strong> ou depuis le calendrier, sélectionnez <strong>« Consigner mes missions du jour »</strong>.</li>
+              <li>Rédigez en quelques lignes les tâches exécutées (ex: <em>« Archivage des dossiers comptables et accueil physique des usagers »</em>).</li>
+              <li>Enregistrez. Le résumé est immédiatement consultable par le tuteur de stage.</li>
+            </ol>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 11: PROGRESSION DU STAGE                              */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="internship-steps" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              11. Les 5 Étapes de Progression vers la Certification
+            </h2>
+            <p>
+              Le parcours de stage est jalonné en 5 étapes clés calculées de 15 % à 100 % :
+            </p>
+
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '13px',
+              margin: '16px 0',
+              border: '1px solid #e2e8f0'
+            }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', width: '15%' }}>Progression</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', width: '30%' }}>Étape</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left' }}>Action associée</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>15 %</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>Accueil & Intégration</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Signature de la convention et paramétrage du suivi.</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>50 %</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>Missions & Pointage</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Réalisation continue des missions et pointage quotidien.</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>75 %</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>Bilan Mi-parcours</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Entretien intermédiaire avec le tuteur.</td>
+                </tr>
+                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>90 %</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>Rapport de Stage</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Finalisation du carnet de bord et synthèse des acquis.</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '10px 12px', fontWeight: 700, color: '#16a34a' }}>100 %</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600 }}>Certification SAMRE</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Clôture par l'entreprise et délivrance de l'attestation QR.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 12: ENTREPRISE & HORAIRES                             */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="company-setup" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              12. Espace Entreprise : Horaires & Périmètre GPS
+            </h2>
+            <p>
+              Pour configurer le suivi dans votre structure :
+            </p>
+            <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
+              <li>Connectez-vous sur votre espace Entreprise.</li>
+              <li>Renseignez les horaires officiels d'activité (ex: <code>08:00 - 17:00</code>), les jours ouvrables (du lundi au vendredi) et la tolérance accordée pour les retards (ex: 15 minutes).</li>
+              <li>Localisez votre siège ou site d'exploitation pour fixer le rayon de géolocalisation (30 à 50 mètres).</li>
+              <li>Récupérez votre <strong>Code de Stage Unique</strong> affiché sur votre tableau de bord et remettez-le à vos nouveaux stagiaires.</li>
+            </ol>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 13: ENTREPRISE & SUPERVISION                          */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="company-supervision" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              13. Supervision des Présences en Direct
+            </h2>
+            <p>
+              Le tableau de bord entreprise permet de suivre en direct :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>La liste complète de vos stagiaires en cours d'immersion.</li>
+              <li>Les badgeages d'arrivée en temps réel avec indicateur de ponctualité.</li>
+              <li>Le taux global d'assiduité mensuelle calculé automatiquement.</li>
+              <li>Les résumés de missions consignés chaque soir par les stagiaires.</li>
+            </ul>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 14: DÉLIVRANCE DU CERTIFICAT AVEC QR CODE             */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="company-certificate" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              14. Délivrance du Certificat Officiel avec QR Code
+            </h2>
+            <p>
+              Au terme de la période de stage :
+            </p>
+            <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
+              <li>Ouvrez la fiche du stagiaire et cliquez sur <strong>« Clôturer le stage & Délivrer le Certificat »</strong>.</li>
+              <li>Attribuez la mention d'honneur appropriée (<em>Assiduité Exemplaire</em>, <em>Mention Très Bien</em>, <em>Félicitations du Tuteur</em> ou <em>Stage Validé</em>).</li>
+              <li>Inscrivez votre appréciation qualitative finale et validez l'émission.</li>
+            </ol>
 
             <div style={{
               backgroundColor: '#f8fafc',
               border: '1px solid #e2e8f0',
-              borderRadius: '12px',
-              padding: '20px',
+              borderRadius: '8px',
+              padding: '16px',
               marginTop: '16px'
             }}>
-              <ol style={{ paddingLeft: '20px', margin: 0, fontSize: '14px', color: '#334155', lineHeight: 1.8 }}>
-                <li>Depuis l'accueil, appuyez sur le raccourci <strong>« Suivi de stage »</strong>.</li>
-                <li>Tapez le code fourni par votre tuteur ou votre secrétaire.</li>
-                <li>L'application affiche le contrat de convention avec le nom de l'entreprise, les horaires contractuels (ex : <code>08:00 - 17:00</code>) et les jours travaillés.</li>
-                <li>Appuyez sur <strong>« Accepter la convention et activer mon suivi »</strong> : l'autorisation de géolocalisation est sollicitée immédiatement.</li>
-                <li><strong>Accord Numérique Réciproque :</strong> Le stage est alors officiellement scellé entre vous et l'entreprise !</li>
-                <li>Vous pouvez alors récupérer à tout moment votre <strong>Convention de Stage officielle en PDF (3 pages)</strong> en cliquant sur l'icône rouge PDF.</li>
-              </ol>
-            </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 5: POINTAGE AUTOMATIQUE & MANUEL GPS                  */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="internship-attendance" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <MapPin size={20} />
+              <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', marginBottom: '4px' }}>
+                Fonctionnement de l'authentification par QR Code
               </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#d97706' }}>
-                  Guide Stagiaire • Chapitre 3
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Le Pointage de Présence : Mode Automatique vs Manuel GPS
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Pour attester de vos heures réelles de présence dans les locaux de l'entreprise, deux options sont intégrées :
-            </p>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '20px',
-              marginTop: '20px'
-            }}>
-              {/* Option A */}
-              <div style={{
-                border: '1px solid #93c5fd',
-                borderRadius: '14px',
-                backgroundColor: '#eff6ff',
-                padding: '24px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#1e40af', textTransform: 'uppercase' }}>
-                    Option A (Recommandée)
-                  </span>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    backgroundColor: '#1e40af',
-                    color: '#ffffff',
-                    padding: '2px 8px',
-                    borderRadius: '12px'
-                  }}>
-                    0 CLIC ⚡
-                  </span>
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#1e3a8a', margin: '0 0 10px 0' }}>
-                  Pointage Automatique [ON]
-                </h3>
-                <p style={{ fontSize: '13px', color: '#1e3a8a', lineHeight: 1.6, margin: 0 }}>
-                  Activez simplement l'interrupteur dans l'onglet Aujourd'hui. Dès que vous pénétrez dans le rayon GPS de l'entreprise le matin avec votre téléphone (même écran éteint dans la poche), votre arrivée est enregistrée automatiquement. De même, votre départ est validé en fin de journée lorsque vous quittez les locaux.
-                </p>
-              </div>
-
-              {/* Option B */}
-              <div style={{
-                border: '1px solid #fde68a',
-                borderRadius: '14px',
-                backgroundColor: '#fffbeb',
-                padding: '24px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#92400e', textTransform: 'uppercase' }}>
-                    Option B (Secours)
-                  </span>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    backgroundColor: '#d97706',
-                    color: '#ffffff',
-                    padding: '2px 8px',
-                    borderRadius: '12px'
-                  }}>
-                    MANUEL 📍
-                  </span>
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#92400e', margin: '0 0 10px 0' }}>
-                  Bouton « Pointer mon arrivée (GPS) »
-                </h3>
-                <p style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.6, margin: 0 }}>
-                  Si vous préférez badger manuellement ou si le mode automatique n'était pas activé, ouvrez simplement l'application à votre arrivée et touchez le bouton orange. L'application vérifie vos coordonnées satellites et certifie votre pointage avec la mention <em>À l'heure</em> ou vos minutes de retard éventuelles.
-                </p>
+              <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
+                Le certificat PDF généré embarque une signature cryptographique sous la forme d'un QR Code unique. Tout futur recruteur scannant ce code est redirigé vers une page officielle SAMRE qui authentifie sans équivoque les dates du stage, le nom de l'entreprise hôte et le volume d'heures réelles accomplies.
               </div>
             </div>
           </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 6: CALENDRIER MENSUEL AU MILLIMÈTRE PRÈS              */}
+          {/* SECTION 15: AUTRES SERVICES                                   */}
           {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="internship-calendar" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10b981, #059669)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <Calendar size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#059669' }}>
-                  Guide Stagiaire & Supervision • Chapitre 4
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Le Calendrier Mensuel au Millimètre Près (Crochets & Croix)
-                </h2>
-              </div>
-            </div>
+          <section id="other-services" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              15. Services Complémentaires de la Plateforme
+            </h2>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li><strong>Événements & Billetterie QR :</strong> Réservation de places pour les conférences et salons professionnels avec e-ticket numérique à présenter à l'accueil.</li>
+              <li><strong>Troc & Partenariats B2B :</strong> Mise en relation inter-entreprises pour échanger des prestations et compétences sans flux monétaire.</li>
+              <li><strong>Sondages Rémunérés :</strong> Participation à des études d'opinion avec points de fidélité crédités dans votre portefeuille SAMRE.</li>
+            </ul>
+          </section>
 
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              L'onglet <strong>Calendrier</strong> permet d'inspecter l'intégralité du stage mois par mois (Mois 1, Mois 2, Mois 3) avec une transparence absolue :
-            </p>
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* SECTION 16: FAQ                                               */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+          <section id="faq" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              16. Foire Aux Questions (FAQ)
+            </h2>
 
-            {/* Visual Calendar Simulation */}
-            <div style={{
-              backgroundColor: '#0f172a',
-              color: '#ffffff',
-              borderRadius: '14px',
-              padding: '24px',
-              marginTop: '18px',
-              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.15)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <span style={{ backgroundColor: '#1e293b', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, color: '#93c5fd' }}>
-                    Mois 1 (En cours)
-                  </span>
-                  <span style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#94a3b8' }}>
-                    Mois 2
-                  </span>
-                  <span style={{ backgroundColor: 'rgba(255,255,255,0.06)', padding: '4px 10px', borderRadius: '6px', fontSize: '12px', color: '#94a3b8' }}>
-                    Mois 3
-                  </span>
-                </div>
-                <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 700 }}>
-                  Assiduité globale : 96.5 %
-                </span>
-              </div>
-
-              {/* Mini Grid representation */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '8px',
-                textAlign: 'center',
-                fontSize: '12px'
-              }}>
-                {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((d, i) => (
-                  <div key={i} style={{ color: '#94a3b8', fontWeight: 700, paddingBottom: '4px' }}>
-                    {d}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+              {[
+                {
+                  q: "Que faire si je ne reçois pas le code SMS (OTP) lors de l'inscription ?",
+                  a: "Vérifiez que vous avez sélectionné le bon indicatif pays (ex: +229 pour le Bénin, +33 pour la France). Si le SMS tarde à arriver, patientez jusqu'à la fin du compte à rebours de sécurité (60 secondes) puis cliquez sur « Renvoyer le code »."
+                },
+                {
+                  q: "Puis-je changer mon numéro de téléphone après l'inscription ?",
+                  a: "Non. Le numéro de téléphone validé par SMS reste lié de façon définitive à votre compte afin de préserver la valeur juridique des conventions de stage et certificats signés. En cas de perte de carte SIM, contactez le support."
+                },
+                {
+                  q: "Que faire si le pointage automatique ne s'est pas déclenché ce matin ?",
+                  a: "Ouvrez simplement l'application et appuyez sur « Pointer mon arrivée (GPS) » dans l'onglet Aujourd'hui. Assurez-vous également que l'autorisation de géolocalisation pour SAMRE est réglée sur « Toujours autoriser » dans les réglages de votre smartphone."
+                },
+                {
+                  q: "J'ai oublié de consigner mes missions hier, puis-je rattraper ?",
+                  a: "Oui. Dans l'onglet Calendrier, touchez le jour précédent et sélectionnez « Consigner / Modifier mes activités » pour mettre à jour vos notes."
+                },
+                {
+                  q: "Comment un recruteur s'assure-t-il de la validité de mon certificat ?",
+                  a: "Il lui suffit de scanner le QR Code imprimé sur votre attestation avec son smartphone. Une page officielle de confirmation SAMRE certifie en direct la validité du document."
+                }
+              ].map((item, i) => (
+                <div key={i} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                  <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                    {item.q}
                   </div>
-                ))}
-                
-                {/* Simulated Days */}
-                {[
-                  { day: 1, status: 'validated' },
-                  { day: 2, status: 'validated' },
-                  { day: 3, status: 'validated' },
-                  { day: 4, status: 'validated' },
-                  { day: 5, status: 'validated' },
-                  { day: 6, status: 'weekend' },
-                  { day: 7, status: 'weekend' },
-                  { day: 8, status: 'validated' },
-                  { day: 9, status: 'validated' },
-                  { day: 10, status: 'validated' },
-                  { day: 11, status: 'missed' },
-                  { day: 12, status: 'today' },
-                  { day: 13, status: 'weekend' },
-                  { day: 14, status: 'weekend' },
-                ].map((item, idx) => (
-                  <div key={idx} style={{
-                    backgroundColor: item.status === 'today' ? 'rgba(245, 166, 35, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    border: item.status === 'today' ? '1px solid #f5a623' : '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '8px',
-                    padding: '8px 4px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}>
-                    <span style={{ fontSize: '11px', color: '#cbd5e1', fontWeight: 600 }}>{item.day}</span>
-                    {item.status === 'validated' && <CheckCircle2 size={16} color="#22c55e" />}
-                    {item.status === 'missed' && <XCircle size={16} color="#ef4444" />}
-                    {item.status === 'today' && <Clock size={16} color="#f5a623" />}
-                    {item.status === 'weekend' && <span style={{ fontSize: '10px', color: '#64748b' }}>repos</span>}
+                  <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                    {item.a}
                   </div>
-                ))}
-              </div>
-
-              {/* Detailed inspection breakdown */}
-              <div style={{
-                marginTop: '18px',
-                backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                borderRadius: '10px',
-                padding: '14px',
-                display: 'flex',
-                flexWrap: 'wrap',
-                justifyContent: 'space-between',
-                fontSize: '12px'
-              }}>
-                <div><strong>Inspection Jour sélectionné :</strong> 10 Septembre</div>
-                <div>🚪 Arrivée : <strong>08:04</strong></div>
-                <div>🏁 Départ : <strong>17:02</strong></div>
-                <div>⏱ Durée : <strong>8h58 réelles</strong></div>
-                <div>📍 Méthode : <span style={{ color: '#60a5fa' }}>Auto Geofence</span></div>
-              </div>
-            </div>
-
-            {/* Carnet de bord des missions */}
-            <div style={{ marginTop: '20px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>
-                Consigner ses missions dans le carnet de bord
-              </h4>
-              <p style={{ fontSize: '13px', color: '#64748b', lineHeight: 1.5, margin: 0 }}>
-                Chaque jour, le stagiaire renseigne en 1 minute un court résumé de ses activités (ex: <em>« Traitement des courriers, gestion des appels entrants et préparation des dossiers d'admissions »</em>). Ce carnet est directement consultable par le tuteur pour suivre la montée en compétences.
-              </p>
-            </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 7: ESPACE ENTREPRISE & SUPERVISION                    */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="company-setup" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #059669, #10b981)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <Building2 size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#059669' }}>
-                  Guide Entreprise • Chapitre 5
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Espace Entreprise : Horaires Officiels & Supervision en Direct
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Pour les directeurs, gérants et secrétaires d'entreprise, SAMRE automatise la gestion du personnel sans contrainte administrative :
-            </p>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '16px',
-              marginTop: '18px'
-            }}>
-              <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <h5 style={{ fontSize: '14px', fontWeight: 700, color: '#065f46', margin: '0 0 4px 0' }}>
-                  1. Paramétrage des Horaires
-                </h5>
-                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Fixez l'heure de début, l'heure de fin, la tolérance de retard accordée (ex: 15 min) et le rayon GPS de vos locaux.
-                </p>
-              </div>
-
-              <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <h5 style={{ fontSize: '14px', fontWeight: 700, color: '#065f46', margin: '0 0 4px 0' }}>
-                  2. Code de Suivi Unique
-                </h5>
-                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Transmettez votre code de stage (ex: <code>STAGE-VOTRENOM</code>). Dès saisie, le stagiaire est rattaché à votre console.
-                </p>
-              </div>
-
-              <div style={{ padding: '16px', borderRadius: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <h5 style={{ fontSize: '14px', fontWeight: 700, color: '#065f46', margin: '0 0 4px 0' }}>
-                  3. Supervision en Temps Réel
-                </h5>
-                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Consultez qui est au bureau à l'instant T, qui est ponctuel et découvrez le résumé des missions quotidiennes consignées.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 8: CERTIFICAT OFFICIEL AVEC QR CODE                   */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="company-certificate" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #f5a623, #d97706)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <Award size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#d97706' }}>
-                  Guide Entreprise & Validation • Chapitre 6
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Délivrance du Certificat Officiel SAMRE avec QR Code Infalsifiable
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              À l'issue de la période de stage, l'entreprise valide les compétences acquises et délivre un <strong>Certificat Officiel Numérique Sécurisé</strong> :
-            </p>
-
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              mdFlexDirection: 'row',
-              gap: '24px',
-              backgroundColor: '#fffbeb',
-              border: '2px dashed #f5a623',
-              borderRadius: '14px',
-              padding: '24px',
-              marginTop: '18px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#fef3c7',
-                  color: '#92400e',
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontSize: '11px',
-                  fontWeight: 800,
-                  marginBottom: '10px'
-                }}>
-                  <QrCode size={14} />
-                  Sceau d'Authenticité SAMRE
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#78350f', margin: '0 0 10px 0' }}>
-                  Une attestation reconnue par les employeurs
-                </h3>
-                <p style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.6, margin: 0 }}>
-                  L'entreprise sélectionne la mention méritée (<em>Assiduité Exemplaire</em>, <em>Mention Très Bien</em>, <em>Félicitations du Tuteur</em>) et appose son appréciation. Le certificat généré inclut un <strong>QR Code officiel</strong> : n'importe quel recruteur le scannant avec son smartphone vérifie sur-le-champ l'authenticité des heures effectuées et du diplôme délivré.
-                </p>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#ffffff',
-                border: '1px solid #fde68a',
-                borderRadius: '12px',
-                padding: '16px 24px',
-                minWidth: '180px',
-                textAlign: 'center'
-              }}>
-                <QrCode size={64} color="#0d3b7a" />
-                <span style={{ fontSize: '11px', fontWeight: 800, color: '#0d3b7a', marginTop: '8px' }}>
-                  QR CODE SÉCURISÉ
-                </span>
-                <span style={{ fontSize: '10px', color: '#64748b' }}>
-                  Vérification en 1 seconde
-                </span>
-              </div>
+              ))}
             </div>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 9: AUTRES SERVICES (BILLETTERIE, TROC, SONDAGES)      */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="other-services" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+          {/* Document Footer */}
+          <div style={{
+            borderTop: '1px solid #e2e8f0',
+            paddingTop: '24px',
+            marginTop: '40px',
+            fontSize: '13px',
+            color: '#64748b',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <Ticket size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#7c3aed' }}>
-                  Services Complémentaires • Chapitre 7
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Événements, Troc de Compétences & Sondages Rémunérés
-                </h2>
-              </div>
-            </div>
+            <span>© {new Date().getFullYear()} SAMRE Technologies. Tous droits réservés.</span>
+            <span>Documentation certifiée officielle</span>
+          </div>
 
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Au-delà de l'emploi et des stages, SAMRE anime un écosystème professionnel complet :
-            </p>
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: '16px',
-              marginTop: '18px'
-            }}>
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <Ticket size={24} color="#7c3aed" style={{ marginBottom: '10px' }} />
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>
-                  Salons & Billetterie QR
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Réservez vos places aux forums pour l'emploi, webinaires et masterclasses. Votre billet numérique avec QR Code est scanné directement à l'entrée.
-                </p>
-              </div>
-
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <RefreshCw size={24} color="#10b981" style={{ marginBottom: '10px' }} />
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>
-                  Troc & Échange de Services
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Échangez vos expertises (comptabilité, design, traduction, développement) sans décaissement de trésorerie pour accélérer vos projets.
-                </p>
-              </div>
-
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                <CheckSquare size={24} color="#f5a623" style={{ marginBottom: '10px' }} />
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '0 0 6px 0' }}>
-                  Sondages & Récompenses
-                </h4>
-                <p style={{ fontSize: '13px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  Participez aux études sur les besoins du marché de l'emploi et cumulez des points de récompense convertibles dans votre portefeuille SAMRE.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 10: FOIRE AUX QUESTIONS (FAQ)                         */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="faq-section" style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '32px',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0d3b7a, #1a6fd4)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff'
-              }}>
-                <HelpCircle size={20} />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#1a6fd4' }}>
-                  Assistance Immédiate
-                </span>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                  Foire Aux Questions (FAQ) & Réponses Fréquentes
-                </h2>
-              </div>
-            </div>
-
-            <p style={{ fontSize: '14px', color: '#475569', lineHeight: 1.6, marginTop: '12px' }}>
-              Retrouvez les réponses aux interrogations les plus courantes de nos utilisateurs :
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-              {filteredFaqs.length === 0 ? (
-                <div style={{
-                  padding: '32px',
-                  textAlign: 'center',
-                  backgroundColor: '#f8fafc',
-                  borderRadius: '12px',
-                  color: '#64748b'
-                }}>
-                  Aucune question ne correspond à votre recherche « {searchQuery} ».
-                </div>
-              ) : (
-                filteredFaqs.map((faq, idx) => {
-                  const isExpanded = expandedFaq[idx] ?? (idx === 0);
-                  return (
-                    <div key={idx} style={{
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      transition: 'all 0.15s'
-                    }}>
-                      <button
-                        onClick={() => toggleFaq(idx)}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '12px',
-                          padding: '16px 20px',
-                          backgroundColor: isExpanded ? '#f8fafc' : '#ffffff',
-                          border: 'none',
-                          textAlign: 'left',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{
-                            fontSize: '10px',
-                            fontWeight: 800,
-                            textTransform: 'uppercase',
-                            backgroundColor: '#e2e8f0',
-                            color: '#475569',
-                            padding: '2px 8px',
-                            borderRadius: '10px',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {faq.badge}
-                          </span>
-                          <span style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b' }}>
-                            {faq.q}
-                          </span>
-                        </div>
-                        <ChevronDown
-                          size={18}
-                          color="#64748b"
-                          style={{
-                            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                            transition: 'transform 0.2s',
-                            flexShrink: 0
-                          }}
-                        />
-                      </button>
-
-                      {isExpanded && (
-                        <div style={{
-                          padding: '0 20px 18px 20px',
-                          backgroundColor: '#f8fafc',
-                          fontSize: '13px',
-                          color: '#475569',
-                          lineHeight: 1.6,
-                          borderTop: '1px solid #f1f5f9'
-                        }}>
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </section>
         </main>
+
+        {/* ── Right Column: "Sur cette page" Mini-TOC ── */}
+        <aside style={{
+          position: 'sticky',
+          top: '96px',
+          height: 'calc(100vh - 120px)',
+          overflowY: 'auto'
+        }} className="docs-on-this-page">
+          <div style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            color: '#64748b',
+            marginBottom: '12px'
+          }}>
+            Sur cette page
+          </div>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
+            <a href="#intro" style={{ color: activeSection === 'intro' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'intro' ? 700 : 400 }}>
+              1. Introduction
+            </a>
+            <a href="#auth-otp" style={{ color: activeSection === 'auth-otp' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'auth-otp' ? 700 : 400 }}>
+              2. Inscription & Code OTP
+            </a>
+            <a href="#profile-roles" style={{ color: activeSection === 'profile-roles' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'profile-roles' ? 700 : 400 }}>
+              3. Profils Métier
+            </a>
+            <a href="#candidate-profile" style={{ color: activeSection === 'candidate-profile' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'candidate-profile' ? 700 : 400 }}>
+              4. Espace Candidat & CV
+            </a>
+            <a href="#candidate-apply" style={{ color: activeSection === 'candidate-apply' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'candidate-apply' ? 700 : 400 }}>
+              5. Offres d'emploi
+            </a>
+            <a href="#internship-join" style={{ color: activeSection === 'internship-join' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-join' ? 700 : 400 }}>
+              6. Rejoindre avec le Code
+            </a>
+            <a href="#internship-convention" style={{ color: activeSection === 'internship-convention' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-convention' ? 700 : 400 }}>
+              7. Convention PDF
+            </a>
+            <a href="#internship-checkin" style={{ color: activeSection === 'internship-checkin' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-checkin' ? 700 : 400 }}>
+              8. Pointage Présence
+            </a>
+            <a href="#internship-calendar" style={{ color: activeSection === 'internship-calendar' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-calendar' ? 700 : 400 }}>
+              9. Calendrier au millimètre
+            </a>
+            <a href="#internship-logbook" style={{ color: activeSection === 'internship-logbook' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-logbook' ? 700 : 400 }}>
+              10. Carnet de bord
+            </a>
+            <a href="#internship-steps" style={{ color: activeSection === 'internship-steps' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-steps' ? 700 : 400 }}>
+              11. Progression de stage
+            </a>
+            <a href="#company-setup" style={{ color: activeSection === 'company-setup' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-setup' ? 700 : 400 }}>
+              12. Horaires & Périmètre
+            </a>
+            <a href="#company-supervision" style={{ color: activeSection === 'company-supervision' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-supervision' ? 700 : 400 }}>
+              13. Supervision en direct
+            </a>
+            <a href="#company-certificate" style={{ color: activeSection === 'company-certificate' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-certificate' ? 700 : 400 }}>
+              14. Certificat avec QR Code
+            </a>
+            <a href="#other-services" style={{ color: activeSection === 'other-services' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'other-services' ? 700 : 400 }}>
+              15. Services secondaires
+            </a>
+            <a href="#faq" style={{ color: activeSection === 'faq' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq' ? 700 : 400 }}>
+              16. FAQ
+            </a>
+          </nav>
+        </aside>
+
       </div>
 
-      {/* ── Footer Public SAMRE ── */}
-      <footer style={{
-        backgroundColor: '#0d3b7a',
-        color: '#ffffff',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        padding: '48px 20px 32px'
-      }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '32px'
-        }}>
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '20px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <img
-                src="/logo-samre.png"
-                alt="Logo SAMRE"
-                style={{ height: '40px', width: 'auto', objectFit: 'contain' }}
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-              <div>
-                <span style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '-0.01em', color: '#ffffff' }}>
-                  SAMRE
-                </span>
-                <span style={{ display: 'block', fontSize: '12px', color: '#93c5fd' }}>
-                  Plateforme Officielle pour l'Emploi & le Suivi de Stage Certifié
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '18px', fontSize: '13px', flexWrap: 'wrap' }}>
-              <Link to="/cgu" style={{ color: '#e2e8f0', textDecoration: 'none' }}>
-                Conditions Générales (CGU)
-              </Link>
-              <Link to="/privacy" style={{ color: '#e2e8f0', textDecoration: 'none' }}>
-                Politique de Confidentialité
-              </Link>
-              <Link to="/mentions-legales" style={{ color: '#e2e8f0', textDecoration: 'none' }}>
-                Mentions Légales
-              </Link>
-            </div>
-          </div>
-
-          <div style={{
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            paddingTop: '20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '12px',
-            fontSize: '12px',
-            color: '#93c5fd'
-          }}>
-            <span>© {new Date().getFullYear()} SAMRE. Tous droits réservés.</span>
-            <span>Sécurité renforcée • Authentification OTP • Certificats avec QR Code</span>
-          </div>
-        </div>
-      </footer>
+      <style>{`
+        @media (max-width: 1024px) {
+          .docs-container {
+            grid-template-columns: 240px 1fr !important;
+          }
+          .docs-on-this-page {
+            display: none !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .docs-container {
+            grid-template-columns: 1fr !important;
+            padding: 20px 16px !important;
+          }
+          .docs-sidebar {
+            display: ${mobileMenuOpen ? 'block' : 'none'} !important;
+            position: fixed !important;
+            top: 64px !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: #ffffff !important;
+            z-index: 40 !important;
+            padding: 20px !important;
+            height: calc(100vh - 64px) !important;
+          }
+          .mobile-menu-btn {
+            display: inline-flex !important;
+          }
+        }
+        @media print {
+          header, aside, .docs-sidebar, .docs-on-this-page, .mobile-menu-btn {
+            display: none !important;
+          }
+          .docs-container {
+            grid-template-columns: 1fr !important;
+            padding: 0 !important;
+          }
+          body {
+            font-size: 12pt !important;
+            color: #000000 !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

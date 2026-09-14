@@ -81,11 +81,14 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_user');
 
-      // Ne jamais rediriger vers le login si le visiteur consulte une page publique légale
+      // Ne jamais rediriger vers le login si le visiteur consulte une page publique légale ou de documentation
       const path = typeof window !== 'undefined' ? window.location.pathname : '';
-      const isPublicPage = ['/p/', '/page/', '/pages/', '/legal/', '/cgu', '/privacy', '/confidentialite', '/mentions-legales', '/a-propos', '/about', '/terms', '/conditions'].some(
-        prefix => path === prefix || path.startsWith(prefix)
-      );
+      const isPublicPage = [
+        '/p/', '/page/', '/pages/', '/legal/',
+        '/cgu', '/privacy', '/confidentialite', '/mentions-legales',
+        '/a-propos', '/about', '/terms', '/conditions',
+        '/guide', '/guide-utilisateur', '/docs', '/documentation', '/user-guide'
+      ].some(prefix => path === prefix || path.startsWith(prefix));
 
       if (!isPublicPage && path !== '/') {
         window.location.href = '/';
