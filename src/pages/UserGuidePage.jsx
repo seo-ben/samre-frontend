@@ -1,16 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Search, Copy, Check, Printer, ExternalLink, ChevronRight,
-  Menu, X, FileText, CheckCircle2, AlertCircle, Info, ArrowUpRight
-} from 'lucide-react';
+import { Search, ChevronRight, Menu, X } from 'lucide-react';
 
 export const UserGuidePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSection, setActiveSection] = useState('intro');
-  const [copiedLink, setCopiedLink] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Synchronisation de la section active avec le hash d'URL
+  // Synchronisation avec le hash d'URL
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
@@ -32,52 +28,54 @@ export const UserGuidePage = () => {
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
-  };
-
   const navigationGroups = [
     {
-      title: "Prise en main",
+      title: "Prise en main commune",
       items: [
-        { id: "intro", label: "Introduction à SAMRE" },
-        { id: "auth-otp", label: "Inscription & Code OTP" },
-        { id: "profile-roles", label: "Sélection du profil métier" },
+        { id: "intro", label: "1. Présentation de SAMRE" },
+        { id: "auth-otp", label: "2. Inscription & Code OTP (SMS)" },
+        { id: "profile-roles", label: "3. Choix du profil utilisateur" },
       ]
     },
     {
-      title: "Espace Candidat",
+      title: "Espace Candidat & Stagiaire",
       items: [
-        { id: "candidate-profile", label: "Profil & CV certifié" },
-        { id: "candidate-apply", label: "Offres d'emploi & Postuler" },
-      ]
-    },
-    {
-      title: "Suivi de Stage (Stagiaire)",
-      items: [
-        { id: "internship-join", label: "Rejoindre avec le Code" },
-        { id: "internship-convention", label: "Convention officielle (PDF)" },
-        { id: "internship-checkin", label: "Pointage Présence (Auto & GPS)" },
-        { id: "internship-calendar", label: "Calendrier au millimètre" },
-        { id: "internship-logbook", label: "Carnet de bord quotidien" },
-        { id: "internship-steps", label: "Progression (15% à 100%)" },
+        { id: "candidate-profile", label: "4. Profil & CV généré par IA" },
+        { id: "candidate-apply", label: "5. Recherche d'offres & Candidatures" },
+        { id: "internship-join", label: "6. Code de Stage & Accord numérique" },
+        { id: "internship-convention", label: "7. Convention officielle en PDF" },
+        { id: "internship-checkin", label: "8. Pointage Présence (Auto & GPS)" },
+        { id: "internship-calendar", label: "9. Calendrier mensuel au millimètre" },
+        { id: "internship-logbook", label: "10. Carnet de bord des missions" },
+        { id: "internship-steps", label: "11. Progression vers la certification" },
       ]
     },
     {
       title: "Espace Entreprise & Tuteur",
       items: [
-        { id: "company-setup", label: "Horaires & Périmètre GPS" },
-        { id: "company-supervision", label: "Supervision des arrivées" },
-        { id: "company-certificate", label: "Délivrance du Certificat QR" },
+        { id: "company-setup", label: "12. Horaires, jours ouvrés & GPS" },
+        { id: "company-code", label: "13. Gestion du Code de Stage" },
+        { id: "company-supervision", label: "14. Supervision des arrivées en direct" },
+        { id: "company-evaluations", label: "15. Validation des étapes & Bilans" },
+        { id: "company-certificate", label: "16. Délivrance du Certificat avec QR Code" },
+        { id: "company-offers", label: "17. Publication d'offres & Recrutement" },
+        { id: "company-branding", label: "18. Bannières & Visibilité de marque" },
       ]
     },
     {
-      title: "Services & FAQ",
+      title: "Espace Visiteur & Partenaire",
       items: [
-        { id: "other-services", label: "Événements, Troc & Sondages" },
-        { id: "faq", label: "Foire Aux Questions (FAQ)" },
+        { id: "visitor-events", label: "19. Événements, Forums & Billetterie QR" },
+        { id: "visitor-barter", label: "20. Place de marché Troc de compétences" },
+        { id: "visitor-surveys", label: "21. Sondages & Récompenses" },
+      ]
+    },
+    {
+      title: "Questions Fréquentes (FAQ)",
+      items: [
+        { id: "faq-candidats", label: "22. FAQ Candidats & Stagiaires" },
+        { id: "faq-entreprises", label: "23. FAQ Entreprises & Tuteurs" },
+        { id: "faq-visiteurs", label: "24. FAQ Visiteurs & Support" },
       ]
     }
   ];
@@ -92,7 +90,7 @@ export const UserGuidePage = () => {
       lineHeight: 1.7
     }}>
 
-      {/* ── Top Navigation (Style Documentation Premium : Stripe / GitHub Docs) ── */}
+      {/* ── Top Navigation Épurée (Sans bouton Imprimer ni Partager) ── */}
       <header style={{
         position: 'sticky',
         top: 0,
@@ -105,7 +103,7 @@ export const UserGuidePage = () => {
         padding: '0 24px',
         justifyContent: 'space-between'
       }}>
-        {/* Left: Brand / Logo */}
+        {/* Left: Brand Logo & Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -134,7 +132,7 @@ export const UserGuidePage = () => {
                 SAMRE
               </span>
               <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
-                / Docs
+                / Documentation Utilisateur
               </span>
               <span style={{
                 fontSize: '11px',
@@ -151,7 +149,7 @@ export const UserGuidePage = () => {
           </div>
         </div>
 
-        {/* Center: Search */}
+        {/* Right: Barre de recherche discrète */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -159,7 +157,7 @@ export const UserGuidePage = () => {
           border: '1px solid #e2e8f0',
           borderRadius: '8px',
           padding: '6px 12px',
-          width: '340px',
+          width: '320px',
           maxWidth: '100%'
         }} className="hidden md:flex">
           <Search size={15} color="#94a3b8" style={{ marginRight: '8px', flexShrink: 0 }} />
@@ -167,7 +165,7 @@ export const UserGuidePage = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Rechercher dans la documentation..."
+            placeholder="Rechercher (OTP, contrat, horaires, QR Code...)"
             style={{
               border: 'none',
               outline: 'none',
@@ -186,51 +184,6 @@ export const UserGuidePage = () => {
             </button>
           )}
         </div>
-
-        {/* Right: Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
-            onClick={handleCopy}
-            title="Copier le lien direct"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e2e8f0',
-              borderRadius: '6px',
-              fontSize: '13px',
-              color: '#334155',
-              cursor: 'pointer',
-              fontWeight: 500
-            }}
-          >
-            {copiedLink ? <Check size={14} color="#16a34a" /> : <Copy size={14} />}
-            <span>{copiedLink ? 'Copié' : 'Partager'}</span>
-          </button>
-
-          <button
-            onClick={() => window.print()}
-            title="Imprimer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              backgroundColor: '#0d3b7a',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '13px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontWeight: 600
-            }}
-          >
-            <Printer size={14} />
-            <span>Imprimer</span>
-          </button>
-        </div>
       </header>
 
       {/* ── Document Shell: Sidebar + Content + On-this-page ── */}
@@ -238,12 +191,12 @@ export const UserGuidePage = () => {
         maxWidth: '1440px',
         margin: '0 auto',
         display: 'grid',
-        gridTemplateColumns: '260px minmax(0, 1fr) 220px',
+        gridTemplateColumns: '270px minmax(0, 1fr) 230px',
         gap: '40px',
         padding: '32px 24px'
       }} className="docs-container">
 
-        {/* ── Left Sidebar Navigation ── */}
+        {/* ── Left Sidebar Navigation (Sans aucune bordure sur les liens) ── */}
         <aside style={{
           position: 'sticky',
           top: '96px',
@@ -254,13 +207,13 @@ export const UserGuidePage = () => {
           {navigationGroups.map((group, gIdx) => (
             <div key={gIdx} style={{ marginBottom: '24px' }}>
               <div style={{
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: 700,
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 color: '#64748b',
                 marginBottom: '8px',
-                paddingLeft: '10px'
+                paddingLeft: '8px'
               }}>
                 {group.title}
               </div>
@@ -275,19 +228,17 @@ export const UserGuidePage = () => {
                       key={item.id}
                       onClick={() => scrollToSection(item.id)}
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
+                        display: 'block',
+                        width: '100%',
                         textAlign: 'left',
-                        padding: '7px 10px',
+                        padding: '6px 8px',
                         borderRadius: '6px',
                         fontSize: '13px',
                         border: 'none',
                         backgroundColor: isCurrent ? '#f1f5f9' : 'transparent',
                         color: isCurrent ? '#0d3b7a' : '#334155',
-                        fontWeight: isCurrent ? 700 : 500,
+                        fontWeight: isCurrent ? 700 : 400,
                         cursor: 'pointer',
-                        borderLeft: isCurrent ? '3px solid #0d3b7a' : '3px solid transparent',
                         transition: 'background-color 0.15s'
                       }}
                       onMouseEnter={(e) => {
@@ -297,7 +248,7 @@ export const UserGuidePage = () => {
                         if (!isCurrent) e.currentTarget.style.backgroundColor = 'transparent';
                       }}
                     >
-                      <span>{item.label}</span>
+                      {item.label}
                     </button>
                   );
                 })}
@@ -320,9 +271,9 @@ export const UserGuidePage = () => {
           }}>
             <span>Documentation</span>
             <ChevronRight size={12} />
-            <span>Guide Utilisateur Officiel</span>
+            <span>Guide d'Utilisation Officiel</span>
             <ChevronRight size={12} />
-            <span style={{ color: '#0f172a', fontWeight: 600 }}>SAMRE Mobile & Web</span>
+            <span style={{ color: '#0f172a', fontWeight: 600 }}>Candidats, Entreprises & Visiteurs</span>
           </div>
 
           {/* Document Title Header */}
@@ -334,98 +285,65 @@ export const UserGuidePage = () => {
               letterSpacing: '-0.02em',
               margin: '0 0 10px 0'
             }}>
-              Manuel d'Utilisation SAMRE
+              Guide d'Utilisation Général SAMRE
             </h1>
             <p style={{ fontSize: '16px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
-              Ce guide détaille le fonctionnement complet de la plateforme : authentification sécurisée par numéro et code OTP, gestion de profil, suivi de stage certifié, carnet de présence au millimètre près et émission des attestations officielles avec QR Code.
+              Documentation officielle pour les trois profils utilisateurs : Candidats & Stagiaires, Entreprises & Tuteurs, et Visiteurs & Partenaires.
             </p>
           </div>
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 1: INTRODUCTION                                       */}
+          {/* PARTIE 1 : PRISE EN MAIN COMMUNE                             */}
           {/* ═════════════════════════════════════════════════════════════ */}
+
           <section id="intro" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              1. Introduction à la Plateforme
+              1. Présentation de SAMRE
             </h2>
             <p>
-              SAMRE est une solution intégrée conçue pour professionnaliser l'insertion des talents, encadrer le déroulement des stages en entreprise et dématérialiser la validation des compétences sans paperasse superflue.
+              SAMRE est une plateforme numérique conçue pour simplifier l'insertion professionnelle, sécuriser les stages en entreprise et fluidifier les recrutements. L'application mobile accompagne les stagiaires et les employeurs de la signature de la convention jusqu'à la remise du certificat officiel.
             </p>
             <p>
-              La plateforme répond à trois besoins majeurs :
+              Chaque utilisateur dispose d'un espace adapté à son statut avec des fonctionnalités dédiées et un journal d'activité sécurisé.
             </p>
-            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
-              <li><strong>Candidats et Stagiaires :</strong> Accéder à des offres vérifiées, formaliser leur période de stage par un contrat numérique clair et certifier leurs heures réelles grâce au pointage géolocalisé.</li>
-              <li><strong>Entreprises et Tuteurs :</strong> Superviser en direct l'assiduité et la ponctualité des stagiaires, valider les étapes d'évaluation et délivrer un certificat officiel reconnu par le marché de l'emploi.</li>
-              <li><strong>Partenaires et Professionnels :</strong> Développer leur réseau via les événements, le troc de compétences et les sondages d'opinion.</li>
-            </ul>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 2: AUTHENTIFICATION OTP                               */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="auth-otp" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
               2. Inscription & Code de Vérification (OTP)
             </h2>
             <p>
-              Afin d'éliminer les risques de fausses déclarations, de doublons ou de comptes fictifs, SAMRE certifie l'identité de chaque utilisateur à travers son <strong>numéro de téléphone mobile</strong> et un <strong>code secret unique reçu par SMS (OTP)</strong>.
+              Pour assurer l'authenticité des comptes et éviter toute usurpation, SAMRE s'appuie sur une vérification directe par numéro de téléphone mobile et code SMS unique (OTP).
             </p>
 
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', margin: '20px 0 8px 0' }}>
-              Procédure d'inscription pas à pas :
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '20px 0 8px 0' }}>
+              Étapes de création de compte :
             </h3>
-            <ol style={{ paddingLeft: '24px', margin: '0 0 20px', lineHeight: 1.8 }}>
-              <li>Ouvrez l'application SAMRE et choisissez <strong>Commencer</strong> ou <strong>Créer un compte</strong>.</li>
-              <li>Sélectionnez l'indicatif correspondant à votre pays (ex : <code>+229</code> Bénin, <code>+33</code> France, <code>+225</code> Côte d'Ivoire, <code>+228</code> Togo).</li>
-              <li>Saisissez votre numéro de téléphone personnel et confirmez.</li>
-              <li>Vous recevez instantanément un SMS contenant un <strong>code à 6 chiffres</strong>.</li>
-              <li>Saisissez les 6 chiffres dans les cases dédiées : la validation s'exécute automatiquement dès le dernier chiffre renseigné.</li>
+            <ol style={{ paddingLeft: '24px', margin: '0 0 16px', lineHeight: 1.8 }}>
+              <li>Lancez l'application et appuyez sur <strong>Commencer</strong> ou <strong>Créer un compte</strong>.</li>
+              <li>Sélectionnez l'indicatif téléphonique de votre pays (ex : <code>+229</code> Bénin, <code>+33</code> France, <code>+225</code> Côte d'Ivoire, <code>+228</code> Togo).</li>
+              <li>Saisissez votre numéro personnel et validez.</li>
+              <li>Vous recevez par SMS un <strong>code de sécurité à 6 chiffres</strong>.</li>
+              <li>Saisissez ce code dans l'application : l'accès est déverrouillé automatiquement.</li>
             </ol>
 
-            {/* Note Callout */}
-            <div style={{
-              backgroundColor: '#f8fafc',
-              borderLeft: '4px solid #0d3b7a',
-              padding: '14px 18px',
-              borderRadius: '0 8px 8px 0',
-              marginBottom: '20px'
-            }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: '#0d3b7a', marginBottom: '4px' }}>
-                Note Importante — Numéro de téléphone immuable
-              </div>
-              <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
-                Le numéro validé par code OTP est scellé à votre compte afin de conférer une valeur probante aux conventions de stage et aux diplômes émis. Il ne peut pas être modifié librement par la suite.
-              </div>
-            </div>
-
-            <div style={{
-              backgroundColor: '#fffbeb',
-              borderLeft: '4px solid #f59e0b',
-              padding: '14px 18px',
-              borderRadius: '0 8px 8px 0'
-            }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: '#92400e', marginBottom: '4px' }}>
-                En cas de délai de réception du SMS
-              </div>
-              <div style={{ fontSize: '13px', color: '#78350f', lineHeight: 1.5 }}>
-                Un compte à rebours de 60 secondes est déclenché à l'envoi. Si le SMS n'est pas parvenu à expiration du délai, appuyez sur <strong>« Renvoyer le code »</strong>. Vérifiez que votre terminal n'est pas en mode hors-ligne.
-              </div>
-            </div>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 3: SÉLECTION DU PROFIL                                */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="profile-roles" style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              3. Sélection du Profil Métier
-            </h2>
-            <p>
-              Dès la validation du code OTP, l'écran <strong>« Qui êtes-vous ? »</strong> vous propose d'orienter votre espace de travail selon votre rôle :
+            <p style={{ color: '#475569', fontSize: '14px', marginTop: '12px' }}>
+              <strong>Note importante sur le numéro de téléphone :</strong> Le numéro validé par code OTP est strictement lié à votre compte afin de garantir la validité juridique des conventions et attestations signées. Il ne peut pas être modifié librement après l'inscription.
             </p>
 
-            {/* Table comparative des profils */}
+            <p style={{ color: '#475569', fontSize: '14px', marginTop: '8px' }}>
+              <strong>Délai de réception :</strong> Si le SMS n'arrive pas immédiatement, patientez la fin du compte à rebours de sécurité (60 secondes) puis appuyez sur <strong>« Renvoyer le code »</strong>. Assurez-vous d'avoir une couverture réseau GSM suffisante.
+            </p>
+          </section>
+
+          <section id="profile-roles" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              3. Choix du Profil Utilisateur
+            </h2>
+            <p>
+              Dès la vérification de votre code SMS, vous devez sélectionner votre rôle métier. L'interface s'ajuste immédiatement selon vos besoins :
+            </p>
+
             <table style={{
               width: '100%',
               borderCollapse: 'collapse',
@@ -436,183 +354,152 @@ export const UserGuidePage = () => {
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                   <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155', width: '25%' }}>Profil</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155', width: '35%' }}>Public Cible</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155' }}>Fonctionnalités Clés</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155', width: '35%' }}>Destinataires</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#334155' }}>Usage Principal</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0d3b7a' }}>Secrétaire / Candidat</td>
-                  <td style={{ padding: '12px 14px', color: '#475569' }}>Étudiants, assistants, secrétaires et stagiaires</td>
-                  <td style={{ padding: '12px 14px', color: '#475569' }}>CV assisté par IA, candidature aux offres, code de stage, pointage présence, convention PDF.</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Étudiants, stagiaires, demandeurs d'emploi, assistants</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Création de CV, recherche d'offres, saisie du code de stage, pointage présence, convention PDF.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#059669' }}>Entreprise / Recruteur</td>
-                  <td style={{ padding: '12px 14px', color: '#475569' }}>Employeurs, DRH, tuteurs et gérants de structures</td>
-                  <td style={{ padding: '12px 14px', color: '#475569' }}>Publication d'offres, code de stage, horaires & rayon GPS, audit des présences en temps réel, émission du certificat officiel.</td>
+                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0d3b7a' }}>Entreprise / Recruteur</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Directeurs, RH, tuteurs de stage, secrétaires d'entreprise</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Horaires de bureau, périmètre GPS, code stagiaire, suivi des présences en temps réel, certificat avec QR Code.</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#7c3aed' }}>Visiteur / Autre</td>
-                  <td style={{ padding: '12px 14px', color: '#475569' }}>Indépendants, partenaires institutionnels</td>
-                  <td style={{ padding: '12px 14px', color: '#475569' }}>Salons & conférences avec e-ticket QR, troc de services inter-professionnels, participation aux sondages.</td>
+                  <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0d3b7a' }}>Visiteur / Autre</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Indépendants, partenaires, grand public</td>
+                  <td style={{ padding: '12px 14px', color: '#475569' }}>Salons professionnels, billetterie électronique avec QR Code, place de marché de troc de compétences, sondages.</td>
                 </tr>
               </tbody>
             </table>
           </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 4: CANDIDAT & CV                                      */}
+          {/* PARTIE 2 : GUIDE CANDIDAT & STAGIAIRE                        */}
           {/* ═════════════════════════════════════════════════════════════ */}
+
           <section id="candidate-profile" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              4. Espace Candidat : Profil & CV Numérique
+              4. Espace Candidat : Profil & CV Assisté par IA
             </h2>
             <p>
-              Pour maximiser vos opportunités de sélection, l'application vous invite à compléter votre dossier :
+              Pour augmenter vos chances auprès des recruteurs partenaires, renseignez soigneusement votre profil dans l'onglet <strong>Profil</strong> :
             </p>
             <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
-              <li><strong>Renseignements de base :</strong> Titre de poste recherché, compétences clés, formations académiques et expériences antérieures.</li>
-              <li><strong>Génération de CV assistée :</strong> Mise en page automatique d'un curriculum vitae prêt à l'emploi.</li>
-              <li><strong>Statut de visibilité :</strong> Option pour rendre votre profil consultable directement par les entreprises partenaires de SAMRE.</li>
+              <li><strong>Coordonnées & Titre :</strong> Spécifiez le poste visé (ex : <em>Secrétaire de Direction</em>, <em>Comptable Junior</em>, <em>Développeur Web</em>).</li>
+              <li><strong>Formations & Diplômes :</strong> Détaillez vos établissements et niveaux d'études.</li>
+              <li><strong>Expériences & Compétences :</strong> Listez vos savoir-faire techniques et pratiques.</li>
+              <li><strong>CV Numérique Automatique :</strong> Vos informations sont automatiquement structurées dans un CV professionnel téléchargeable en PDF.</li>
             </ul>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 5: OFFRES & CANDIDATURES                              */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="candidate-apply" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              5. Consultation des Offres & Dépôt de Candidature
+              5. Recherche d'Offres & Candidatures
             </h2>
             <p>
-              Depuis l'onglet <strong>Offres</strong>, filtrez par type de contrat (Stage professionnel, Stage académique, CDD, CDI), par localisation ou par domaine d'activité.
+              L'onglet <strong>Offres</strong> rassemble les annonces publiées par les structures vérifiées :
             </p>
-            <p>
-              En appuyant sur <strong>« Postuler »</strong>, votre profil complet est transmis sans friction au service de recrutement de l'entreprise. Vous pouvez suivre l'état d'examen de vos candidatures dans votre tableau de bord.
-            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>Filtrez par localisation géographique, type de contrat (Stage professionnel, Stage académique, CDD, CDI) et secteur d'activité.</li>
+              <li>Consultez les missions requises, les horaires et les critères d'éligibilité.</li>
+              <li>Appuyez sur <strong>« Postuler »</strong> pour soumettre votre candidature en un clic. L'entreprise reçoit instantanément votre dossier complet.</li>
+            </ul>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 6: REJOINDRE LE SUIVI DE STAGE                        */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="internship-join" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              6. Rejoindre son Entreprise (Code de Stage)
+              6. Code de Stage & Accord Numérique Réciproque
             </h2>
             <p>
-              Lorsque votre période de stage débute, l'entreprise vous transmet son <strong>Code de Stage Unique</strong> (par ex : <code>STG-7B9K2P</code>) :
+              Lorsque votre période de stage démarre dans une entreprise, celle-ci vous remet son <strong>Code de Stage Unique</strong> (ex : <code>STG-7B9K2P</code>) :
             </p>
             <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
-              <li>Appuyez sur le raccourci <strong>« Suivi de stage »</strong> sur l'écran d'accueil.</li>
-              <li>Renseignez le code fourni par votre structure d'accueil.</li>
-              <li>L'écran affiche la proposition de stage : coordonnées de l'entreprise, horaires contractuels (ex: <code>08:00 - 17:00</code>) et jours ouvrés.</li>
-              <li>Appuyez sur <strong>« Accepter la convention et activer mon suivi »</strong>. L'application configure alors le périmètre de pointage et officialise l'accord réciproque.</li>
+              <li>Sur l'accueil, appuyez sur le bouton <strong>« Suivi de stage »</strong>.</li>
+              <li>Saisissez le code transmis par votre superviseur ou tuteur.</li>
+              <li>L'écran affiche la fiche contractuelle : nom de l'entreprise d'accueil, horaires d'embauche et de sortie (ex : <code>08:00 - 17:00</code>), jours travaillés hebdomadaires.</li>
+              <li>Appuyez sur <strong>« Accepter la convention et activer mon suivi »</strong>.</li>
+              <li>L'accord numérique réciproque est alors enregistré et scellé. Votre suivi de stage est officiellement actif.</li>
             </ol>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 7: CONVENTION OFFICIELLE PDF                          */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="internship-convention" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              7. Convention de Stage Officielle (PDF)
+              7. Consultation & Téléchargement de la Convention (PDF)
             </h2>
             <p>
-              Dès que l'accord est scellé, un document contractuel officiel de 3 pages est édité :
+              Dès que l'accord est validé, vous pouvez télécharger votre convention officielle :
             </p>
             <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
-              <li>Rendez-vous dans l'onglet <strong>Convention & Dossier</strong> ou cliquez sur l'icône <strong>PDF</strong>.</li>
-              <li>Appuyez sur <strong>« Télécharger ma convention (PDF) »</strong>.</li>
-              <li>Le fichier PDF intègre les mentions légales, les engagements des deux parties, les horaires, l'adresse de travail ainsi que les références d'accord numérique et le cachet certifié.</li>
+              <li>Rendez-vous dans l'onglet <strong>Convention & Dossier</strong> ou appuyez sur l'icône rouge PDF en haut de l'écran.</li>
+              <li>Sélectionnez <strong>« Télécharger ma convention (PDF) »</strong>.</li>
+              <li>Le document contractuel complet (3 pages) comprend les articles légaux, les horaires, l'adresse exacte du lieu de stage, la référence unique du dossier et les signatures numériques certifiées des deux parties.</li>
             </ul>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 8: POINTAGE PRÉSENCE (AUTO & GPS)                     */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="internship-checkin" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              8. Le Pointage de Présence : Automatique ou Manuel
+              8. Le Pointage de Présence : Mode Automatique & Manuel GPS
             </h2>
             <p>
-              Pour certifier que le stagiaire est présent sur le lieu de travail conformément à la convention, l'application propose deux modalités :
+              Pour justifier de votre assiduité dans les locaux de l'entreprise, l'application dispose de deux options simples :
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', margin: '20px 0' }}>
-              <div style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                padding: '18px',
-                backgroundColor: '#f8fafc'
-              }}>
-                <div style={{ fontWeight: 700, color: '#0d3b7a', marginBottom: '8px' }}>
-                  A. Pointage Automatique [ON]
-                </div>
-                <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
-                  Dans l'onglet <strong>Aujourd'hui</strong>, activez l'interrupteur. Dès votre arrivée dans le périmètre de l'entreprise le matin avec votre téléphone, l'application valide automatiquement votre badgeage sans aucune manipulation. Le départ est consigné de même lorsque vous quittez les locaux.
-                </p>
-              </div>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '16px 0 6px 0' }}>
+              Option A : Pointage Automatique (Recommandé)
+            </h3>
+            <p>
+              Dans l'onglet <strong>Aujourd'hui</strong>, activez l'interrupteur <strong>Pointage Automatique [ON]</strong>. Dès que vous pénétrez dans le rayon GPS des bureaux le matin avec votre téléphone (même écran éteint dans votre poche), votre arrivée est validée automatiquement. À votre sortie des locaux le soir, l'heure de départ est enregistrée sans intervention manuelle.
+            </p>
 
-              <div style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                padding: '18px',
-                backgroundColor: '#f8fafc'
-              }}>
-                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: '8px' }}>
-                  B. Pointage Manuel (Bouton GPS)
-                </div>
-                <p style={{ fontSize: '13px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
-                  Si le mode automatique est désactivé ou pour un pointage ponctuel, ouvrez l'application à votre arrivée et appuyez sur <strong>« Pointer mon arrivée (GPS) »</strong>. La position satellite est vérifiée par rapport aux coordonnées de l'entreprise et valide la présence.
-                </p>
-              </div>
-            </div>
+            <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: '16px 0 6px 0' }}>
+              Option B : Pointage Manuel par GPS
+            </h3>
+            <p>
+              Si vous préférez badger manuellement ou si le mode automatique était désactivé, ouvrez simplement l'application à votre arrivée et appuyez sur <strong>« Pointer mon arrivée (GPS) »</strong>. Votre position par rapport au site de l'entreprise est vérifiée et consigne votre heure avec la mention <em>À l'heure</em> ou vos minutes de retard éventuelles.
+            </p>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 9: CALENDRIER MENSUEL AU MILLIMÈTRE                   */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="internship-calendar" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
               9. Calendrier Mensuel au Millimètre Près
             </h2>
             <p>
-              L'onglet <strong>Calendrier</strong> présente une vue intégrale sur chacun des mois du stage (Mois 1, Mois 2, Mois 3) :
+              L'onglet <strong>Calendrier</strong> offre une visibilité totale mois par mois (Mois 1, Mois 2, Mois 3) :
             </p>
             <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
               <li><strong>Crochet Vert (✔) :</strong> Journée validée avec succès (présence certifiée).</li>
               <li><strong>Croix Rouge (✖) :</strong> Journée ouvrée sans enregistrement de présence (absence).</li>
-              <li><strong>Badge Orange :</strong> Journée en cours en attente de pointage ou de clôture.</li>
-              <li><strong>Fiche d'audit détaillée :</strong> En touchant n'importe quel jour du calendrier, vous affichez l'heure exacte d'arrivée, l'heure exacte de départ, la durée effective travaillée, la méthode de validation utilisée et les tâches accomplies.</li>
+              <li><strong>Badge Orange :</strong> Journée d'aujourd'hui en cours.</li>
+              <li><strong>Cases Grisées :</strong> Week-ends et jours de repos contractuels.</li>
+              <li><strong>Audit détaillé d'une journée :</strong> Touchez n'importe quel jour du calendrier pour afficher la fiche complète : heure exacte d'arrivée, heure de départ, temps réel travaillé, méthode de validation (Geofence ou GPS manuel) et tâches accomplies.</li>
             </ul>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 10: CARNET DE BORD QUOTIDIEN                          */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="internship-logbook" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              10. Consigner son Résumé de Journée (Carnet de bord)
+              10. Consigner son Carnet de Bord Quotidien
             </h2>
             <p>
-              Chaque jour, le stagiaire est invité à résumer brièvement ses activités :
+              Chaque jour ouvré, le stagiaire renseigne en 1 minute un court résumé de ses activités :
             </p>
             <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
-              <li>Dans l'onglet <strong>Aujourd'hui</strong> ou depuis le calendrier, sélectionnez <strong>« Consigner mes missions du jour »</strong>.</li>
-              <li>Rédigez en quelques lignes les tâches exécutées (ex: <em>« Archivage des dossiers comptables et accueil physique des usagers »</em>).</li>
-              <li>Enregistrez. Le résumé est immédiatement consultable par le tuteur de stage.</li>
+              <li>Dans l'onglet <strong>Aujourd'hui</strong> ou en cliquant sur le jour dans le calendrier, sélectionnez <strong>« Consigner mes missions du jour »</strong>.</li>
+              <li>Décrivez les tâches accomplies (ex : <em>« Accueil physique et téléphonique, enregistrement des courriers entrants et mise à jour du registre des fournisseurs »</em>).</li>
+              <li>Enregistrez. Ce carnet est directement visible par le tuteur de stage pour évaluer votre progression.</li>
             </ol>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 11: PROGRESSION DU STAGE                              */}
-          {/* ═════════════════════════════════════════════════════════════ */}
           <section id="internship-steps" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              11. Les 5 Étapes de Progression vers la Certification
+              11. Les 5 Étapes vers la Certification
             </h2>
             <p>
-              Le parcours de stage est jalonné en 5 étapes clés calculées de 15 % à 100 % :
+              Dans l'onglet <strong>Convention & Dossier</strong>, votre progression est mesurée de 15 % à 100 % :
             </p>
 
             <table style={{
@@ -624,26 +511,26 @@ export const UserGuidePage = () => {
             }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', width: '15%' }}>Progression</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', width: '15%' }}>Avancement</th>
                   <th style={{ padding: '8px 12px', textAlign: 'left', width: '30%' }}>Étape</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left' }}>Action associée</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left' }}>Description de l'étape</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>15 %</td>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>Accueil & Intégration</td>
-                  <td style={{ padding: '10px 12px', color: '#475569' }}>Signature de la convention et paramétrage du suivi.</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Signature de la convention et paramétrage des horaires.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>50 %</td>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>Missions & Pointage</td>
-                  <td style={{ padding: '10px 12px', color: '#475569' }}>Réalisation continue des missions et pointage quotidien.</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Exécution quotidienne des activités et badgeage régulier.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>75 %</td>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>Bilan Mi-parcours</td>
-                  <td style={{ padding: '10px 12px', color: '#475569' }}>Entretien intermédiaire avec le tuteur.</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Entretien intermédiaire avec le tuteur de stage.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '10px 12px', fontWeight: 700, color: '#0d3b7a' }}>90 %</td>
@@ -653,134 +540,265 @@ export const UserGuidePage = () => {
                 <tr>
                   <td style={{ padding: '10px 12px', fontWeight: 700, color: '#16a34a' }}>100 %</td>
                   <td style={{ padding: '10px 12px', fontWeight: 600 }}>Certification SAMRE</td>
-                  <td style={{ padding: '10px 12px', color: '#475569' }}>Clôture par l'entreprise et délivrance de l'attestation QR.</td>
+                  <td style={{ padding: '10px 12px', color: '#475569' }}>Clôture par l'employeur et délivrance du Certificat avec QR Code.</td>
                 </tr>
               </tbody>
             </table>
           </section>
 
           {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 12: ENTREPRISE & HORAIRES                             */}
+          {/* PARTIE 3 : GUIDE ENTREPRISE, RECUTEUR & TUTEUR              */}
           {/* ═════════════════════════════════════════════════════════════ */}
+
           <section id="company-setup" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              12. Espace Entreprise : Horaires & Périmètre GPS
+              12. Espace Entreprise : Horaires, Jours Ouvrés & Périmètre GPS
             </h2>
             <p>
-              Pour configurer le suivi dans votre structure :
+              L'espace Entreprise permet aux employeurs, directeurs des ressources humaines, tuteurs et secrétaires de superviser facilement leurs stagiaires sans lourdeur administrative.
+            </p>
+            <p>
+              Dès la première connexion, configurez les paramètres de travail de votre structure :
             </p>
             <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
-              <li>Connectez-vous sur votre espace Entreprise.</li>
-              <li>Renseignez les horaires officiels d'activité (ex: <code>08:00 - 17:00</code>), les jours ouvrables (du lundi au vendredi) et la tolérance accordée pour les retards (ex: 15 minutes).</li>
-              <li>Localisez votre siège ou site d'exploitation pour fixer le rayon de géolocalisation (30 à 50 mètres).</li>
-              <li>Récupérez votre <strong>Code de Stage Unique</strong> affiché sur votre tableau de bord et remettez-le à vos nouveaux stagiaires.</li>
+              <li>Complétez la fiche de l'entreprise : raison sociale, logo, adresse physique et contact officiel.</li>
+              <li>Définissez vos <strong>horaires de bureau</strong> : heure d'embauche le matin (ex : <code>08:00</code>) et heure de débauche le soir (ex : <code>17:00</code>).</li>
+              <li>Fixez la <strong>tolérance de retard</strong> accordée aux collaborateurs (ex : <code>15 minutes</code>). Tout badgeage effectué au-delà de cette tolérance est automatiquement comptabilisé en retard.</li>
+              <li>Sélectionnez les <strong>jours ouvrés</strong> (ex : du lundi au vendredi). Les week-ends et jours de repos ne sont pas comptés comme des absences.</li>
+              <li>Positionnez votre adresse sur la carte pour définir le <strong>périmètre GPS</strong> (rayon de 30 à 50 mètres autour du bâtiment de travail).</li>
             </ol>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 13: ENTREPRISE & SUPERVISION                          */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="company-supervision" style={{ marginBottom: '48px' }}>
+          <section id="company-code" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              13. Supervision des Présences en Direct
+              13. Gestion du Code de Stage Entreprise
             </h2>
             <p>
-              Le tableau de bord entreprise permet de suivre en direct :
+              Chaque entreprise inscrite dispose d'un <strong>Code de Stage Unique</strong> affiché en tête de son tableau de bord (ex : <code>STAGE-NOMENTREPRISE</code> ou <code>STG-XXXXXX</code>) :
             </p>
             <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
-              <li>La liste complète de vos stagiaires en cours d'immersion.</li>
-              <li>Les badgeages d'arrivée en temps réel avec indicateur de ponctualité.</li>
-              <li>Le taux global d'assiduité mensuelle calculé automatiquement.</li>
-              <li>Les résumés de missions consignés chaque soir par les stagiaires.</li>
+              <li>Communiquez ce code à chaque nouveau stagiaire accueilli au sein de vos équipes.</li>
+              <li>Dès que le stagiaire saisit ce code sur son smartphone et valide la convention, il apparaît automatiquement dans votre liste de stagiaires actifs.</li>
+              <li>Aucune création manuelle de compte ni échange complexe de fichiers papier n'est nécessaire.</li>
             </ul>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 14: DÉLIVRANCE DU CERTIFICAT AVEC QR CODE             */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="company-certificate" style={{ marginBottom: '48px' }}>
+          <section id="company-supervision" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              14. Délivrance du Certificat Officiel avec QR Code
+              14. Supervision des Présences & Ponctualité en Temps Réel
             </h2>
             <p>
-              Au terme de la période de stage :
+              Depuis l'onglet <strong>Suivi des Stagiaires</strong> de la console entreprise, le tuteur dispose d'un contrôle transparent :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li><strong>Présence en direct :</strong> Visualisez instantanément qui est actuellement présent au bureau et qui est absent.</li>
+              <li><strong>Ponctualité :</strong> Le système indique l'heure exacte d'arrivée et calcule automatiquement le nombre de minutes de retard éventuelles.</li>
+              <li><strong>Taux d'assiduité mensuel :</strong> Calcul automatique du pourcentage de présence sur les jours ouvrés du mois.</li>
+              <li><strong>Lecture des carnets de bord :</strong> Consultez chaque soir les résumés des activités consignées par chaque stagiaire pour apprécier leur travail.</li>
+            </ul>
+          </section>
+
+          <section id="company-evaluations" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              15. Suivi Pédagogique & Validation des Étapes
+            </h2>
+            <p>
+              Au fil des mois d'immersion, le tuteur encadre l'évolution du stagiaire :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>Sur la fiche du stagiaire, validez l'avancement de l'étape <em>Bilan Mi-parcours</em> (75 %) après avoir conduit l'entretien intermédiaire.</li>
+              <li>Validez l'étape <em>Rapport de Stage</em> (90 %) après réception et relecture du document de synthèse.</li>
+              <li>Vous pouvez ajouter des remarques et appréciations pédagogiques directement transmises sur le profil du stagiaire.</li>
+            </ul>
+          </section>
+
+          <section id="company-certificate" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              16. Clôture de Stage & Délivrance du Certificat Officiel avec QR Code
+            </h2>
+            <p>
+              À l'échéance du stage, l'entreprise délivre l'attestation numérique certifiée :
             </p>
             <ol style={{ paddingLeft: '24px', margin: '12px 0 16px', lineHeight: 1.8 }}>
-              <li>Ouvrez la fiche du stagiaire et cliquez sur <strong>« Clôturer le stage & Délivrer le Certificat »</strong>.</li>
-              <li>Attribuez la mention d'honneur appropriée (<em>Assiduité Exemplaire</em>, <em>Mention Très Bien</em>, <em>Félicitations du Tuteur</em> ou <em>Stage Validé</em>).</li>
-              <li>Inscrivez votre appréciation qualitative finale et validez l'émission.</li>
+              <li>Sur la fiche du stagiaire, appuyez sur <strong>« Clôturer le stage & Délivrer le Certificat »</strong>.</li>
+              <li>Choisissez la mention méritée :
+                <ul style={{ paddingLeft: '20px', marginTop: '6px' }}>
+                  <li><em>Assiduité Exemplaire</em> (pour un taux de présence supérieur à 95 %)</li>
+                  <li><em>Mention Très Bien</em></li>
+                  <li><em>Félicitations du Tuteur</em></li>
+                  <li><em>Stage Validé avec Succès</em></li>
+                </ul>
+              </li>
+              <li>Rédigez l'appréciation globale sur la qualité du travail et le professionnalisme démontré.</li>
+              <li>Validez l'émission : le document est généré et horodaté instantanément.</li>
             </ol>
 
-            <div style={{
-              backgroundColor: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              borderRadius: '8px',
-              padding: '16px',
-              marginTop: '16px'
-            }}>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a', marginBottom: '4px' }}>
-                Fonctionnement de l'authentification par QR Code
+            <p style={{ color: '#475569', fontSize: '14px', marginTop: '12px' }}>
+              <strong>Authenticité par QR Code infalsifiable :</strong> Le certificat émis porte un QR Code officiel infalsifiable. Tout futur recruteur scannant ce code est redirigé vers une page publique de vérification SAMRE qui confirme sans ambiguïté les dates réelles du stage, le nom de votre entreprise, le total des heures effectuées et la mention attribuée.
+            </p>
+          </section>
+
+          <section id="company-offers" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              17. Publication d'Offres d'Emploi & Gestion des Candidatures
+            </h2>
+            <p>
+              L'entreprise peut publier ses opportunités de recrutement :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>Rédigez le titre de l'offre, les missions, les compétences recherchées et le niveau de qualification souhaité.</li>
+              <li>Définissez la rémunération ou indemnité éventuelle et le lieu de travail.</li>
+              <li>Recevez les candidatures dans votre espace de gestion, consultez les CV des postulants et modifiez les statuts (<em>En attente</em>, <em>Retenu pour entretien</em>, <em>Accepté</em>, <em>Refusé</em>).</li>
+            </ul>
+          </section>
+
+          <section id="company-branding" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              18. Bannières Publicitaires & Visibilité de Marque
+            </h2>
+            <p>
+              Les entreprises peuvent valoriser leurs activités sur la plateforme SAMRE à travers des bannières visibles sur l'application mobile et le portail web. Les demandes d'affichage sont soumises à la modération pour garantir la conformité aux standards de la plateforme.
+            </p>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* PARTIE 4 : GUIDE VISITEUR & SERVICES PARTENAIRES             */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+
+          <section id="visitor-events" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              19. Événements Professionnels, Salons & Billetterie QR Code
+            </h2>
+            <p>
+              Le catalogue <strong>Événements</strong> recense les rendez-vous professionnels (salons pour l'emploi, masterclasses, ateliers de formation et conférences) :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>Consultez la date, le lieu, le programme des interventions et les intervenants.</li>
+              <li>Réservez votre place en ligne et recevez un <strong>e-ticket électronique doté d'un QR Code sécurisé</strong>.</li>
+              <li>À l'entrée de l'événement, présentez votre smartphone : le personnel d'accueil scanne votre billet pour valider votre admission.</li>
+            </ul>
+          </section>
+
+          <section id="visitor-barter" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              20. Place de Marché de Troc & Échange de Compétences B2B
+            </h2>
+            <p>
+              Le module <strong>Troc de Services</strong> permet aux indépendants, créateurs d'entreprises et professionnels de collaborer sans décaissement de trésorerie :
+            </p>
+            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
+              <li>Publiez une offre de service basée sur votre expertise (ex : <em>« Conception graphique de logo »</em> ou <em>« Traduction de documents »</em>).</li>
+              <li>Indiquez la compétence recherchée en contrepartie (ex : <em>« Création de site web »</em> ou <em>« Conseil juridique »</em>).</li>
+              <li>Échangez directement avec vos pairs et validez la réalisation des prestations mutuelles.</li>
+            </ul>
+          </section>
+
+          <section id="visitor-surveys" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              21. Sondages d'Opinion & Portefeuille de Récompenses
+            </h2>
+            <p>
+              Participez aux enquêtes sur les tendances du marché du travail, l'orientation professionnelle et les besoins des recruteurs. Vos réponses vous permettent de cumuler des points convertibles dans votre portefeuille numérique SAMRE.
+            </p>
+          </section>
+
+          {/* ═════════════════════════════════════════════════════════════ */}
+          {/* PARTIE 5 : QUESTIONS FRÉQUENTES (FAQ)                        */}
+          {/* ═════════════════════════════════════════════════════════════ */}
+
+          <section id="faq-candidats" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              22. FAQ Candidats & Stagiaires
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Que faire si le pointage automatique ne s'est pas déclenché ce matin ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Ouvrez l'application et appuyez sur le bouton <strong>« Pointer mon arrivée (GPS) »</strong> dans l'onglet Aujourd'hui. Vérifiez que la localisation de votre téléphone est activée et réglée sur <em>« Toujours autoriser »</em> dans les paramètres de votre appareil.
+                </div>
               </div>
-              <div style={{ fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
-                Le certificat PDF généré embarque une signature cryptographique sous la forme d'un QR Code unique. Tout futur recruteur scannant ce code est redirigé vers une page officielle SAMRE qui authentifie sans équivoque les dates du stage, le nom de l'entreprise hôte et le volume d'heures réelles accomplies.
+
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  J'ai oublié de consigner mes missions hier, puis-je rattraper aujourd'hui ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Oui. Dans l'onglet <strong>Calendrier</strong>, appuyez sur la date d'hier puis cliquez sur <strong>« Consigner / Modifier mes activités »</strong> pour enregistrer votre résumé.
+                </div>
+              </div>
+
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Comment télécharger ma convention signée ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Rendez-vous dans l'onglet <strong>Convention & Dossier</strong> ou cliquez sur l'icône rouge PDF en haut de l'écran, puis appuyez sur <strong>« Télécharger ma convention (PDF) »</strong>.
+                </div>
               </div>
             </div>
           </section>
 
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 15: AUTRES SERVICES                                   */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="other-services" style={{ marginBottom: '48px' }}>
+          <section id="faq-entreprises" style={{ marginBottom: '48px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              15. Services Complémentaires de la Plateforme
-            </h2>
-            <ul style={{ paddingLeft: '24px', margin: '12px 0 16px' }}>
-              <li><strong>Événements & Billetterie QR :</strong> Réservation de places pour les conférences et salons professionnels avec e-ticket numérique à présenter à l'accueil.</li>
-              <li><strong>Troc & Partenariats B2B :</strong> Mise en relation inter-entreprises pour échanger des prestations et compétences sans flux monétaire.</li>
-              <li><strong>Sondages Rémunérés :</strong> Participation à des études d'opinion avec points de fidélité crédités dans votre portefeuille SAMRE.</li>
-            </ul>
-          </section>
-
-          {/* ═════════════════════════════════════════════════════════════ */}
-          {/* SECTION 16: FAQ                                               */}
-          {/* ═════════════════════════════════════════════════════════════ */}
-          <section id="faq" style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
-              16. Foire Aux Questions (FAQ)
+              23. FAQ Entreprises & Tuteurs
             </h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
-              {[
-                {
-                  q: "Que faire si je ne reçois pas le code SMS (OTP) lors de l'inscription ?",
-                  a: "Vérifiez que vous avez sélectionné le bon indicatif pays (ex: +229 pour le Bénin, +33 pour la France). Si le SMS tarde à arriver, patientez jusqu'à la fin du compte à rebours de sécurité (60 secondes) puis cliquez sur « Renvoyer le code »."
-                },
-                {
-                  q: "Puis-je changer mon numéro de téléphone après l'inscription ?",
-                  a: "Non. Le numéro de téléphone validé par SMS reste lié de façon définitive à votre compte afin de préserver la valeur juridique des conventions de stage et certificats signés. En cas de perte de carte SIM, contactez le support."
-                },
-                {
-                  q: "Que faire si le pointage automatique ne s'est pas déclenché ce matin ?",
-                  a: "Ouvrez simplement l'application et appuyez sur « Pointer mon arrivée (GPS) » dans l'onglet Aujourd'hui. Assurez-vous également que l'autorisation de géolocalisation pour SAMRE est réglée sur « Toujours autoriser » dans les réglages de votre smartphone."
-                },
-                {
-                  q: "J'ai oublié de consigner mes missions hier, puis-je rattraper ?",
-                  a: "Oui. Dans l'onglet Calendrier, touchez le jour précédent et sélectionnez « Consigner / Modifier mes activités » pour mettre à jour vos notes."
-                },
-                {
-                  q: "Comment un recruteur s'assure-t-il de la validité de mon certificat ?",
-                  a: "Il lui suffit de scanner le QR Code imprimé sur votre attestation avec son smartphone. Une page officielle de confirmation SAMRE certifie en direct la validité du document."
-                }
-              ].map((item, i) => (
-                <div key={i} style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
-                  <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
-                    {item.q}
-                  </div>
-                  <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
-                    {item.a}
-                  </div>
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Comment transmettre le code de stage à mes stagiaires ?
                 </div>
-              ))}
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Votre code unique est affiché en haut de votre tableau de bord entreprise. Il suffit de le transmettre à vos stagiaires lors de leur premier jour. Dès qu'ils l'entrent dans leur téléphone, ils sont reliés à votre console.
+                </div>
+              </div>
+
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Comment le système gère-t-il les retards ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Si un stagiaire arrive après l'heure d'embauche plus la tolérance configurée (ex : 08h15 pour un horaire de 08h00 avec 15 min de tolérance), son arrivée est enregistrée avec le nombre exact de minutes de retard. Cela est répercuté automatiquement sur son assiduité globale.
+                </div>
+              </div>
+
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Comment un tiers ou futur recruteur vérifie-t-il le certificat de stage ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Chaque certificat officiel intègre un QR Code cryptographique. En scannant ce code avec n'importe quel smartphone, le recruteur accède à une page officielle certifiant les dates réelles, le nom de l'entreprise et la mention obtenue.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="faq-visiteurs" style={{ marginBottom: '48px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 16px 0' }}>
+              24. FAQ Visiteurs & Support Technique
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Que faire si je ne reçois pas le code SMS lors de la connexion ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Vérifiez que vous avez sélectionné le bon indicatif pays. Si le SMS tarde, patientez jusqu'à l'expiration du compte à rebours de 60 secondes et cliquez sur « Renvoyer le code ».
+                </div>
+              </div>
+
+              <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '14px' }}>
+                <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: '6px' }}>
+                  Puis-je changer de profil après mon inscription ?
+                </div>
+                <div style={{ color: '#475569', fontSize: '14px', lineHeight: 1.6 }}>
+                  Si vous êtes visiteur et souhaitez devenir candidat ou entreprise, vous pouvez faire évoluer votre compte depuis le menu Profil & Paramètres ou contacter le support SAMRE.
+                </div>
+              </div>
             </div>
           </section>
 
@@ -798,7 +816,7 @@ export const UserGuidePage = () => {
             gap: '12px'
           }}>
             <span>© {new Date().getFullYear()} SAMRE Technologies. Tous droits réservés.</span>
-            <span>Documentation certifiée officielle</span>
+            <span>Documentation Officielle Utilisateur</span>
           </div>
 
         </main>
@@ -822,52 +840,76 @@ export const UserGuidePage = () => {
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
             <a href="#intro" style={{ color: activeSection === 'intro' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'intro' ? 700 : 400 }}>
-              1. Introduction
+              1. Présentation
             </a>
             <a href="#auth-otp" style={{ color: activeSection === 'auth-otp' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'auth-otp' ? 700 : 400 }}>
               2. Inscription & Code OTP
             </a>
             <a href="#profile-roles" style={{ color: activeSection === 'profile-roles' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'profile-roles' ? 700 : 400 }}>
-              3. Profils Métier
+              3. Profils Utilisateur
             </a>
             <a href="#candidate-profile" style={{ color: activeSection === 'candidate-profile' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'candidate-profile' ? 700 : 400 }}>
               4. Espace Candidat & CV
             </a>
             <a href="#candidate-apply" style={{ color: activeSection === 'candidate-apply' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'candidate-apply' ? 700 : 400 }}>
-              5. Offres d'emploi
+              5. Recherche d'offres
             </a>
             <a href="#internship-join" style={{ color: activeSection === 'internship-join' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-join' ? 700 : 400 }}>
-              6. Rejoindre avec le Code
+              6. Code de stage & Accord
             </a>
             <a href="#internship-convention" style={{ color: activeSection === 'internship-convention' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-convention' ? 700 : 400 }}>
               7. Convention PDF
             </a>
             <a href="#internship-checkin" style={{ color: activeSection === 'internship-checkin' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-checkin' ? 700 : 400 }}>
-              8. Pointage Présence
+              8. Pointage présence
             </a>
             <a href="#internship-calendar" style={{ color: activeSection === 'internship-calendar' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-calendar' ? 700 : 400 }}>
-              9. Calendrier au millimètre
+              9. Calendrier mensuel
             </a>
             <a href="#internship-logbook" style={{ color: activeSection === 'internship-logbook' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-logbook' ? 700 : 400 }}>
               10. Carnet de bord
             </a>
             <a href="#internship-steps" style={{ color: activeSection === 'internship-steps' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-steps' ? 700 : 400 }}>
-              11. Progression de stage
+              11. Étapes de certification
             </a>
             <a href="#company-setup" style={{ color: activeSection === 'company-setup' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-setup' ? 700 : 400 }}>
               12. Horaires & Périmètre
             </a>
+            <a href="#company-code" style={{ color: activeSection === 'company-code' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-code' ? 700 : 400 }}>
+              13. Code de stage
+            </a>
             <a href="#company-supervision" style={{ color: activeSection === 'company-supervision' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-supervision' ? 700 : 400 }}>
-              13. Supervision en direct
+              14. Supervision en direct
+            </a>
+            <a href="#company-evaluations" style={{ color: activeSection === 'company-evaluations' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-evaluations' ? 700 : 400 }}>
+              15. Suivi pédagogique
             </a>
             <a href="#company-certificate" style={{ color: activeSection === 'company-certificate' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-certificate' ? 700 : 400 }}>
-              14. Certificat avec QR Code
+              16. Certificat avec QR Code
             </a>
-            <a href="#other-services" style={{ color: activeSection === 'other-services' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'other-services' ? 700 : 400 }}>
-              15. Services secondaires
+            <a href="#company-offers" style={{ color: activeSection === 'company-offers' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-offers' ? 700 : 400 }}>
+              17. Recrutement & Offres
             </a>
-            <a href="#faq" style={{ color: activeSection === 'faq' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq' ? 700 : 400 }}>
-              16. FAQ
+            <a href="#company-branding" style={{ color: activeSection === 'company-branding' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-branding' ? 700 : 400 }}>
+              18. Bannières de marque
+            </a>
+            <a href="#visitor-events" style={{ color: activeSection === 'visitor-events' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'visitor-events' ? 700 : 400 }}>
+              19. Événements & Billetterie
+            </a>
+            <a href="#visitor-barter" style={{ color: activeSection === 'visitor-barter' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'visitor-barter' ? 700 : 400 }}>
+              20. Troc de compétences
+            </a>
+            <a href="#visitor-surveys" style={{ color: activeSection === 'visitor-surveys' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'visitor-surveys' ? 700 : 400 }}>
+              21. Sondages & Récompenses
+            </a>
+            <a href="#faq-candidats" style={{ color: activeSection === 'faq-candidats' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq-candidats' ? 700 : 400 }}>
+              22. FAQ Candidats
+            </a>
+            <a href="#faq-entreprises" style={{ color: activeSection === 'faq-entreprises' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq-entreprises' ? 700 : 400 }}>
+              23. FAQ Entreprises
+            </a>
+            <a href="#faq-visiteurs" style={{ color: activeSection === 'faq-visiteurs' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq-visiteurs' ? 700 : 400 }}>
+              24. FAQ Visiteurs
             </a>
           </nav>
         </aside>
