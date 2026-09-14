@@ -186,12 +186,12 @@ export const UserGuidePage = () => {
         </div>
       </header>
 
-      {/* ── Document Shell: Sidebar + Content + On-this-page ── */}
+      {/* ── Document Shell: Sidebar + Content ── */}
       <div style={{
-        maxWidth: '1440px',
+        maxWidth: '1280px',
         margin: '0 auto',
         display: 'grid',
-        gridTemplateColumns: '270px minmax(0, 1fr) 230px',
+        gridTemplateColumns: '270px minmax(0, 1fr)',
         gap: '40px',
         padding: '32px 24px'
       }} className="docs-container">
@@ -821,110 +821,9 @@ export const UserGuidePage = () => {
 
         </main>
 
-        {/* ── Right Column: "Sur cette page" Mini-TOC ── */}
-        <aside style={{
-          position: 'sticky',
-          top: '96px',
-          height: 'calc(100vh - 120px)',
-          overflowY: 'auto'
-        }} className="docs-on-this-page">
-          <div style={{
-            fontSize: '11px',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            color: '#64748b',
-            marginBottom: '12px'
-          }}>
-            Sur cette page
-          </div>
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-            <a href="#intro" style={{ color: activeSection === 'intro' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'intro' ? 700 : 400 }}>
-              1. Présentation
-            </a>
-            <a href="#auth-otp" style={{ color: activeSection === 'auth-otp' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'auth-otp' ? 700 : 400 }}>
-              2. Inscription & Code OTP
-            </a>
-            <a href="#profile-roles" style={{ color: activeSection === 'profile-roles' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'profile-roles' ? 700 : 400 }}>
-              3. Profils Utilisateur
-            </a>
-            <a href="#candidate-profile" style={{ color: activeSection === 'candidate-profile' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'candidate-profile' ? 700 : 400 }}>
-              4. Espace Candidat & CV
-            </a>
-            <a href="#candidate-apply" style={{ color: activeSection === 'candidate-apply' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'candidate-apply' ? 700 : 400 }}>
-              5. Recherche d'offres
-            </a>
-            <a href="#internship-join" style={{ color: activeSection === 'internship-join' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-join' ? 700 : 400 }}>
-              6. Code de stage & Accord
-            </a>
-            <a href="#internship-convention" style={{ color: activeSection === 'internship-convention' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-convention' ? 700 : 400 }}>
-              7. Convention PDF
-            </a>
-            <a href="#internship-checkin" style={{ color: activeSection === 'internship-checkin' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-checkin' ? 700 : 400 }}>
-              8. Pointage présence
-            </a>
-            <a href="#internship-calendar" style={{ color: activeSection === 'internship-calendar' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-calendar' ? 700 : 400 }}>
-              9. Calendrier mensuel
-            </a>
-            <a href="#internship-logbook" style={{ color: activeSection === 'internship-logbook' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-logbook' ? 700 : 400 }}>
-              10. Carnet de bord
-            </a>
-            <a href="#internship-steps" style={{ color: activeSection === 'internship-steps' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'internship-steps' ? 700 : 400 }}>
-              11. Étapes de certification
-            </a>
-            <a href="#company-setup" style={{ color: activeSection === 'company-setup' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-setup' ? 700 : 400 }}>
-              12. Horaires & Périmètre
-            </a>
-            <a href="#company-code" style={{ color: activeSection === 'company-code' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-code' ? 700 : 400 }}>
-              13. Code de stage
-            </a>
-            <a href="#company-supervision" style={{ color: activeSection === 'company-supervision' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-supervision' ? 700 : 400 }}>
-              14. Supervision en direct
-            </a>
-            <a href="#company-evaluations" style={{ color: activeSection === 'company-evaluations' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-evaluations' ? 700 : 400 }}>
-              15. Suivi pédagogique
-            </a>
-            <a href="#company-certificate" style={{ color: activeSection === 'company-certificate' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-certificate' ? 700 : 400 }}>
-              16. Certificat avec QR Code
-            </a>
-            <a href="#company-offers" style={{ color: activeSection === 'company-offers' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-offers' ? 700 : 400 }}>
-              17. Recrutement & Offres
-            </a>
-            <a href="#company-branding" style={{ color: activeSection === 'company-branding' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'company-branding' ? 700 : 400 }}>
-              18. Bannières de marque
-            </a>
-            <a href="#visitor-events" style={{ color: activeSection === 'visitor-events' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'visitor-events' ? 700 : 400 }}>
-              19. Événements & Billetterie
-            </a>
-            <a href="#visitor-barter" style={{ color: activeSection === 'visitor-barter' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'visitor-barter' ? 700 : 400 }}>
-              20. Troc de compétences
-            </a>
-            <a href="#visitor-surveys" style={{ color: activeSection === 'visitor-surveys' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'visitor-surveys' ? 700 : 400 }}>
-              21. Sondages & Récompenses
-            </a>
-            <a href="#faq-candidats" style={{ color: activeSection === 'faq-candidats' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq-candidats' ? 700 : 400 }}>
-              22. FAQ Candidats
-            </a>
-            <a href="#faq-entreprises" style={{ color: activeSection === 'faq-entreprises' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq-entreprises' ? 700 : 400 }}>
-              23. FAQ Entreprises
-            </a>
-            <a href="#faq-visiteurs" style={{ color: activeSection === 'faq-visiteurs' ? '#0d3b7a' : '#64748b', textDecoration: 'none', fontWeight: activeSection === 'faq-visiteurs' ? 700 : 400 }}>
-              24. FAQ Visiteurs
-            </a>
-          </nav>
-        </aside>
-
       </div>
 
       <style>{`
-        @media (max-width: 1024px) {
-          .docs-container {
-            grid-template-columns: 240px 1fr !important;
-          }
-          .docs-on-this-page {
-            display: none !important;
-          }
-        }
         @media (max-width: 768px) {
           .docs-container {
             grid-template-columns: 1fr !important;
@@ -947,7 +846,7 @@ export const UserGuidePage = () => {
           }
         }
         @media print {
-          header, aside, .docs-sidebar, .docs-on-this-page, .mobile-menu-btn {
+          header, aside, .docs-sidebar, .mobile-menu-btn {
             display: none !important;
           }
           .docs-container {
